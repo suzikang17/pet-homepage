@@ -129,7 +129,8 @@ export const acknowledgeVaccinationReminder = mutation({
   handler: async (ctx, { vaccinationId }) => {
     const vax = await ctx.db.get(vaccinationId)
     if (!vax) throw new Error('Vaccination not found')
-    await ctx.db.patch(vaccinationId, { nextDueAt: undefined })
+    const { nextDueAt: _removed, _id, _creationTime, ...rest } = vax
+    await ctx.db.replace(vaccinationId, rest)
     await ctx.db.insert('events', {
       petId: vax.petId,
       occurredAt: new Date().toISOString(),
@@ -148,7 +149,8 @@ export const acknowledgeMedicationRefill = mutation({
   handler: async (ctx, { medicationId }) => {
     const med = await ctx.db.get(medicationId)
     if (!med) throw new Error('Medication not found')
-    await ctx.db.patch(medicationId, { refillDueAt: undefined })
+    const { refillDueAt: _removed, _id, _creationTime, ...rest } = med
+    await ctx.db.replace(medicationId, rest)
     await ctx.db.insert('events', {
       petId: med.petId,
       occurredAt: new Date().toISOString(),
@@ -167,7 +169,8 @@ export const acknowledgeVetVisitReminder = mutation({
   handler: async (ctx, { vetVisitId }) => {
     const visit = await ctx.db.get(vetVisitId)
     if (!visit) throw new Error('Vet visit not found')
-    await ctx.db.patch(vetVisitId, { nextVisitDate: undefined })
+    const { nextVisitDate: _removed, _id, _creationTime, ...rest } = visit
+    await ctx.db.replace(vetVisitId, rest)
     await ctx.db.insert('events', {
       petId: visit.petId,
       occurredAt: new Date().toISOString(),
