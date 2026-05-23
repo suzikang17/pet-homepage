@@ -1,6 +1,11 @@
 'use client'
 import { Topbar } from './Topbar'
 import { usePetData } from '@/hooks/usePetData'
+import { useMutation } from 'convex/react'
+import { api } from '@/convex/_generated/api'
+import type { Id } from '@/convex/_generated/dataModel'
+
+type ReminderSourceType = 'vaccination' | 'medication' | 'vet_visit'
 
 interface Reminder {
   id: string
@@ -10,6 +15,8 @@ interface Reminder {
   dueAt: string
   daysAway: number
   urgency: 'over' | 'soon' | 'upcoming'
+  sourceType: ReminderSourceType
+  sourceRecordId: string
 }
 
 function daysFromNow(iso: string): number {
@@ -32,7 +39,7 @@ const urgencyStyles = {
   upcoming: { border: 'var(--rule)',   bg: 'var(--paper)',     label: 'Upcoming',   labelColor: 'var(--ink-3)'  },
 }
 
-function ReminderCard({ r }: { r: Reminder }) {
+function ReminderCard({ r, onDone }: { r: Reminder; onDone: () => void }) {
   const s = urgencyStyles[r.urgency]
   const dayLabel = r.daysAway < 0
     ? `${Math.abs(r.daysAway)} day${Math.abs(r.daysAway) !== 1 ? 's' : ''} overdue`
@@ -49,11 +56,22 @@ function ReminderCard({ r }: { r: Reminder }) {
         <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--ink)', marginBottom: 2 }}>{r.title}</div>
         <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>{r.subtitle}</div>
       </div>
-      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+      <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: s.labelColor, textTransform: 'uppercase',
-                      letterSpacing: '0.05em', marginBottom: 3 }}>{s.label}</div>
+                      letterSpacing: '0.05em' }}>{s.label}</div>
         <div style={{ fontSize: 13, color: 'var(--ink-2)', fontWeight: 500 }}>{dayLabel}</div>
         <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{fmt(r.dueAt)}</div>
+        <button
+          type="button"
+          onClick={onDone}
+          style={{
+            marginTop: 4, padding: '4px 12px', fontSize: 12, fontWeight: 600,
+            borderRadius: 8, border: '1px solid var(--rule)', background: 'var(--paper)',
+            color: 'var(--ink-2)', cursor: 'pointer',
+          }}
+        >
+          Mark done
+        </button>
       </div>
     </div>
   )
@@ -61,6 +79,9 @@ function ReminderCard({ r }: { r: Reminder }) {
 
 export function RemindersPage() {
   const { pet, vaccinations, medications, vetVisits, loading } = usePetData()
+  const ackVax   = useMutation(api.medical.acknowledgeVaccinationReminder)
+  const ackMed   = useMutation(api.medical.acknowledgeMedicationRefill)
+  const ackVisit = useMutation(api.medical.acknowledgeVetVisitReminder)
 
   if (loading) {
     return <div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', color: 'var(--ink-3)', fontSize: 14 }}>Loading…</div>
@@ -77,6 +98,8 @@ export function RemindersPage() {
       id: v._id, icon: '💉', urgency: urgency(days), daysAway: days, dueAt: v.nextDueAt,
       title: `${v.vaccineName} vaccine`,
       subtitle: `Last given ${new Date(v.administeredAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`,
+      sourceType: 'vaccination',
+      sourceRecordId: v._id,
     })
   })
 
@@ -87,6 +110,8 @@ export function RemindersPage() {
       id: m._id, icon: '💊', urgency: urgency(days), daysAway: days, dueAt: m.refillDueAt!,
       title: `${m.drugName} refill`,
       subtitle: m.dosage || 'Medication refill needed',
+      sourceType: 'medication',
+      sourceRecordId: m._id,
     })
   })
 
@@ -97,10 +122,22 @@ export function RemindersPage() {
       id: v._id + '-next', icon: '🩺', urgency: urgency(days), daysAway: days, dueAt: v.nextVisitDate!,
       title: 'Vet visit',
       subtitle: v.clinicName || 'Scheduled follow-up',
+      sourceType: 'vet_visit',
+      sourceRecordId: v._id,
     })
   })
 
   reminders.sort((a, b) => a.daysAway - b.daysAway)
+
+  const handleDone = (r: Reminder) => {
+    if (r.sourceType === 'vaccination') {
+      ackVax({ vaccinationId: r.sourceRecordId as Id<'vaccinations'> })
+    } else if (r.sourceType === 'medication') {
+      ackMed({ medicationId: r.sourceRecordId as Id<'medications'> })
+    } else {
+      ackVisit({ vetVisitId: r.sourceRecordId as Id<'vetVisits'> })
+    }
+  }
 
   const overdue  = reminders.filter(r => r.urgency === 'over')
   const soon     = reminders.filter(r => r.urgency === 'soon')
@@ -130,21 +167,21 @@ export function RemindersPage() {
               <div style={{ marginBottom: 24 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--red)', textTransform: 'uppercase',
                               letterSpacing: '0.07em', marginBottom: 10 }}>Overdue — {overdue.length}</div>
-                {overdue.map(r => <ReminderCard key={r.id} r={r}/>)}
+                {overdue.map(r => <ReminderCard key={r.id} r={r} onDone={() => handleDone(r)} />)}
               </div>
             )}
             {soon.length > 0 && (
               <div style={{ marginBottom: 24 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--orange)', textTransform: 'uppercase',
                               letterSpacing: '0.07em', marginBottom: 10 }}>Due soon — {soon.length}</div>
-                {soon.map(r => <ReminderCard key={r.id} r={r}/>)}
+                {soon.map(r => <ReminderCard key={r.id} r={r} onDone={() => handleDone(r)} />)}
               </div>
             )}
             {upcoming.length > 0 && (
               <div style={{ marginBottom: 48 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase',
                               letterSpacing: '0.07em', marginBottom: 10 }}>Upcoming — {upcoming.length}</div>
-                {upcoming.map(r => <ReminderCard key={r.id} r={r}/>)}
+                {upcoming.map(r => <ReminderCard key={r.id} r={r} onDone={() => handleDone(r)} />)}
               </div>
             )}
           </>
