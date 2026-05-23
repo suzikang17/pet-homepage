@@ -5,7 +5,7 @@ import { internalMutation } from './_generated/server'
 export const syncReminderRecords = internalMutation({
   args: {},
   handler: async (ctx) => {
-    const now    = new Date().toISOString()
+    const now    = new Date(Date.now()).toISOString()
     const cutoff = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString()
 
     // ── Vaccinations ────────────────────────────────────────────────────────────
