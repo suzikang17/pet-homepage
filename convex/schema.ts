@@ -5,7 +5,7 @@ import { v } from 'convex/values'
 export default defineSchema({
   ...authTables,
   pets: defineTable({
-    userId:          v.string(),              // Clerk user ID (added when auth is wired)
+    userId:          v.string(),              // Convex auth tokenIdentifier
     name:            v.string(),
     species:         v.string(),              // 'dog' | 'cat' | 'other'
     breed:           v.optional(v.string()),
@@ -20,7 +20,7 @@ export default defineSchema({
 
   events: defineTable({
     petId:        v.id('pets'),
-    occurredAt:   v.string(),                 // ISO 8601 — extracted from content, not ingestion time
+    occurredAt:   v.string(),                 // ISO 8601
     ingestedAt:   v.number(),                 // Date.now()
     source:       v.union(v.literal('email'), v.literal('sms'), v.literal('manual')),
     eventType:    v.string(),
@@ -33,9 +33,9 @@ export default defineSchema({
       size:     v.number(),
     })),
     parsedFields: v.any(),
-    recordId:     v.optional(v.string()),     // ID of the normalized record
-    recordType:   v.optional(v.string()),     // 'vetVisits' | 'vaccinations' | 'medications' | 'weightLogs'
-    messageId:    v.optional(v.string()),     // email Message-ID header — used for deduplication
+    recordId:     v.optional(v.string()),
+    recordType:   v.optional(v.string()),
+    messageId:    v.optional(v.string()),
   })
     .index('by_pet_id', ['petId'])
     .index('by_pet_id_and_type', ['petId', 'eventType'])
@@ -44,7 +44,7 @@ export default defineSchema({
   vetVisits: defineTable({
     petId:          v.id('pets'),
     eventId:        v.optional(v.id('events')),
-    occurredAt:     v.string(),               // ISO date
+    occurredAt:     v.string(),
     clinicName:     v.optional(v.string()),
     vetName:        v.optional(v.string()),
     reason:         v.optional(v.string()),
@@ -52,10 +52,11 @@ export default defineSchema({
     treatmentNotes: v.optional(v.string()),
     weightKg:       v.optional(v.number()),
     nextVisitDate:  v.optional(v.string()),
-    isBaseline:     v.boolean(),              // true after user taps "mark visit complete"
+    isBaseline:     v.boolean(),
   })
     .index('by_pet_id', ['petId'])
-    .index('by_pet_id_baseline', ['petId', 'isBaseline']),
+    .index('by_pet_id_baseline', ['petId', 'isBaseline'])
+    .index('by_next_visit_date', ['nextVisitDate']),
 
   vaccinations: defineTable({
     petId:          v.id('pets'),
@@ -64,10 +65,11 @@ export default defineSchema({
     administeredAt: v.string(),
     administeredBy: v.optional(v.string()),
     lotNumber:      v.optional(v.string()),
-    nextDueAt:      v.optional(v.string()),   // source of truth for reminder scheduling
+    nextDueAt:      v.optional(v.string()),
   })
     .index('by_pet_id', ['petId'])
-    .index('by_pet_id_due', ['petId', 'nextDueAt']),
+    .index('by_pet_id_due', ['petId', 'nextDueAt'])
+    .index('by_next_due_at', ['nextDueAt']),
 
   medications: defineTable({
     petId:          v.id('pets'),
@@ -76,25 +78,26 @@ export default defineSchema({
     dosage:         v.optional(v.string()),
     frequency:      v.optional(v.string()),
     startedAt:      v.string(),
-    endedAt:        v.optional(v.string()),   // undefined = currently active
-    refillDueAt:    v.optional(v.string()),   // source of truth for refill reminders
+    endedAt:        v.optional(v.string()),
+    refillDueAt:    v.optional(v.string()),
     prescribingVet: v.optional(v.string()),
     notes:          v.optional(v.string()),
   })
-    .index('by_pet_id', ['petId']),
+    .index('by_pet_id', ['petId'])
+    .index('by_refill_due_at', ['refillDueAt']),
 
   weightLogs: defineTable({
     petId:      v.id('pets'),
     eventId:    v.optional(v.id('events')),
     recordedAt: v.string(),
     weightKg:   v.number(),
-    source:     v.optional(v.string()),       // 'vet_visit' | 'home' | 'groomer'
+    source:     v.optional(v.string()),
   })
     .index('by_pet_id', ['petId']),
 
   reminders: defineTable({
     petId:          v.id('pets'),
-    sourceType:     v.string(),               // 'vaccination' | 'medication' | 'vet_visit' | 'manual'
+    sourceType:     v.string(),               // 'vaccination' | 'medication' | 'vet_visit'
     sourceId:       v.string(),
     reminderType:   v.string(),               // 'due_soon' | 'overdue' | 'refill'
     dueAt:          v.string(),
@@ -104,5 +107,6 @@ export default defineSchema({
     acknowledgedAt: v.optional(v.number()),
   })
     .index('by_pet_id_status', ['petId', 'status'])
-    .index('by_next_send_at', ['nextSendAt']),
+    .index('by_next_send_at', ['nextSendAt'])
+    .index('by_source', ['sourceType', 'sourceId']),
 })
