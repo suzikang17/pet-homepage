@@ -105,25 +105,28 @@ export function Composer({ petId, petName }: { petId: Id<"pets">; petName: strin
 
       if (type === "weight") {
         const raw = parseFloat(weightVal)
-        if (!isNaN(raw) && raw > 0) {
-          const weightKg = weightUnit === "lb" ? raw * 0.453592 : raw
-          await logWeight({ petId, recordedAt: now, weightKg, source: weightSrc })
+        if (isNaN(raw) || raw <= 0) {
+          showToast("Enter a valid weight first.")
+          return
         }
+        const weightKg = weightUnit === "lb" ? raw * 0.453592 : raw
+        await logWeight({ petId, recordedAt: now, weightKg, source: weightSrc })
       } else if (type === "photo") {
         // Photo upload not yet wired — show toast only
       } else {
-        const eventType = EVENT_TYPES[type]!
-        if (text.trim()) {
-          await logEvent({
-            petId,
-            occurredAt: now,
-            source: "manual",
-            eventType,
-            notes: text.trim(),
-            attachments: [],
-            parsedFields: {},
-          })
+        const eventType = EVENT_TYPES[type]
+        if (!eventType || !text.trim()) {
+          return
         }
+        await logEvent({
+          petId,
+          occurredAt: now,
+          source: "manual",
+          eventType,
+          notes: text.trim(),
+          attachments: [],
+          parsedFields: {},
+        })
       }
 
       showToast(submitMessages[type])
