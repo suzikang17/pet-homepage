@@ -39,7 +39,7 @@ const urgencyStyles = {
   upcoming: { border: 'var(--rule)',   bg: 'var(--paper)',     label: 'Upcoming',   labelColor: 'var(--ink-3)'  },
 }
 
-function ReminderCard({ r, onDone }: { r: Reminder; onDone: () => void }) {
+function ReminderCard({ r, onDone }: { r: Reminder; onDone: () => void | Promise<void> }) {
   const s = urgencyStyles[r.urgency]
   const dayLabel = r.daysAway < 0
     ? `${Math.abs(r.daysAway)} day${Math.abs(r.daysAway) !== 1 ? 's' : ''} overdue`
@@ -129,13 +129,17 @@ export function RemindersPage() {
 
   reminders.sort((a, b) => a.daysAway - b.daysAway)
 
-  const handleDone = (r: Reminder) => {
-    if (r.sourceType === 'vaccination') {
-      ackVax({ vaccinationId: r.sourceRecordId as Id<'vaccinations'> })
-    } else if (r.sourceType === 'medication') {
-      ackMed({ medicationId: r.sourceRecordId as Id<'medications'> })
-    } else {
-      ackVisit({ vetVisitId: r.sourceRecordId as Id<'vetVisits'> })
+  const handleDone = async (r: Reminder) => {
+    try {
+      if (r.sourceType === 'vaccination') {
+        await ackVax({ vaccinationId: r.sourceRecordId as Id<'vaccinations'> })
+      } else if (r.sourceType === 'medication') {
+        await ackMed({ medicationId: r.sourceRecordId as Id<'medications'> })
+      } else {
+        await ackVisit({ vetVisitId: r.sourceRecordId as Id<'vetVisits'> })
+      }
+    } catch (err) {
+      console.error('Failed to acknowledge reminder', err)
     }
   }
 
