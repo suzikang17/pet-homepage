@@ -123,3 +123,60 @@ export const listVetVisits = query({
   handler: async (ctx, { petId, limit }) =>
     ctx.db.query('vetVisits').withIndex('by_pet_id', q => q.eq('petId', petId)).order('desc').take(limit ?? 20),
 })
+
+export const acknowledgeVaccinationReminder = mutation({
+  args: { vaccinationId: v.id('vaccinations') },
+  handler: async (ctx, { vaccinationId }) => {
+    const vax = await ctx.db.get(vaccinationId)
+    if (!vax) throw new Error('Vaccination not found')
+    await ctx.db.patch(vaccinationId, { nextDueAt: undefined })
+    await ctx.db.insert('events', {
+      petId: vax.petId,
+      occurredAt: new Date().toISOString(),
+      ingestedAt: Date.now(),
+      source: 'manual',
+      eventType: 'reminder_acknowledged',
+      notes: `${vax.vaccineName} vaccine reminder marked done`,
+      attachments: [],
+      parsedFields: {},
+    })
+  },
+})
+
+export const acknowledgeMedicationRefill = mutation({
+  args: { medicationId: v.id('medications') },
+  handler: async (ctx, { medicationId }) => {
+    const med = await ctx.db.get(medicationId)
+    if (!med) throw new Error('Medication not found')
+    await ctx.db.patch(medicationId, { refillDueAt: undefined })
+    await ctx.db.insert('events', {
+      petId: med.petId,
+      occurredAt: new Date().toISOString(),
+      ingestedAt: Date.now(),
+      source: 'manual',
+      eventType: 'reminder_acknowledged',
+      notes: `${med.drugName} refill marked done`,
+      attachments: [],
+      parsedFields: {},
+    })
+  },
+})
+
+export const acknowledgeVetVisitReminder = mutation({
+  args: { vetVisitId: v.id('vetVisits') },
+  handler: async (ctx, { vetVisitId }) => {
+    const visit = await ctx.db.get(vetVisitId)
+    if (!visit) throw new Error('Vet visit not found')
+    await ctx.db.patch(vetVisitId, { nextVisitDate: undefined })
+    await ctx.db.insert('events', {
+      petId: visit.petId,
+      occurredAt: new Date().toISOString(),
+      ingestedAt: Date.now(),
+      source: 'manual',
+      eventType: 'reminder_acknowledged',
+      notes: 'Vet visit reminder marked done',
+      attachments: [],
+      parsedFields: {},
+    })
+  },
+})
