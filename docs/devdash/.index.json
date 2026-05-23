@@ -1,0 +1,55 @@
+{
+  "artifacts" : [
+    {
+      "modified" : "2026-05-10T21:16:29Z",
+      "path" : "sections\/initiatives.html",
+      "tags" : [
+
+      ],
+      "title" : "initiatives",
+      "type" : "sections",
+      "wordCount" : 20
+    },
+    {
+      "modified" : "2026-05-10T21:16:29Z",
+      "path" : "sections\/roadmap.html",
+      "tags" : [
+
+      ],
+      "title" : "roadmap",
+      "type" : "sections",
+      "wordCount" : 12
+    },
+    {
+      "modified" : "2026-05-10T19:07:29Z",
+      "path" : "sections\/goals.html",
+      "tags" : [
+
+      ],
+      "title" : "pet-homepage — Goals &amp; KPIs",
+      "type" : "sections",
+      "wordCount" : 65
+    },
+    {
+      "modified" : "2026-05-10T18:56:42Z",
+      "path" : "sections\/ideas.html",
+      "tags" : [
+
+      ],
+      "title" : "Ideas",
+      "type" : "sections",
+      "wordCount" : 51
+    },
+    {
+      "modified" : "2026-05-10T18:56:42Z",
+      "path" : "sections\/overview.html",
+      "tags" : [
+
+      ],
+      "title" : "pet-homepage",
+      "type" : "sections",
+      "wordCount" : 124
+    }
+  ],
+  "generatedAt" : "2026-05-10T21:16:29Z"
+}

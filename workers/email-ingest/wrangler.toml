@@ -1,0 +1,8 @@
+name = "email-ingest"
+main = "index.ts"
+compatibility_date = "2024-09-23"
+
+[vars]
+INGEST_API_URL = "https://homepage.pet/api/ingest/email"
+
+# Set INGEST_SECRET via: wrangler secret put INGEST_SECRET

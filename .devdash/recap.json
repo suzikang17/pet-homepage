@@ -1,0 +1,10 @@
+{
+  "includedCommits" : [
+
+  ],
+  "summary" : "## Where you left off\n\nThe most recent session (May 5) focused on wiring in authentication — adding Convex Auth alongside sign-in\/sign-up pages, protecting routes via `middleware.ts`, and building out the `ConvexClientProvider`. Just before that, a substantial multi-step `OnboardingFlow` was completed (17 steps: welcome → pet details → care history → notifications → account). The core UI pages (Records, Reminders, Timeline, Composer) were built in an earlier session on May 2.\n\n## What's been done\n\n- **Email ingestion pipeline** — Cloudflare Worker (`workers\/email-ingest\/`) parses raw emails via PostalMime and POSTs to `\/api\/ingest\/email`, which runs AI extraction and writes normalized records (vet visits, vaccinations, medications, weight logs) to Convex\n- **Full Convex schema** — `pets`, `events`, `vetVisits`, `vaccinations`, `medications`, `weightLogs`, and `reminders` tables all defined with proper indexes\n- **Onboarding flow** — 17-step wizard covering pet profile, care history, notifications, and account creation\n- **Auth integration** — Convex Auth configured, sign-in\/sign-up pages added, middleware protecting routes\n- **UI shell** — Records, Reminders, Timeline, PetDashboard, Topbar, Subnav all in place\n\n## What's likely next\n\n- **Connect onboarding to Convex** — the schema's `userId` field has a comment \"added when auth is wired\"; the onboarding mutation likely needs updating to use the real Convex Auth identity\n- **Reminders scheduling logic** — the `reminders` table and schema are defined but there's no visible cron or send logic yet; `nextSendAt` \/ `lastSentAt` fields suggest a scheduler needs wiring\n- **Deploy and test the Cloudflare Worker** — the email worker exists but environment variables (`INGEST_API_URL`, `INGEST_SECRET`) need confirming in the worker config\n- **End-to-end smoke test** — sign up → onboard a pet → forward a vet email → confirm it appears in Records",
+  "generatedAt" : "2026-05-10T13:14:39Z",
+  "includedSessions" : [
+
+  ]
+}

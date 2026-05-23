@@ -1,0 +1,49 @@
+[
+  {
+    "addedAt" : "2026-05-10T17:22:59Z",
+    "category" : "ai",
+    "dashboardURL" : "https:\/\/console.anthropic.com\/usage",
+    "detectedFrom" : {
+      "packageJSON" : {
+        "name" : "@ai-sdk\/anthropic"
+      }
+    },
+    "id" : "84CE2E60-B6C2-47DF-8790-DCA04C1920FB",
+    "name" : "Anthropic"
+  },
+  {
+    "addedAt" : "2026-05-10T17:22:59Z",
+    "category" : "ai",
+    "detectedFrom" : {
+      "packageJSON" : {
+        "name" : "ai"
+      }
+    },
+    "id" : "03F1C90C-B9F1-424E-BBCA-3296CC170E35",
+    "name" : "Vercel AI SDK"
+  },
+  {
+    "addedAt" : "2026-05-10T17:22:59Z",
+    "category" : "cdn",
+    "dashboardURL" : "https:\/\/dash.cloudflare.com\/",
+    "detectedFrom" : {
+      "packageJSON" : {
+        "name" : "wrangler"
+      }
+    },
+    "id" : "7E536C52-25FC-4AA5-8279-937FD7C95250",
+    "name" : "Cloudflare"
+  },
+  {
+    "addedAt" : "2026-05-10T17:22:59Z",
+    "category" : "database",
+    "dashboardURL" : "https:\/\/supabase.com\/dashboard",
+    "detectedFrom" : {
+      "packageJSON" : {
+        "name" : "@supabase\/supabase-js"
+      }
+    },
+    "id" : "AC981662-2420-48BD-8085-D6C3848B176C",
+    "name" : "Supabase"
+  }
+]
