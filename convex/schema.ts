@@ -108,5 +108,5 @@ export default defineSchema({
   })
     .index('by_pet_id_status', ['petId', 'status'])
     .index('by_next_send_at', ['nextSendAt'])
-    .index('by_source', ['sourceType', 'sourceId']),
+    .index('by_source_type_and_source_id', ['sourceType', 'sourceId']),
 })
