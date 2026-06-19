@@ -831,7 +831,7 @@ git commit -m "feat(ios): add NotificationScheduling protocol, UN adapter, and f
 
 > This class turns a `Medication` (its `scheduleTime` Date) into a `PendingMedicationReminder` (hour/minute) and drives the injected scheduler. Active medications (no `endedAt`, or `endedAt` in the future) are scheduled; ended ones are cancelled. All logic is tested against `FakeNotificationScheduler` — no real notification center.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```swift
 // ios/PetHomepageTests/MedicationReminderSchedulerTests.swift
@@ -918,17 +918,17 @@ final class MedicationReminderSchedulerTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Regenerate the project**
+- [x] **Step 2: Regenerate the project**
 
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodegen generate)`
 Expected: `Created project at .../ios/PetHomepage.xcodeproj`.
 
-- [ ] **Step 3: Run the test to verify it fails**
+- [x] **Step 3: Run the test to verify it fails**
 
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' -only-testing:PetHomepageTests/MedicationReminderSchedulerTests)`
 Expected: FAIL — `cannot find 'MedicationReminderScheduler' in scope`.
 
-- [ ] **Step 4: Implement the scheduler**
+- [x] **Step 4: Implement the scheduler**
 
 ```swift
 // ios/PetHomepage/Notifications/MedicationReminderScheduler.swift
@@ -979,12 +979,12 @@ final class MedicationReminderScheduler {
 }
 ```
 
-- [ ] **Step 5: Run the test to verify it passes**
+- [x] **Step 5: Run the test to verify it passes**
 
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' -only-testing:PetHomepageTests/MedicationReminderSchedulerTests)`
 Expected: PASS (all four tests).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add ios
