@@ -20,5 +20,11 @@
         <attribute name="endedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="refillDueAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="medications" inverseEntity="Pet"/>
+        <relationship name="doseLogs" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="DoseLog" inverseName="medication" inverseEntity="DoseLog"/>
+    </entity>
+    <entity name="DoseLog" representedClassName="DoseLog" syncable="YES" codeGenerationType="none">
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="givenAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="medication" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Medication" inverseName="doseLogs" inverseEntity="Medication"/>
     </entity>
 </model>

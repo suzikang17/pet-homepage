@@ -12,6 +12,7 @@ public class Medication: NSManagedObject {
     @NSManaged public var endedAt: Date?
     @NSManaged public var refillDueAt: Date?
     @NSManaged public var pet: Pet?
+    @NSManaged public var doseLogs: NSSet?
 }
 
 extension Medication {
