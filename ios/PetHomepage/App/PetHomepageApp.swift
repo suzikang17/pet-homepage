@@ -8,6 +8,11 @@ struct PetHomepageApp: App {
         WindowGroup {
             ContentView()
                 .environment(\.managedObjectContext, persistence.container.viewContext)
+                .task {
+                    await NotificationBootstrap.requestAuthorizationIfNeeded(
+                        using: UNNotificationScheduler()
+                    )
+                }
         }
     }
 }
