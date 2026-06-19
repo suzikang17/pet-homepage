@@ -650,7 +650,7 @@ git commit -m "feat(ios): pet profile screen wired to PetStore"
 **Interfaces:**
 - Produces: `final class DocumentStore { init(baseURL: URL, fileManager: FileManager = .default); static func iCloudDrive() -> DocumentStore?; @discardableResult func save(_ data: Data, named: String) throws -> URL; func read(named: String) throws -> Data; func fileURL(named: String) -> URL }`. Used by later phases to store record attachments (PDFs/photos) in the iCloud Drive container.
 
-- [ ] **Step 1: Write the failing test (against a temp dir, not iCloud)**
+- [x] **Step 1: Write the failing test (against a temp dir, not iCloud)**
 
 ```swift
 // ios/PetHomepageTests/DocumentStoreTests.swift
@@ -686,12 +686,12 @@ final class DocumentStoreTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `cd ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:PetHomepageTests/DocumentStoreTests`
 Expected: FAIL — `cannot find 'DocumentStore' in scope`.
 
-- [ ] **Step 3: Implement DocumentStore**
+- [x] **Step 3: Implement DocumentStore**
 
 ```swift
 // ios/PetHomepage/Stores/DocumentStore.swift
@@ -733,12 +733,12 @@ final class DocumentStore {
 }
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `cd ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:PetHomepageTests/DocumentStoreTests`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add ios
