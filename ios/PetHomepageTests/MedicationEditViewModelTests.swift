@@ -1,0 +1,86 @@
+// ios/PetHomepageTests/MedicationEditViewModelTests.swift
+import XCTest
+import CoreData
+@testable import PetHomepage
+
+final class MedicationEditViewModelTests: XCTestCase {
+    private var context: NSManagedObjectContext!
+    private var store: MedicationStore!
+    private var fake: FakeNotificationScheduler!
+    private var reminderScheduler: MedicationReminderScheduler!
+
+    override func setUpWithError() throws {
+        context = PersistenceController(inMemory: true).container.viewContext
+        let petStore = PetStore(context: context)
+        try petStore.createPet(name: "Sandy", species: "dog")
+        store = MedicationStore(context: context, petStore: petStore)
+        fake = FakeNotificationScheduler()
+        reminderScheduler = MedicationReminderScheduler(
+            scheduler: fake,
+            calendar: Calendar(identifier: .gregorian)
+        )
+    }
+
+    func testSaveCreatesMedicationAndSchedulesReminder() async throws {
+        let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, editing: nil)
+        vm.drugName = "Apoquel"
+        vm.dosage = "16mg"
+        vm.frequency = "daily"
+
+        try await vm.save()
+
+        let meds = try store.medications()
+        XCTAssertEqual(meds.count, 1)
+        XCTAssertEqual(meds.first?.drugName, "Apoquel")
+        let pending = await fake.pendingMedicationIDs()
+        XCTAssertEqual(pending.count, 1)
+    }
+
+    func testIsValidRequiresDrugName() {
+        let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, editing: nil)
+        XCTAssertFalse(vm.isValid)
+        vm.drugName = "Apoquel"
+        XCTAssertTrue(vm.isValid)
+    }
+
+    func testInitLoadsExistingMedicationForEditing() async throws {
+        let t = Date(timeIntervalSince1970: 0)
+        let med = try store.create(drugName: "Zyrtec", dosage: "5mg", frequency: "daily",
+                                   scheduleTime: t, startedAt: t, refillDueAt: nil)
+
+        let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, editing: med)
+
+        XCTAssertEqual(vm.drugName, "Zyrtec")
+        XCTAssertEqual(vm.dosage, "5mg")
+        XCTAssertFalse(vm.hasRefillDue)
+        XCTAssertFalse(vm.hasEnded)
+    }
+
+    func testSaveUpdatesExistingMedication() async throws {
+        let t = Date(timeIntervalSince1970: 0)
+        let med = try store.create(drugName: "Zyrtec", dosage: "5mg", frequency: "daily",
+                                   scheduleTime: t, startedAt: t, refillDueAt: nil)
+        let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, editing: med)
+        vm.dosage = "10mg"
+        vm.hasRefillDue = true
+        vm.refillDueAt = Date(timeIntervalSince1970: 86_400)
+
+        try await vm.save()
+
+        let fetched = try store.medications().first
+        XCTAssertEqual(fetched?.dosage, "10mg")
+        XCTAssertEqual(fetched?.refillDueAt, Date(timeIntervalSince1970: 86_400))
+    }
+
+    func testSavingEndedMedicationCancelsReminder() async throws {
+        let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, editing: nil)
+        vm.drugName = "Apoquel"
+        vm.hasEnded = true
+        vm.endedAt = Date(timeIntervalSince1970: 0) // ended in the past
+
+        try await vm.save()
+
+        let pending = await fake.pendingMedicationIDs()
+        XCTAssertTrue(pending.isEmpty)
+    }
+}
