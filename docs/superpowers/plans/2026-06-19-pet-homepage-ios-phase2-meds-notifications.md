@@ -1105,7 +1105,11 @@ Expected: `Created project at .../ios/PetHomepage.xcodeproj`.
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' -only-testing:PetHomepageTests/MedicationEditViewModelTests)`
 Expected: FAIL — `cannot find 'MedicationEditViewModel' in scope`.
 
+> **Note (TDD process):** The red phase was executed locally before implementation but was not staged as a separate commit — the test file, view model, and view were all committed together in 180f092. This means the red-green sequence is not evidenced at the commit level. The correctness of the final state (tests pass, implementation correct) was verified by running the full suite post-fix on 2026-06-19: `Executed 31 tests, with 0 failures`. Future tasks should stage the failing test in its own commit before writing implementation.
+
 - [x] **Step 4: Implement the view model**
+
+> **Note (fix):** The initial implementation below had a non-atomic double-save bug on the create-with-endedAt path: it called `store.create()` (one `context.save()`), then `store.update()` (a second `context.save()`). A crash between the two saves would produce a record with `endedAt=nil` when `hasEnded=true`. This was fixed in commit f50ada2 by adding `endedAt: Date? = nil` to `MedicationStore.create()`, eliminating the redundant `store.update()` call. The corrected implementation is shown below.
 
 ```swift
 // ios/PetHomepage/Features/Medications/MedicationEditViewModel.swift
@@ -1177,17 +1181,8 @@ final class MedicationEditViewModel {
                                           frequency: frequency,
                                           scheduleTime: scheduleTime,
                                           startedAt: startedAt,
+                                          endedAt: ended,
                                           refillDueAt: refill)
-            if let ended {
-                try store.update(medication,
-                                 drugName: drugName,
-                                 dosage: dosage,
-                                 frequency: frequency,
-                                 scheduleTime: scheduleTime,
-                                 startedAt: startedAt,
-                                 endedAt: ended,
-                                 refillDueAt: refill)
-            }
         }
 
         await reminderScheduler.sync(medication)
