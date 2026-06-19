@@ -1004,7 +1004,7 @@ git commit -m "feat(ios): add MedicationReminderScheduler over notification prot
 - Consumes: `MedicationStore`, `MedicationReminderScheduler`.
 - Produces: `@Observable final class MedicationEditViewModel { init(store:reminderScheduler:editing:); var drugName/dosage/frequency: String; var scheduleTime/startedAt: Date; var hasRefillDue: Bool; var refillDueAt: Date; var hasEnded: Bool; var endedAt: Date; var isValid: Bool; func save() async throws }`. Mirrors `PetProfileViewModel`: takes its store in `init`, exposes plain mutable fields, and a single `save()`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```swift
 // ios/PetHomepageTests/MedicationEditViewModelTests.swift
@@ -1095,17 +1095,17 @@ final class MedicationEditViewModelTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Regenerate the project**
+- [x] **Step 2: Regenerate the project**
 
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodegen generate)`
 Expected: `Created project at .../ios/PetHomepage.xcodeproj`.
 
-- [ ] **Step 3: Run the test to verify it fails**
+- [x] **Step 3: Run the test to verify it fails**
 
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' -only-testing:PetHomepageTests/MedicationEditViewModelTests)`
 Expected: FAIL — `cannot find 'MedicationEditViewModel' in scope`.
 
-- [ ] **Step 4: Implement the view model**
+- [x] **Step 4: Implement the view model**
 
 ```swift
 // ios/PetHomepage/Features/Medications/MedicationEditViewModel.swift
@@ -1195,12 +1195,12 @@ final class MedicationEditViewModel {
 }
 ```
 
-- [ ] **Step 5: Run the test to verify it passes**
+- [x] **Step 5: Run the test to verify it passes**
 
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' -only-testing:PetHomepageTests/MedicationEditViewModelTests)`
 Expected: PASS (all five tests).
 
-- [ ] **Step 6: Build the add/edit SwiftUI screen**
+- [x] **Step 6: Build the add/edit SwiftUI screen**
 
 ```swift
 // ios/PetHomepage/Features/Medications/MedicationEditView.swift
@@ -1258,12 +1258,12 @@ struct MedicationEditView: View {
 }
 ```
 
-- [ ] **Step 7: Verify the full suite still builds + passes**
+- [x] **Step 7: Verify the full suite still builds + passes**
 
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2')`
 Expected: BUILD SUCCEEDED, all tests PASS.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add ios
