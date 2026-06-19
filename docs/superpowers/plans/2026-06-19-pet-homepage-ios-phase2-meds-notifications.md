@@ -1283,7 +1283,7 @@ git commit -m "feat(ios): add medication add/edit view model and screen"
 
 > `nextDue` is the medication's `scheduleTime` mapped onto today (or tomorrow if today's time already passed), giving the list a "next reminder" hint. `isRefillDueSoon` is true when `refillDueAt` is within 7 days. `logDose` writes a `DoseLog` and reloads so "last given" updates immediately.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```swift
 // ios/PetHomepageTests/MedicationsListViewModelTests.swift
@@ -1380,17 +1380,17 @@ final class MedicationsListViewModelTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Regenerate the project**
+- [x] **Step 2: Regenerate the project**
 
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodegen generate)`
 Expected: `Created project at .../ios/PetHomepage.xcodeproj`.
 
-- [ ] **Step 3: Run the test to verify it fails**
+- [x] **Step 3: Run the test to verify it fails**
 
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' -only-testing:PetHomepageTests/MedicationsListViewModelTests)`
 Expected: FAIL — `cannot find 'MedicationsListViewModel'` / `'MedicationRow' in scope`.
 
-- [ ] **Step 4: Implement the view model**
+- [x] **Step 4: Implement the view model**
 
 ```swift
 // ios/PetHomepage/Features/Medications/MedicationsListViewModel.swift
@@ -1476,12 +1476,12 @@ final class MedicationsListViewModel {
 }
 ```
 
-- [ ] **Step 5: Run the test to verify it passes**
+- [x] **Step 5: Run the test to verify it passes**
 
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' -only-testing:PetHomepageTests/MedicationsListViewModelTests)`
 Expected: PASS (all six tests).
 
-- [ ] **Step 6: Build the list SwiftUI screen**
+- [x] **Step 6: Build the list SwiftUI screen**
 
 ```swift
 // ios/PetHomepage/Features/Medications/MedicationsListView.swift
@@ -1569,7 +1569,7 @@ struct MedicationsListView: View {
 extension Medication: Identifiable {}
 ```
 
-- [ ] **Step 7: Wire the tab navigation in `ContentView`**
+- [x] **Step 7: Wire the tab navigation in `ContentView`**
 
 ```swift
 // ios/PetHomepage/App/ContentView.swift
@@ -1596,12 +1596,12 @@ struct ContentView: View {
 }
 ```
 
-- [ ] **Step 8: Verify the full suite builds + passes**
+- [x] **Step 8: Verify the full suite builds + passes**
 
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2')`
 Expected: BUILD SUCCEEDED, all tests PASS (Phase 1 + Phase 2 suites).
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add ios
