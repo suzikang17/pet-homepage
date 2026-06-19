@@ -10,6 +10,7 @@ public class Pet: NSManagedObject {
     @NSManaged public var dob: Date?
     @NSManaged public var adoptionDate: Date?
     @NSManaged public var photoData: Data?
+    @NSManaged public var medications: NSSet?
 }
 
 extension Pet {
