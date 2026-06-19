@@ -1,7 +1,10 @@
+// ios/PetHomepage/App/ContentView.swift
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(\.managedObjectContext) private var context
+
     var body: some View {
-        Text("pet-homepage")
+        PetProfileView(store: PetStore(context: context))
     }
 }
