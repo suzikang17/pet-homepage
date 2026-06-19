@@ -90,7 +90,7 @@ ios/
 - Consumes: `PersistenceController(inMemory:).container.viewContext`, `PetStore` (for `currentPet()`).
 - Produces:
   - `class Medication: NSManagedObject` with `id: UUID, drugName: String, dosage: String, frequency: String, scheduleTime: Date, startedAt: Date, endedAt: Date?, refillDueAt: Date?, pet: Pet?` and `static func fetchRequest() -> NSFetchRequest<Medication>`.
-  - `final class MedicationStore { init(context:); @discardableResult func create(drugName:dosage:frequency:scheduleTime:startedAt:refillDueAt:) throws -> Medication; func medications() throws -> [Medication]; func update(_:drugName:dosage:frequency:scheduleTime:startedAt:endedAt:refillDueAt:) throws; func delete(_:) throws }`.
+  - `final class MedicationStore { init(context:); @discardableResult func create(drugName:dosage:frequency:scheduleTime:startedAt:endedAt:refillDueAt:) throws -> Medication; func medications() throws -> [Medication]; func update(_:drugName:dosage:frequency:scheduleTime:startedAt:endedAt:refillDueAt:) throws; func delete(_:) throws }`.
 
 - [ ] **Step 1: Add the `Medication` entity to the Core Data model**
 
@@ -286,6 +286,7 @@ final class MedicationStore {
                 frequency: String,
                 scheduleTime: Date,
                 startedAt: Date,
+                endedAt: Date? = nil,
                 refillDueAt: Date?) throws -> Medication {
         let med = Medication(context: context)
         med.id = UUID()
@@ -294,6 +295,7 @@ final class MedicationStore {
         med.frequency = frequency
         med.scheduleTime = scheduleTime
         med.startedAt = startedAt
+        med.endedAt = endedAt
         med.refillDueAt = refillDueAt
         med.pet = try petStore.currentPet()
         try context.save()
@@ -363,7 +365,7 @@ git commit -m "feat(ios): add Medication entity and pet-scoped MedicationStore"
   - `class DoseLog: NSManagedObject` with `id: UUID, givenAt: Date, medication: Medication?` and `static func fetchRequest() -> NSFetchRequest<DoseLog>`.
   - `final class DoseLogStore { init(context:); @discardableResult func logDose(for:at:) throws -> DoseLog; func lastGiven(for:) throws -> Date?; func doseCount(for:) throws -> Int }`.
 
-- [ ] **Step 1: Add the `DoseLog` entity to the Core Data model**
+- [x] **Step 1: Add the `DoseLog` entity to the Core Data model**
 
 Overwrite `ios/PetHomepage/Persistence/PetHomepage.xcdatamodeld/PetHomepage.xcdatamodel/contents`. `Medication` gains an optional `doseLogs` to-many relation; the new `DoseLog` entity has CloudKit-safe attributes (`id`/`givenAt` are `optional="YES"`, always set by the store before `save()`).
 
@@ -400,7 +402,7 @@ Overwrite `ios/PetHomepage/Persistence/PetHomepage.xcdatamodeld/PetHomepage.xcda
 </model>
 ```
 
-- [ ] **Step 2: Add the `doseLogs` relation to the `Medication` subclass**
+- [x] **Step 2: Add the `doseLogs` relation to the `Medication` subclass**
 
 Replace `ios/PetHomepage/Models/Medication.swift` with:
 
@@ -429,7 +431,7 @@ extension Medication {
 }
 ```
 
-- [ ] **Step 3: Write the failing test**
+- [x] **Step 3: Write the failing test**
 
 ```swift
 // ios/PetHomepageTests/DoseLogStoreTests.swift
@@ -498,17 +500,17 @@ final class DoseLogStoreTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 4: Regenerate the project**
+- [x] **Step 4: Regenerate the project**
 
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodegen generate)`
 Expected: `Created project at .../ios/PetHomepage.xcodeproj`.
 
-- [ ] **Step 5: Run the test to verify it fails**
+- [x] **Step 5: Run the test to verify it fails**
 
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' -only-testing:PetHomepageTests/DoseLogStoreTests)`
 Expected: FAIL — `cannot find 'DoseLog'` / `'DoseLogStore' in scope`.
 
-- [ ] **Step 6: Write the `DoseLog` subclass**
+- [x] **Step 6: Write the `DoseLog` subclass**
 
 ```swift
 // ios/PetHomepage/Models/DoseLog.swift
@@ -528,7 +530,7 @@ extension DoseLog {
 }
 ```
 
-- [ ] **Step 7: Write the `DoseLogStore`**
+- [x] **Step 7: Write the `DoseLogStore`**
 
 ```swift
 // ios/PetHomepage/Stores/DoseLogStore.swift
@@ -569,12 +571,12 @@ final class DoseLogStore {
 }
 ```
 
-- [ ] **Step 8: Run the test to verify it passes**
+- [x] **Step 8: Run the test to verify it passes**
 
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' -only-testing:PetHomepageTests/DoseLogStoreTests)`
 Expected: PASS (all four tests).
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add ios
@@ -1109,7 +1111,7 @@ Expected: FAIL — `cannot find 'MedicationEditViewModel' in scope`.
 
 - [x] **Step 4: Implement the view model**
 
-> **Note (fix):** The initial implementation below had a non-atomic double-save bug on the create-with-endedAt path: it called `store.create()` (one `context.save()`), then `store.update()` (a second `context.save()`). A crash between the two saves would produce a record with `endedAt=nil` when `hasEnded=true`. This was fixed in commit f50ada2 by adding `endedAt: Date? = nil` to `MedicationStore.create()`, eliminating the redundant `store.update()` call. The corrected implementation is shown below.
+> **Note (atomicity):** Because `MedicationStore.create()` accepts `endedAt: Date? = nil` (defined in Task 1, Step 7), the create-with-`endedAt` path is a single atomic `context.save()`. Do NOT implement this as `store.create()` followed by a separate `store.update()` — that double-save path is non-atomic: a crash between the two saves would persist a record with `endedAt=nil` even when `hasEnded=true`. Pass `endedAt` directly into `create()` as shown below.
 
 ```swift
 // ios/PetHomepage/Features/Medications/MedicationEditViewModel.swift
@@ -1744,7 +1746,7 @@ git commit -m "feat(ios): request notification authorization on launch"
 **Placeholder scan:** No TBD/TODO; every code step shows complete code; every run step shows an exact `xcodebuild` command pinned to iPhone 16 / OS 18.2 with an expected result; every task ends with a `git add ios` commit.
 
 **Type consistency:**
-- `MedicationStore.create(drugName:dosage:frequency:scheduleTime:startedAt:refillDueAt:)` and `update(_:drugName:dosage:frequency:scheduleTime:startedAt:endedAt:refillDueAt:)` are defined in Task 1 and called identically in Tasks 2, 4, 5, 6.
+- `MedicationStore.create(drugName:dosage:frequency:scheduleTime:startedAt:endedAt:refillDueAt:)` (with `endedAt: Date? = nil` defaulted, so callers may omit it) and `update(_:drugName:dosage:frequency:scheduleTime:startedAt:endedAt:refillDueAt:)` are defined in Task 1 and called identically in Tasks 2, 4, 5, 6.
 - `DoseLogStore.logDose(for:at:)` / `lastGiven(for:)` defined in Task 2, used in Tasks 5–6.
 - `NotificationScheduling` (Task 3) is the single seam implemented by `UNNotificationScheduler` (Task 3) and `FakeNotificationScheduler` (Task 3), and consumed by `MedicationReminderScheduler` (Task 4) and `NotificationBootstrap` (Task 7).
 - `MedicationReminderScheduler.sync(_:)` / `cancel(_:)` defined in Task 4, used in Tasks 5–6.
