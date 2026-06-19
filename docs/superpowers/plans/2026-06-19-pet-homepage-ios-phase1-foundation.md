@@ -485,7 +485,7 @@ git commit -m "feat(ios): add Pet entity and single-pet PetStore"
 - Consumes: `PetStore`.
 - Produces: `@Observable final class PetProfileViewModel { init(store: PetStore); var name: String; var species: String; var isSaved: Bool; func save() throws }`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```swift
 // ios/PetHomepageTests/PetProfileViewModelTests.swift
@@ -534,12 +534,12 @@ final class PetProfileViewModelTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `cd ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:PetHomepageTests/PetProfileViewModelTests`
 Expected: FAIL — `cannot find 'PetProfileViewModel' in scope`.
 
-- [ ] **Step 3: Implement the view model**
+- [x] **Step 3: Implement the view model**
 
 ```swift
 // ios/PetHomepage/Features/PetProfile/PetProfileViewModel.swift
@@ -574,12 +574,12 @@ final class PetProfileViewModel {
 }
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `cd ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:PetHomepageTests/PetProfileViewModelTests`
 Expected: PASS.
 
-- [ ] **Step 5: Build the SwiftUI screen and mount it**
+- [x] **Step 5: Build the SwiftUI screen and mount it**
 
 ```swift
 // ios/PetHomepage/Features/PetProfile/PetProfileView.swift
@@ -627,12 +627,12 @@ struct ContentView: View {
 }
 ```
 
-- [ ] **Step 6: Verify the full test suite and a clean build**
+- [x] **Step 6: Verify the full test suite and a clean build**
 
 Run: `cd ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16'`
 Expected: BUILD SUCCEEDED, all tests PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add ios
