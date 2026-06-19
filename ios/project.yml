@@ -1,0 +1,35 @@
+# ios/project.yml
+name: PetHomepage
+options:
+  bundleIdPrefix: pet.homepage
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    GENERATE_INFOPLIST_FILE: YES
+targets:
+  PetHomepage:
+    type: application
+    platform: iOS
+    sources:
+      - path: PetHomepage
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: pet.homepage.PetHomepage
+  PetHomepageTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: PetHomepageTests
+    dependencies:
+      - target: PetHomepage
+schemes:
+  PetHomepage:
+    build:
+      targets:
+        PetHomepage: all
+    test:
+      targets:
+        - PetHomepageTests
