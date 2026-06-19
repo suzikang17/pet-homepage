@@ -17,6 +17,7 @@ final class MedicationStore {
                 frequency: String,
                 scheduleTime: Date,
                 startedAt: Date,
+                endedAt: Date? = nil,
                 refillDueAt: Date?) throws -> Medication {
         let med = Medication(context: context)
         med.id = UUID()
@@ -25,6 +26,7 @@ final class MedicationStore {
         med.frequency = frequency
         med.scheduleTime = scheduleTime
         med.startedAt = startedAt
+        med.endedAt = endedAt
         med.refillDueAt = refillDueAt
         med.pet = try petStore.currentPet()
         try context.save()

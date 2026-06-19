@@ -67,17 +67,8 @@ final class MedicationEditViewModel {
                                           frequency: frequency,
                                           scheduleTime: scheduleTime,
                                           startedAt: startedAt,
+                                          endedAt: ended,
                                           refillDueAt: refill)
-            if let ended {
-                try store.update(medication,
-                                 drugName: drugName,
-                                 dosage: dosage,
-                                 frequency: frequency,
-                                 scheduleTime: scheduleTime,
-                                 startedAt: startedAt,
-                                 endedAt: ended,
-                                 refillDueAt: refill)
-            }
         }
 
         await reminderScheduler.sync(medication)
