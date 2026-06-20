@@ -42,6 +42,7 @@ final class URLSessionExtractionService: ExtractionService {
             throw ExtractionError.badStatus(http.statusCode)
         }
         let decoded = try ExtractionResult.decoder.decode(ExtractionResponse.self, from: data)
+        if decoded.results.isEmpty { throw ExtractionError.emptyResults }
         return decoded.results
     }
 

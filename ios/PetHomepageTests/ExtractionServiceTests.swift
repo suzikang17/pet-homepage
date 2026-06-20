@@ -41,6 +41,20 @@ final class StubURLProtocol: URLProtocol {
 }
 
 final class ExtractionServiceTests: XCTestCase {
+    override func setUp() {
+        super.setUp()
+        StubURLProtocol.responseData = Data()
+        StubURLProtocol.statusCode = 200
+        StubURLProtocol.lastRequestBody = nil
+    }
+
+    override func tearDown() {
+        StubURLProtocol.responseData = Data()
+        StubURLProtocol.statusCode = 200
+        StubURLProtocol.lastRequestBody = nil
+        super.tearDown()
+    }
+
     private func makeSession() -> URLSession {
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [StubURLProtocol.self]
@@ -106,5 +120,42 @@ final class ExtractionServiceTests: XCTestCase {
         XCTAssertEqual(out, [result])
         XCTAssertEqual(fake.lastMimeType, "image/jpeg")
         XCTAssertEqual(fake.lastFileData, Data("z".utf8))
+    }
+
+    // MARK: - emptyResults
+
+    func testThrowsEmptyResultsWhenServerReturnsEmptyArray() async {
+        StubURLProtocol.statusCode = 200
+        StubURLProtocol.responseData = Data("""
+        { "results": [] }
+        """.utf8)
+        let service = URLSessionExtractionService(
+            config: ExtractionConfig(endpoint: URL(string: "https://example.com/api/extract")!),
+            session: makeSession()
+        )
+        do {
+            _ = try await service.extract(fileData: Data("pdf".utf8), mimeType: "application/pdf")
+            XCTFail("expected ExtractionError.emptyResults")
+        } catch let error as ExtractionError {
+            XCTAssertEqual(error, .emptyResults)
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+    }
+
+    // MARK: - FakeExtractionService error injection
+
+    func testFakeThrowsCannedError() async {
+        let fake = FakeExtractionService(errorToThrow: ExtractionError.emptyResults)
+        do {
+            _ = try await fake.extract(fileData: Data(), mimeType: "application/pdf")
+            XCTFail("expected canned error to be thrown")
+        } catch let error as ExtractionError {
+            XCTAssertEqual(error, .emptyResults)
+        } catch {
+            XCTFail("unexpected error type: \(error)")
+        }
+        XCTAssertEqual(fake.callCount, 1)
+        XCTAssertNotNil(fake.lastMimeType)
     }
 }
