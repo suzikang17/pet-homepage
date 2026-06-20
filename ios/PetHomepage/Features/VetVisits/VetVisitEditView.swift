@@ -38,6 +38,9 @@ struct VetVisitEditView: View {
                 }
             }
             .navigationTitle("Vet visit")
+            .scrollContentBackground(.hidden)
+            .background(Theme.bg)
+            .tint(Theme.primary)
         }
     }
 }

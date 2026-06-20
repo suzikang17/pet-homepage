@@ -62,6 +62,9 @@ struct RecordUploadView: View {
                 }
             }
             .navigationTitle("Upload record")
+            .scrollContentBackground(.hidden)
+            .background(Theme.bg)
+            .tint(Theme.primary)
         }
     }
 }

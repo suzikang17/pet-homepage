@@ -32,6 +32,9 @@ struct MarkerEditView: View {
                 }
             }
             .navigationTitle("Add marker")
+            .scrollContentBackground(.hidden)
+            .background(Theme.bg)
+            .tint(Theme.primary)
         }
     }
 }

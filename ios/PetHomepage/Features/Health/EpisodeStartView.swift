@@ -30,6 +30,9 @@ struct EpisodeStartView: View {
                 }
             }
             .navigationTitle("New episode")
+            .scrollContentBackground(.hidden)
+            .background(Theme.bg)
+            .tint(Theme.primary)
         }
     }
 }

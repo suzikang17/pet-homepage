@@ -48,6 +48,9 @@ struct MedicationEditView: View {
                 }
             }
             .navigationTitle("Medication")
+            .scrollContentBackground(.hidden)
+            .background(Theme.bg)
+            .tint(Theme.primary)
         }
     }
 }

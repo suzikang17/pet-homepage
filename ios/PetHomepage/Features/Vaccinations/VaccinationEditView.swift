@@ -35,6 +35,9 @@ struct VaccinationEditView: View {
                 }
             }
             .navigationTitle("Vaccination")
+            .scrollContentBackground(.hidden)
+            .background(Theme.bg)
+            .tint(Theme.primary)
         }
     }
 }
