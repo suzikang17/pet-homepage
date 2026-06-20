@@ -79,4 +79,19 @@ final class MedicationReminderSchedulerTests: XCTestCase {
         let pending = await fake.pendingMedicationIDs()
         XCTAssertTrue(pending.isEmpty)
     }
+
+    func testSyncAllSchedulesActiveAndCancelsEndedMedications() async throws {
+        let fake = FakeNotificationScheduler()
+        let scheduler = MedicationReminderScheduler(scheduler: fake, calendar: calendar)
+        let activeMed = try makeMed(hour: 8, minute: 0, ended: false)
+        let endedMed = try makeMed(hour: 9, minute: 0, ended: true)
+        // Pre-schedule the ended one so we can confirm it gets cancelled.
+        await fake.schedule(scheduler.reminder(for: endedMed))
+
+        await scheduler.syncAll([activeMed, endedMed])
+
+        let pending = await fake.pendingMedicationIDs()
+        XCTAssertTrue(pending.contains(activeMed.id), "active medication should be scheduled")
+        XCTAssertFalse(pending.contains(endedMed.id), "ended medication should be cancelled")
+    }
 }
