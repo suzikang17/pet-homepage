@@ -1640,7 +1640,7 @@ git commit -m "feat(ios): medications list with last-given, next-due, refill, ta
 
 > The app must hold notification permission before reminders can fire. We isolate the "ask once" call behind `NotificationBootstrap` so it is tested against the fake — the real `UNUserNotificationCenter` permission prompt is never triggered in tests.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```swift
 // ios/PetHomepageTests/NotificationAuthorizationTests.swift
@@ -1670,17 +1670,17 @@ final class NotificationAuthorizationTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Regenerate the project**
+- [x] **Step 2: Regenerate the project**
 
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodegen generate)`
 Expected: `Created project at .../ios/PetHomepage.xcodeproj`.
 
-- [ ] **Step 3: Run the test to verify it fails**
+- [x] **Step 3: Run the test to verify it fails**
 
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' -only-testing:PetHomepageTests/NotificationAuthorizationTests)`
 Expected: FAIL — `cannot find 'NotificationBootstrap' in scope`.
 
-- [ ] **Step 4: Implement the bootstrap entry point**
+- [x] **Step 4: Implement the bootstrap entry point**
 
 ```swift
 // ios/PetHomepage/Notifications/NotificationBootstrap.swift
@@ -1695,7 +1695,7 @@ enum NotificationBootstrap {
 }
 ```
 
-- [ ] **Step 5: Call it on launch**
+- [x] **Step 5: Call it on launch**
 
 ```swift
 // ios/PetHomepage/App/PetHomepageApp.swift
@@ -1719,12 +1719,12 @@ struct PetHomepageApp: App {
 }
 ```
 
-- [ ] **Step 6: Regenerate the project (new `NotificationBootstrap.swift` source)**
+- [x] **Step 6: Regenerate the project (new `NotificationBootstrap.swift` source)**
 
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodegen generate)`
 Expected: `Created project at .../ios/PetHomepage.xcodeproj`.
 
-- [ ] **Step 7: Run the test to verify it passes, then the full suite**
+- [x] **Step 7: Run the test to verify it passes, then the full suite**
 
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' -only-testing:PetHomepageTests/NotificationAuthorizationTests)`
 Expected: PASS (both tests).
@@ -1732,7 +1732,7 @@ Expected: PASS (both tests).
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2')`
 Expected: BUILD SUCCEEDED, all tests PASS.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add ios
