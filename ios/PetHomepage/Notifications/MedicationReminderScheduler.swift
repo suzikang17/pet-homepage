@@ -43,4 +43,12 @@ final class MedicationReminderScheduler {
     func cancel(_ medication: Medication) async {
         await scheduler.cancel(medicationID: medication.id)
     }
+
+    /// Syncs reminders for a full list of medications in one pass:
+    /// active ones are scheduled (or replaced), ended ones are cancelled.
+    func syncAll(_ medications: [Medication]) async {
+        for medication in medications {
+            await sync(medication)
+        }
+    }
 }
