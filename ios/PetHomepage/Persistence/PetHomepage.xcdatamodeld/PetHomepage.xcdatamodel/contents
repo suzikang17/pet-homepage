@@ -74,5 +74,14 @@
         <attribute name="resolvedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="statusRaw" optional="NO" attributeType="String" defaultValueString="active"/>
         <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="symptomEpisodes" inverseEntity="Pet"/>
+        <relationship name="entries" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="SymptomEntry" inverseName="episode" inverseEntity="SymptomEntry"/>
+    </entity>
+    <entity name="SymptomEntry" representedClassName="SymptomEntry" syncable="YES" codeGenerationType="none">
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="severityRaw" optional="NO" attributeType="String" defaultValueString="mild"/>
+        <attribute name="note" optional="YES" attributeType="String"/>
+        <attribute name="suspectedCause" optional="YES" attributeType="String"/>
+        <relationship name="episode" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="SymptomEpisode" inverseName="entries" inverseEntity="SymptomEpisode"/>
     </entity>
 </model>
