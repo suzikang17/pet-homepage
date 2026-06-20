@@ -1,8 +1,8 @@
 import { httpRouter } from 'convex/server'
-import { auth } from './auth'
-import { sha256Hex } from './crypto'
 import { internal } from './_generated/api'
 import { httpAction } from './_generated/server'
+import { auth } from './auth'
+import { sha256Hex } from './crypto'
 
 const http = httpRouter()
 auth.addHttpRoutes(http)

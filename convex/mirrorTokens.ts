@@ -1,7 +1,7 @@
 import { getAuthUserId } from '@convex-dev/auth/server'
 import { v } from 'convex/values'
-import { sha256Hex } from './crypto'
 import { internalQuery, mutation, query } from './_generated/server'
+import { sha256Hex } from './crypto'
 
 // Per-user capability tokens for the iOS mirror push. All three functions are auth-gated
 // (dashboard only). The raw token is returned exactly once from mintMirrorToken and never
