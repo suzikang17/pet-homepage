@@ -24,7 +24,7 @@ final class VetVisitEditViewModel {
         self.cadenceMonths = cadenceMonths
         self.editing = editing
         if let visit = editing {
-            occurredAt = visit.occurredAtValue
+            occurredAt = visit.occurredAt
             clinicName = visit.clinicName ?? ""
             vetName = visit.vetName ?? ""
             reason = visit.reason ?? ""

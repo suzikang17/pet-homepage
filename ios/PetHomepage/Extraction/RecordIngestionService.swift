@@ -77,7 +77,7 @@ final class RecordIngestionService {
                 treatmentNotes: f.treatmentNotes,
                 nextVisitDate: parseDay(f.nextVisitDate)
             )
-            return .vetVisit(visit.id ?? UUID())
+            return .vetVisit(visit.id)
 
         case .medicationStart(let f):
             let med = try medicationStore.create(

@@ -29,7 +29,7 @@ final class VetVisitsListViewModel {
 
     func load() throws {
         rows = try store.visits().map { visit in
-            VetVisitRow(id: visit.idValue, visit: visit, occurredAt: visit.occurredAtValue,
+            VetVisitRow(id: visit.id, visit: visit, occurredAt: visit.occurredAt,
                         clinicName: visit.clinicName, reason: visit.reason)
         }
     }

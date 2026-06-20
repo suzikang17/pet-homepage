@@ -11,7 +11,7 @@ struct VetVisitDetailView: View {
     var body: some View {
         Form {
             Section("Visit") {
-                LabeledContent("Date", value: model.visit.occurredAtValue.formatted(date: .abbreviated, time: .omitted))
+                LabeledContent("Date", value: model.visit.occurredAt.formatted(date: .abbreviated, time: .omitted))
                 if let clinic = model.visit.clinicName { LabeledContent("Clinic", value: clinic) }
                 if let vet = model.visit.vetName { LabeledContent("Vet", value: vet) }
                 if let reason = model.visit.reason { LabeledContent("Reason", value: reason) }
@@ -19,10 +19,10 @@ struct VetVisitDetailView: View {
                 if let notes = model.visit.treatmentNotes { LabeledContent("Treatment", value: notes) }
             }
             Section("Recommendations") {
-                ForEach(model.recommendations, id: \.objectID) { rec in
+                ForEach(model.recommendations, id: \.id) { rec in
                     VStack(alignment: .leading, spacing: 2) {
                         Text(rec.text)
-                        Text(rec.dateValue.formatted(date: .abbreviated, time: .omitted))
+                        Text(rec.date.formatted(date: .abbreviated, time: .omitted))
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }
