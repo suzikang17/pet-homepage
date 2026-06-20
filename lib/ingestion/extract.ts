@@ -1,7 +1,6 @@
 import { anthropic } from '@ai-sdk/anthropic'
 import { generateObject } from 'ai'
 import { type ExtractionResult, ExtractionResultArraySchema } from '@/lib/schemas/extraction'
-import type { IngestPayload } from '@/lib/schemas/ingest'
 
 type TextPart = { type: 'text'; text: string }
 type ImagePart = {
@@ -19,33 +18,6 @@ const SUPPORTED_ATTACHMENT_TYPES = new Set([
   'image/webp',
   'image/gif',
 ])
-
-export async function extractFromEmail(payload: IngestPayload): Promise<ExtractionResult[]> {
-  const bodyText = payload.text?.trim()
-  const body = bodyText || (payload.html ? stripHtml(payload.html) : '(no body)')
-
-  const content: ContentPart[] = [
-    {
-      type: 'text',
-      text: [
-        `From: ${payload.from}`,
-        `Subject: ${payload.subject ?? '(no subject)'}`,
-        payload.date ? `Date: ${payload.date}` : null,
-        '',
-        body,
-      ]
-        .filter(Boolean)
-        .join('\n'),
-    },
-  ]
-
-  for (const attachment of payload.attachments) {
-    const part = attachmentToContentPart(attachment.mimeType, attachment.content)
-    if (part) content.push(part)
-  }
-
-  return runExtraction(content)
-}
 
 /**
  * Extract structured records from a single uploaded document (image or PDF).
@@ -117,19 +89,3 @@ Rules:
 - fields: extract only what is clearly stated. Omit fields that are ambiguous or absent — never guess.
 - warnings: note anything ambiguous, conflicting, or worth human review.
 - Multiple records: if a document contains multiple distinct health events (e.g. a vet visit that also includes a vaccination and a new medication), return one result object per event. Do not collapse them into one.`
-
-function stripHtml(html: string): string {
-  return html
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
-    .replace(/\s+/g, ' ')
-    .trim()
-}

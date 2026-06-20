@@ -9,15 +9,10 @@
  */
 
 import type * as auth from "../auth.js";
-import type * as crons from "../crons.js";
 import type * as crypto from "../crypto.js";
-import type * as events from "../events.js";
 import type * as http from "../http.js";
-import type * as medical from "../medical.js";
 import type * as mirror from "../mirror.js";
 import type * as mirrorTokens from "../mirrorTokens.js";
-import type * as pets from "../pets.js";
-import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -27,15 +22,10 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
-  crons: typeof crons;
   crypto: typeof crypto;
-  events: typeof events;
   http: typeof http;
-  medical: typeof medical;
   mirror: typeof mirror;
   mirrorTokens: typeof mirrorTokens;
-  pets: typeof pets;
-  users: typeof users;
 }>;
 
 /**
