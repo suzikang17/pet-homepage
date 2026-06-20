@@ -602,7 +602,7 @@ git commit -m "feat(ios): add DoseLog entity and DoseLogStore with last-given"
 
 > The protocol is the seam: scheduling LOGIC (Task 4) is written against `NotificationScheduling` and unit-tested with `FakeNotificationScheduler`. The real `UNUserNotificationCenter` is touched ONLY by `UNNotificationScheduler`, which is never exercised in unit tests (it would require user permission). A request identifier is derived deterministically from `medicationID` (`"med-reminder-\(medicationID.uuidString)"`) so cancel/replace are idempotent.
 
-- [ ] **Step 1: Write the failing contract test against the fake**
+- [x] **Step 1: Write the failing contract test against the fake**
 
 ```swift
 // ios/PetHomepageTests/NotificationSchedulerContractTests.swift
@@ -659,17 +659,19 @@ final class NotificationSchedulerContractTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Regenerate the project**
+- [x] **Step 2: Regenerate the project**
 
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodegen generate)`
 Expected: `Created project at .../ios/PetHomepage.xcodeproj`.
 
-- [ ] **Step 3: Run the test to verify it fails**
+- [x] **Step 3: Run the test to verify it fails**
 
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' -only-testing:PetHomepageTests/NotificationSchedulerContractTests)`
 Expected: FAIL — `cannot find 'PendingMedicationReminder'` / `'FakeNotificationScheduler' in scope`.
 
-- [ ] **Step 4: Define the protocol + value type**
+> **Note (TDD process):** The red phase was executed locally before implementation but was not staged as a separate commit — the test file, protocol, production adapter, and fake were all committed together in 7bf7d3b. This means the red-green sequence is not evidenced at the commit level. The contract tests are correct and non-vacuous, and the final state (tests pass, implementation correct) was verified by running the suite post-fix on 2026-06-19: `Executed 4 tests, with 0 failures`. Future tasks should stage the failing test in its own commit before writing implementation.
+
+- [x] **Step 4: Define the protocol + value type**
 
 ```swift
 // ios/PetHomepage/Notifications/NotificationScheduling.swift
@@ -714,7 +716,7 @@ enum MedicationReminderIdentifier {
 }
 ```
 
-- [ ] **Step 5: Write the production adapter**
+- [x] **Step 5: Write the production adapter**
 
 ```swift
 // ios/PetHomepage/Notifications/UNNotificationScheduler.swift
@@ -768,7 +770,7 @@ final class UNNotificationScheduler: NotificationScheduling {
 }
 ```
 
-- [ ] **Step 6: Write the test-only fake**
+- [x] **Step 6: Write the test-only fake**
 
 ```swift
 // ios/PetHomepageTests/Support/FakeNotificationScheduler.swift
@@ -802,17 +804,17 @@ final class FakeNotificationScheduler: NotificationScheduling {
 }
 ```
 
-- [ ] **Step 7: Regenerate the project (the new Support/ file must enter the test target)**
+- [x] **Step 7: Regenerate the project (the new Support/ file must enter the test target)**
 
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodegen generate)`
 Expected: `Created project at .../ios/PetHomepage.xcodeproj`.
 
-- [ ] **Step 8: Run the test to verify it passes**
+- [x] **Step 8: Run the test to verify it passes**
 
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' -only-testing:PetHomepageTests/NotificationSchedulerContractTests)`
 Expected: PASS (all four tests).
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add ios
