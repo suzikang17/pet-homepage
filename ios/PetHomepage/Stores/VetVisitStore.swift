@@ -67,6 +67,6 @@ final class VetVisitStore {
 
     /// The `occurredAt` of the most recent vet visit, or nil — drives the vet-cadence reminder.
     func mostRecentVisitDate() throws -> Date? {
-        try visits().first?.occurredAt
+        try visits().first?.occurredAt ?? nil
     }
 }

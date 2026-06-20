@@ -3,8 +3,8 @@ import CoreData
 
 @objc(VetVisit)
 public class VetVisit: NSManagedObject {
-    @NSManaged public var id: UUID
-    @NSManaged public var occurredAt: Date
+    @NSManaged public var id: UUID?
+    @NSManaged public var occurredAt: Date?
     @NSManaged public var clinicName: String?
     @NSManaged public var vetName: String?
     @NSManaged public var reason: String?
