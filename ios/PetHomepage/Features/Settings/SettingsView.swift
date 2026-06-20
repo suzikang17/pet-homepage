@@ -17,6 +17,26 @@ struct SettingsView: View {
                     Text(model.privacyNote)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
+
+                    TextField(
+                        "Deployment URL",
+                        text: $model.mirrorEndpoint,
+                        prompt: Text("https://…convex.site/mirror/push")
+                    )
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .keyboardType(.URL)
+
+                    SecureField(
+                        "Mirror token",
+                        text: $model.mirrorToken,
+                        prompt: Text("Paste token from dashboard")
+                    )
+
+                    Text("Mint a token on the web dashboard, then paste it here along with your deployment URL. The token is stored in the device Keychain.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+
                     Button("Sync now") {
                         Task {
                             do { _ = try await model.syncNow() }

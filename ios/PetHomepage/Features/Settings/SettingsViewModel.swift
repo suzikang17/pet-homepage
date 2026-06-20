@@ -18,6 +18,24 @@ final class SettingsViewModel {
     /// The opt-in privacy posture, shown verbatim next to the toggle.
     let privacyNote = "When mirroring is on, a copy of your pet's records leaves iCloud and is sent to the dashboard backend. It stays off by default."
 
+    // Stored properties so @Observable tracks mutations and SwiftUI Bindings work.
+    // Each setter writes through to the injected MirrorSettings (which persists the value).
+
+    /// Bound to the toggle.
+    var isMirroringEnabled: Bool {
+        didSet { settings.isMirroringEnabled = isMirroringEnabled }
+    }
+
+    /// Bound to the endpoint TextField. Blank = use the build-time default.
+    var mirrorEndpoint: String {
+        didSet { settings.mirrorEndpoint = mirrorEndpoint }
+    }
+
+    /// Bound to the token SecureField. Written to the Keychain by the production MirrorSettings.
+    var mirrorToken: String {
+        didSet { settings.mirrorToken = mirrorToken }
+    }
+
     private let settings: MirrorSettings
     private let coordinator: MirrorCoordinator
     private let documentSharing: DocumentSharing
@@ -31,12 +49,10 @@ final class SettingsViewModel {
         self.coordinator = coordinator
         self.documentSharing = documentSharing
         self.documentNames = documentNames
-    }
-
-    /// Bound to the toggle — reads and writes the injected MirrorSettings directly.
-    var isMirroringEnabled: Bool {
-        get { settings.isMirroringEnabled }
-        set { settings.isMirroringEnabled = newValue }
+        // Seed the tracked stored properties from the persisted settings.
+        self.isMirroringEnabled = settings.isMirroringEnabled
+        self.mirrorEndpoint = settings.mirrorEndpoint
+        self.mirrorToken = settings.mirrorToken
     }
 
     /// Populate `documentRows` with only the candidate documents that actually exist on disk.
