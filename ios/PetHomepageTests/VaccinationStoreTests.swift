@@ -45,7 +45,7 @@ final class VaccinationStoreTests: XCTestCase {
         XCTAssertEqual(try store.lastGiven(vaccineName: "Rabies"), newer)
     }
 
-    func testNextDueReturnsEarliestFutureDueForName() throws {
+    func testNextDueReturnsEarliestDueForName() throws {
         let due1 = Date(timeIntervalSince1970: 1_800_000_000)
         let due2 = Date(timeIntervalSince1970: 1_900_000_000)
         try store.create(vaccineName: "Rabies", administeredAt: Date(timeIntervalSince1970: 1), nextDueAt: due2, lotNumber: nil, administeredBy: nil)
