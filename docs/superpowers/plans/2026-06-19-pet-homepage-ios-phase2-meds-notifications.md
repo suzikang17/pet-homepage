@@ -1404,6 +1404,10 @@ Expected: `Created project at .../ios/PetHomepage.xcodeproj`.
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' -only-testing:PetHomepageTests/MedicationsListViewModelTests)`
 Expected: FAIL — `cannot find 'MedicationsListViewModel'` / `'MedicationRow' in scope`.
 
+> **Note (TDD process):** The red phase was executed locally before implementation but was not staged as a separate commit — the test file, view model, and view were all committed together in 16d1c78. This means the red-green sequence is not evidenced at the commit level. The five original tests are correct and non-vacuous, and the final state (tests pass, implementation correct) was verified by running the suite post-fix on 2026-06-19: `Executed 5 tests, with 0 failures`. Future tasks should stage the failing test in its own commit before writing implementation.
+
+> **Process gap remediation (2026-06-19):** A proper TDD red-green pair was committed to evidence the process at the commit level. Commit f4fb16c adds `testHasAnyRefillDueSoonReflectsRows` alone — it fails to compile with "value of type 'MedicationsListViewModel' has no member 'hasAnyRefillDueSoon'" (observed red). Commit b45d35d implements `hasAnyRefillDueSoon` as a computed property on `MedicationsListViewModel` — all 6 tests pass (observed green).
+
 - [x] **Step 4: Implement the view model**
 
 ```swift
@@ -1493,7 +1497,7 @@ final class MedicationsListViewModel {
 - [x] **Step 5: Run the test to verify it passes**
 
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' -only-testing:PetHomepageTests/MedicationsListViewModelTests)`
-Expected: PASS (all six tests).
+Expected: PASS (all six tests — five original + `testHasAnyRefillDueSoonReflectsRows` added in the TDD remediation pair above).
 
 - [x] **Step 6: Build the list SwiftUI screen**
 
