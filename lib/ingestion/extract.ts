@@ -1,11 +1,15 @@
-import { generateObject } from 'ai'
 import { anthropic } from '@ai-sdk/anthropic'
-import { ExtractionResultArraySchema, type ExtractionResult } from '@/lib/schemas/extraction'
+import { generateObject } from 'ai'
+import { type ExtractionResult, ExtractionResultArraySchema } from '@/lib/schemas/extraction'
 import type { IngestPayload } from '@/lib/schemas/ingest'
 
-type TextPart  = { type: 'text'; text: string }
-type ImagePart = { type: 'image'; image: string; mimeType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' }
-type FilePart  = { type: 'file'; data: string; mediaType: 'application/pdf' }
+type TextPart = { type: 'text'; text: string }
+type ImagePart = {
+  type: 'image'
+  image: string
+  mimeType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif'
+}
+type FilePart = { type: 'file'; data: string; mediaType: 'application/pdf' }
 type ContentPart = TextPart | ImagePart | FilePart
 
 const SUPPORTED_ATTACHMENT_TYPES = new Set([
@@ -29,24 +33,71 @@ export async function extractFromEmail(payload: IngestPayload): Promise<Extracti
         payload.date ? `Date: ${payload.date}` : null,
         '',
         body,
-      ].filter(Boolean).join('\n'),
+      ]
+        .filter(Boolean)
+        .join('\n'),
     },
   ]
 
   for (const attachment of payload.attachments) {
-    if (!SUPPORTED_ATTACHMENT_TYPES.has(attachment.mimeType)) continue
-    if (!attachment.content) continue
-    if (attachment.mimeType === 'application/pdf') {
-      content.push({ type: 'file', data: attachment.content, mediaType: 'application/pdf' })
-    } else {
-      content.push({
-        type: 'image',
-        image: attachment.content,
-        mimeType: attachment.mimeType as 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif',
-      })
-    }
+    const part = attachmentToContentPart(attachment.mimeType, attachment.content)
+    if (part) content.push(part)
   }
 
+  return runExtraction(content)
+}
+
+/**
+ * Extract structured records from a single uploaded document (image or PDF).
+ * Powers the mobile app's in-app record upload. Stateless — returns the parsed
+ * records and never writes to any store. Throws UnsupportedMediaTypeError if the
+ * mimeType is not a supported image/PDF.
+ */
+export async function extractFromDocument(input: {
+  fileName: string
+  mimeType: string
+  content: string // base64-encoded file bytes
+  note?: string
+  date?: string
+}): Promise<ExtractionResult[]> {
+  const part = attachmentToContentPart(input.mimeType, input.content)
+  if (!part) throw new UnsupportedMediaTypeError(input.mimeType)
+
+  const header = [
+    `Uploaded document: ${input.fileName}`,
+    input.date ? `Date: ${input.date}` : null,
+    input.note ? `User note: ${input.note}` : null,
+  ]
+    .filter(Boolean)
+    .join('\n')
+
+  return runExtraction([{ type: 'text', text: header }, part])
+}
+
+export class UnsupportedMediaTypeError extends Error {
+  constructor(public readonly mimeType: string) {
+    super(`Unsupported media type: ${mimeType}`)
+    this.name = 'UnsupportedMediaTypeError'
+  }
+}
+
+function attachmentToContentPart(
+  mimeType: string,
+  content: string | undefined
+): ContentPart | null {
+  if (!SUPPORTED_ATTACHMENT_TYPES.has(mimeType)) return null
+  if (!content) return null
+  if (mimeType === 'application/pdf') {
+    return { type: 'file', data: content, mediaType: 'application/pdf' }
+  }
+  return {
+    type: 'image',
+    image: content,
+    mimeType: mimeType as 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif',
+  }
+}
+
+async function runExtraction(content: ContentPart[]): Promise<ExtractionResult[]> {
   const { object } = await generateObject({
     model: anthropic('claude-sonnet-4-6'),
     schema: ExtractionResultArraySchema,
