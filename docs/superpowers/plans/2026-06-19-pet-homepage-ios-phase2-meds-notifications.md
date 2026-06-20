@@ -934,6 +934,10 @@ Expected: `Created project at .../ios/PetHomepage.xcodeproj`.
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' -only-testing:PetHomepageTests/MedicationReminderSchedulerTests)`
 Expected: FAIL — `cannot find 'MedicationReminderScheduler' in scope`.
 
+> **Note (TDD process):** The red phase was executed locally before implementation but was not staged as a separate commit — `MedicationReminderScheduler.swift` and `MedicationReminderSchedulerTests.swift` both landed in ba5838b. This means the red-green sequence is not evidenced at the commit level. The four original tests are correct and non-vacuous, and the final state (tests pass, implementation correct) was verified by running the suite: `Executed 4 tests, with 0 failures`. Future tasks should stage the failing test in its own commit before writing implementation.
+
+> **Process gap remediation (2026-06-19):** A proper TDD red-green pair was committed to evidence the process at the commit level. Commit 52cf2b9 adds `testSyncAllSchedulesActiveAndCancelsEndedMedications` alone — it fails to compile with "value of type 'MedicationReminderScheduler' has no member 'syncAll'" (observed red). Commit e521af7 implements `syncAll()` on `MedicationReminderScheduler` — all 5 tests pass (observed green).
+
 - [x] **Step 4: Implement the scheduler**
 
 ```swift
