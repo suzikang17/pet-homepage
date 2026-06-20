@@ -22,4 +22,20 @@ final class NotificationAuthorizationTests: XCTestCase {
         XCTAssertFalse(granted)
         XCTAssertEqual(fake.authorizationRequestCount, 1)
     }
+
+    func testCancelAllRemindersRemovesAllPendingReminders() async {
+        let fake = FakeNotificationScheduler()
+        // Pre-populate two scheduled reminders via the fake scheduler directly.
+        let id1 = UUID()
+        let id2 = UUID()
+        await fake.schedule(PendingMedicationReminder(medicationID: id1,
+                                                      title: "T", body: "B", hour: 8, minute: 0))
+        await fake.schedule(PendingMedicationReminder(medicationID: id2,
+                                                      title: "T", body: "B", hour: 20, minute: 0))
+
+        await NotificationBootstrap.cancelAllReminders(using: fake)
+
+        let pending = await fake.pendingMedicationIDs()
+        XCTAssertTrue(pending.isEmpty, "cancelAllReminders should clear every pending reminder")
+    }
 }
