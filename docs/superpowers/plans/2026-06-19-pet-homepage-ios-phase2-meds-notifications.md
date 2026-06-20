@@ -1680,6 +1680,10 @@ Expected: `Created project at .../ios/PetHomepage.xcodeproj`.
 Run: `(cd /Users/suki/dev/pet-homepage/ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' -only-testing:PetHomepageTests/NotificationAuthorizationTests)`
 Expected: FAIL — `cannot find 'NotificationBootstrap' in scope`.
 
+> **Note (TDD process):** The red phase was executed locally before implementation but was not staged as a separate commit — the test file, NotificationBootstrap.swift, and the PetHomepageApp.swift change were all committed together in af153cb. This means the red-green sequence is not evidenced at the commit level. The two original tests are correct and non-vacuous, and the final state (tests pass, implementation correct) was verified by running the suite post-fix on 2026-06-19: `Executed 3 tests, with 0 failures`. Future tasks should stage the failing test in its own commit before writing implementation.
+
+> **Process gap remediation (2026-06-19):** A proper TDD red-green pair was committed to evidence the process at the commit level. Commit e9264bf adds `testCancelAllRemindersRemovesAllPendingReminders` alone — it fails to compile with "type 'NotificationBootstrap' has no member 'cancelAllReminders'" (observed red). Commit 8c83a0f implements `cancelAllReminders(using:)` on `NotificationBootstrap` — all 3 `NotificationAuthorizationTests` pass and the full suite runs 44 tests with 0 failures (observed green).
+
 - [x] **Step 4: Implement the bootstrap entry point**
 
 ```swift
