@@ -12,6 +12,7 @@
         <relationship name="vaccinations" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Vaccination" inverseName="pet" inverseEntity="Vaccination"/>
         <relationship name="vetVisits" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="VetVisit" inverseName="pet" inverseEntity="VetVisit"/>
         <relationship name="healthMarkers" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="HealthMarker" inverseName="pet" inverseEntity="HealthMarker"/>
+        <relationship name="symptomEpisodes" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="SymptomEpisode" inverseName="pet" inverseEntity="SymptomEpisode"/>
     </entity>
     <entity name="Medication" representedClassName="Medication" syncable="YES" codeGenerationType="none">
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
@@ -64,5 +65,14 @@
         <attribute name="unit" optional="YES" attributeType="String"/>
         <attribute name="recordedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="healthMarkers" inverseEntity="Pet"/>
+    </entity>
+    <entity name="SymptomEpisode" representedClassName="SymptomEpisode" syncable="YES" codeGenerationType="none">
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="categoryRaw" optional="NO" attributeType="String" defaultValueString=""/>
+        <attribute name="title" optional="YES" attributeType="String"/>
+        <attribute name="startedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="resolvedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="statusRaw" optional="NO" attributeType="String" defaultValueString="active"/>
+        <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="symptomEpisodes" inverseEntity="Pet"/>
     </entity>
 </model>
