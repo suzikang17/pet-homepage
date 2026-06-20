@@ -19,39 +19,53 @@ final class UNNotificationScheduler: NotificationScheduling {
         }
     }
 
-    func schedule(_ reminder: PendingMedicationReminder) async {
+    func schedule(_ reminder: PendingReminder) async {
         let content = UNMutableNotificationContent()
         content.title = reminder.title
         content.body = reminder.body
         content.sound = .default
 
-        var components = DateComponents()
-        components.hour = reminder.hour
-        components.minute = reminder.minute
-        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
+        let trigger: UNCalendarNotificationTrigger
+        if let date = reminder.dateComponents {
+            // One-shot reminder on a specific calendar date (vaccination-due / vet-cadence),
+            // fired at the reminder's hour/minute.
+            var components = date
+            components.hour = reminder.hour
+            components.minute = reminder.minute
+            trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        } else {
+            // Daily repeating reminder (medications).
+            var components = DateComponents()
+            components.hour = reminder.hour
+            components.minute = reminder.minute
+            trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
+        }
 
-        let id = MedicationReminderIdentifier.requestID(for: reminder.medicationID)
-        // Replace any existing reminder for this medication first.
-        center.removePendingNotificationRequests(withIdentifiers: [id])
+        let id = ReminderIdentifier.requestID(kind: reminder.kind, entityID: reminder.entityID)
+        center.removePendingNotificationRequests(withIdentifiers: [id]) // replace
         let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
         try? await center.add(request)
     }
 
-    func cancel(medicationID: UUID) async {
-        let id = MedicationReminderIdentifier.requestID(for: medicationID)
+    func cancel(kind: ReminderKind, entityID: UUID) async {
+        let id = ReminderIdentifier.requestID(kind: kind, entityID: entityID)
         center.removePendingNotificationRequests(withIdentifiers: [id])
     }
 
-    func pendingMedicationIDs() async -> [UUID] {
+    func pendingIDs(kind: ReminderKind) async -> [UUID] {
         let requests = await center.pendingNotificationRequests()
-        return requests.compactMap { MedicationReminderIdentifier.medicationID(from: $0.identifier) }
+        return requests.compactMap { request in
+            guard let (parsedKind, id) = ReminderIdentifier.parse(request.identifier),
+                  parsedKind == kind else { return nil }
+            return id
+        }
     }
 
-    func cancelAll() async {
+    func cancelAll(kind: ReminderKind) async {
         let requests = await center.pendingNotificationRequests()
-        let medIDs = requests
+        let ids = requests
             .map(\.identifier)
-            .filter { $0.hasPrefix(MedicationReminderIdentifier.prefix) }
-        center.removePendingNotificationRequests(withIdentifiers: medIDs)
+            .filter { $0.hasPrefix(ReminderIdentifier.prefix(for: kind)) }
+        center.removePendingNotificationRequests(withIdentifiers: ids)
     }
 }

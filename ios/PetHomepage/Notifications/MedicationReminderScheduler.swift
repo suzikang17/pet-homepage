@@ -1,8 +1,8 @@
 // ios/PetHomepage/Notifications/MedicationReminderScheduler.swift
 import Foundation
 
-/// Turns a Medication into a daily PendingMedicationReminder and drives the
-/// injected NotificationScheduling. Pure enough to unit-test with a fake.
+/// Turns a Medication into a daily PendingReminder and drives the injected
+/// NotificationScheduling. Pure enough to unit-test with a fake.
 final class MedicationReminderScheduler {
     private let scheduler: NotificationScheduling
     private let calendar: Calendar
@@ -13,10 +13,11 @@ final class MedicationReminderScheduler {
     }
 
     /// Builds the daily reminder for a medication from its scheduleTime.
-    func reminder(for medication: Medication) -> PendingMedicationReminder {
+    func reminder(for medication: Medication) -> PendingReminder {
         let components = calendar.dateComponents([.hour, .minute], from: medication.scheduleTime)
-        return PendingMedicationReminder(
-            medicationID: medication.id,
+        return PendingReminder(
+            kind: .medication,
+            entityID: medication.id,
             title: "Time for meds",
             body: "Give \(medication.drugName) (\(medication.dosage))",
             hour: components.hour ?? 0,
@@ -35,17 +36,16 @@ final class MedicationReminderScheduler {
         if isActive(medication) {
             await scheduler.schedule(reminder(for: medication))
         } else {
-            await scheduler.cancel(medicationID: medication.id)
+            await scheduler.cancel(kind: .medication, entityID: medication.id)
         }
     }
 
     /// Explicitly cancels a medication's reminder (e.g. on delete).
     func cancel(_ medication: Medication) async {
-        await scheduler.cancel(medicationID: medication.id)
+        await scheduler.cancel(kind: .medication, entityID: medication.id)
     }
 
-    /// Syncs reminders for a full list of medications in one pass:
-    /// active ones are scheduled (or replaced), ended ones are cancelled.
+    /// Syncs reminders for a full list of medications in one pass.
     func syncAll(_ medications: [Medication]) async {
         for medication in medications {
             await sync(medication)
