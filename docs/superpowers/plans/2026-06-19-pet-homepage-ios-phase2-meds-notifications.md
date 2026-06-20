@@ -671,6 +671,8 @@ Expected: FAIL — `cannot find 'PendingMedicationReminder'` / `'FakeNotificatio
 
 > **Note (TDD process):** The red phase was executed locally before implementation but was not staged as a separate commit — the test file, protocol, production adapter, and fake were all committed together in 7bf7d3b. This means the red-green sequence is not evidenced at the commit level. The contract tests are correct and non-vacuous, and the final state (tests pass, implementation correct) was verified by running the suite post-fix on 2026-06-19: `Executed 4 tests, with 0 failures`. Future tasks should stage the failing test in its own commit before writing implementation.
 
+> **Process gap remediation (2026-06-19):** A proper TDD red-green pair was committed to evidence the process at the commit level. Commit 624bfec adds `testCancelAllRemovesAllPendingReminders` alone — it fails to compile with "value of type 'FakeNotificationScheduler' has no member 'cancelAll'" (observed red). Commit 227baf7 implements `cancelAll()` on the protocol, `UNNotificationScheduler`, and `FakeNotificationScheduler` — all 39 tests pass (observed green).
+
 - [x] **Step 4: Define the protocol + value type**
 
 ```swift
