@@ -83,4 +83,25 @@ final class MedicationEditViewModelTests: XCTestCase {
         let pending = await fake.pendingMedicationIDs()
         XCTAssertTrue(pending.isEmpty)
     }
+
+    /// Regression test: verifies that creating a new medication with hasEnded=true
+    /// persists endedAt atomically in a single Core Data save, not as a separate
+    /// follow-up update(). A double-save implementation would leave endedAt=nil
+    /// if the process crashed between the two saves.
+    func testSavingEndedMedicationPersistsEndedAtInCoreData() async throws {
+        let endedDate = Date(timeIntervalSince1970: 0)
+        let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, editing: nil)
+        vm.drugName = "Apoquel"
+        vm.dosage = "16mg"
+        vm.frequency = "daily"
+        vm.hasEnded = true
+        vm.endedAt = endedDate
+
+        try await vm.save()
+
+        let fetched = try store.medications().first
+        XCTAssertNotNil(fetched, "medication should be persisted")
+        XCTAssertEqual(fetched?.endedAt, endedDate,
+                       "endedAt must be set in the same atomic save as the create — not in a second update()")
+    }
 }
