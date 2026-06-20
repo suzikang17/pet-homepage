@@ -111,6 +111,8 @@ private struct HealthTabView: View {
     let symptomEntryStore: SymptomEntryStore
 
     @State private var section: Section = .markers
+    @State private var addMarker = false
+    @State private var addEpisode = false
 
     private enum Section: String, CaseIterable, Identifiable {
         case markers = "Markers"
@@ -119,22 +121,32 @@ private struct HealthTabView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            Picker("Section", selection: $section) {
-                ForEach(Section.allCases) { Text($0.rawValue).tag($0) }
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal)
-            .padding(.top, 8)
+        NavigationStack {
+            VStack(spacing: 14) {
+                HeroHeader(
+                    title: "Health",
+                    subtitle: section.rawValue,
+                    systemImage: "heart.text.square.fill",
+                    onAdd: { if section == .markers { addMarker = true } else { addEpisode = true } }
+                )
+                Picker("Section", selection: $section) {
+                    ForEach(Section.allCases) { Text($0.rawValue).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, 18)
 
-            switch section {
-            case .markers:
-                HealthMarkersView(store: healthMarkerStore)
-            case .symptoms:
-                SymptomsListView(episodeStore: symptomEpisodeStore,
-                                 entryStore: symptomEntryStore)
+                switch section {
+                case .markers:
+                    HealthMarkersView(store: healthMarkerStore, showingAdd: $addMarker)
+                case .symptoms:
+                    SymptomsListView(episodeStore: symptomEpisodeStore,
+                                     entryStore: symptomEntryStore,
+                                     showingStart: $addEpisode)
+                }
             }
+            .background(Theme.bg)
+            .ignoresSafeArea(edges: .top)
+            .toolbar(.hidden, for: .navigationBar)
         }
-        .background(Theme.bg)
     }
 }
