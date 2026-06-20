@@ -33,6 +33,11 @@ final class MedicationsListViewModel {
         self.calendar = calendar
     }
 
+    /// True when at least one medication has a refill due within 7 days — useful for tab badge.
+    var hasAnyRefillDueSoon: Bool {
+        rows.contains { $0.isRefillDueSoon }
+    }
+
     func load() throws {
         let now = Date()
         rows = try medicationStore.medications().map { med in
