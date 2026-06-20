@@ -2,7 +2,9 @@
 import CoreData
 
 final class PetStore {
-    private let context: NSManagedObjectContext
+    /// The shared managed-object context. Read-only to collaborators (e.g. SnapshotBuilder),
+    /// which need it for fetches the typed stores don't expose.
+    let context: NSManagedObjectContext
 
     init(context: NSManagedObjectContext) {
         self.context = context
