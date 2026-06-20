@@ -22,6 +22,8 @@ protocol NotificationScheduling {
     func cancel(medicationID: UUID) async
     /// The medication IDs that currently have a pending reminder.
     func pendingMedicationIDs() async -> [UUID]
+    /// Cancels ALL pending medication reminders (e.g. when all medications are deleted).
+    func cancelAll() async
 }
 
 /// Deterministic request identifier shared by the real and fake schedulers,

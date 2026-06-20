@@ -46,4 +46,12 @@ final class UNNotificationScheduler: NotificationScheduling {
         let requests = await center.pendingNotificationRequests()
         return requests.compactMap { MedicationReminderIdentifier.medicationID(from: $0.identifier) }
     }
+
+    func cancelAll() async {
+        let requests = await center.pendingNotificationRequests()
+        let medIDs = requests
+            .map(\.identifier)
+            .filter { $0.hasPrefix(MedicationReminderIdentifier.prefix) }
+        center.removePendingNotificationRequests(withIdentifiers: medIDs)
+    }
 }

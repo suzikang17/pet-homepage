@@ -26,4 +26,8 @@ final class FakeNotificationScheduler: NotificationScheduling {
     func pendingMedicationIDs() async -> [UUID] {
         scheduled.map(\.medicationID)
     }
+
+    func cancelAll() async {
+        scheduled.removeAll()
+    }
 }
