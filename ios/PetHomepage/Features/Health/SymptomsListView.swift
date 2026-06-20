@@ -57,8 +57,7 @@ struct SymptomsListView: View {
 
     private func episodeLink(_ row: EpisodeRow) -> some View {
         NavigationLink {
-            // EpisodeDetailView is wired in Task 6.
-            Text(row.title)
+            EpisodeDetailView(episode: row.episode, episodeStore: episodeStore, entryStore: entryStore)
         } label: {
             VStack(alignment: .leading, spacing: 2) {
                 HStack {
