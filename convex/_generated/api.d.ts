@@ -13,6 +13,7 @@ import type * as crons from "../crons.js";
 import type * as events from "../events.js";
 import type * as http from "../http.js";
 import type * as medical from "../medical.js";
+import type * as mirror from "../mirror.js";
 import type * as pets from "../pets.js";
 import type * as users from "../users.js";
 
@@ -28,6 +29,7 @@ declare const fullApi: ApiFromModules<{
   events: typeof events;
   http: typeof http;
   medical: typeof medical;
+  mirror: typeof mirror;
   pets: typeof pets;
   users: typeof users;
 }>;

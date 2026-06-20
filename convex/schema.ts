@@ -4,6 +4,17 @@ import { v } from 'convex/values'
 
 export default defineSchema({
   ...authTables,
+
+  // Opt-in desktop mirror: the iOS app pushes a full single-pet health-record
+  // snapshot (see ios/PetHomepage/Mirror/MirrorSnapshot.swift) for the read-only
+  // web dashboard. One row per authenticated user; snapshot is an opaque blob.
+  mirrors: defineTable({
+    userId:        v.id('users'),
+    snapshot:      v.any(),     // MirrorSnapshot JSON (snake_case keys, ISO-8601 dates)
+    schemaVersion: v.number(),
+    updatedAt:     v.number(),
+  }).index('by_user', ['userId']),
+
   pets: defineTable({
     userId:          v.string(),              // Convex auth tokenIdentifier
     name:            v.string(),
