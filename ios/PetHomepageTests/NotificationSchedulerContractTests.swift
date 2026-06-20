@@ -49,4 +49,19 @@ final class NotificationSchedulerContractTests: XCTestCase {
         XCTAssertFalse(granted)
         XCTAssertEqual(fake.authorizationRequestCount, 1)
     }
+
+    // TDD red commit: cancelAll() does not yet exist on the protocol or fake.
+    // This test must fail (compile error) before the implementation is added.
+    func testCancelAllRemovesAllPendingReminders() async {
+        let fake = FakeNotificationScheduler()
+        let idA = UUID()
+        let idB = UUID()
+        await fake.schedule(reminder(idA, hour: 8))
+        await fake.schedule(reminder(idB, hour: 20))
+
+        await fake.cancelAll()
+
+        let pending = await fake.pendingMedicationIDs()
+        XCTAssertTrue(pending.isEmpty, "cancelAll() should clear every pending reminder")
+    }
 }
