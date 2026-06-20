@@ -80,6 +80,20 @@ final class MedicationReminderSchedulerTests: XCTestCase {
         XCTAssertTrue(pending.isEmpty)
     }
 
+    func testCancelAllRemovesAllPendingReminders() async throws {
+        let fake = FakeNotificationScheduler()
+        let scheduler = MedicationReminderScheduler(scheduler: fake, calendar: calendar)
+        let med1 = try makeMed(hour: 8, minute: 0)
+        let med2 = try makeMed(hour: 9, minute: 0)
+        await scheduler.sync(med1)
+        await scheduler.sync(med2)
+
+        await scheduler.cancelAll([med1, med2])
+
+        let pending = await fake.pendingMedicationIDs()
+        XCTAssertTrue(pending.isEmpty, "cancelAll should remove all pending reminders")
+    }
+
     func testSyncAllSchedulesActiveAndCancelsEndedMedications() async throws {
         let fake = FakeNotificationScheduler()
         let scheduler = MedicationReminderScheduler(scheduler: fake, calendar: calendar)
