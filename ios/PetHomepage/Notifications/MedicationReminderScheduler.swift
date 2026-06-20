@@ -51,4 +51,11 @@ final class MedicationReminderScheduler {
             await sync(medication)
         }
     }
+
+    /// Cancels all pending reminders for every medication in the list (e.g. on bulk delete).
+    func cancelAll(_ medications: [Medication]) async {
+        for medication in medications {
+            await cancel(medication)
+        }
+    }
 }
