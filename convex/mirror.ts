@@ -1,6 +1,6 @@
 import { getAuthUserId } from '@convex-dev/auth/server'
 import { v } from 'convex/values'
-import { mutation, query } from './_generated/server'
+import { internalMutation, mutation, query } from './_generated/server'
 
 // Opt-in desktop mirror. The iOS app pushes a full single-pet health-record
 // snapshot for the read-only web dashboard. Auth-gated: each user has exactly
@@ -47,5 +47,34 @@ export const get = query({
       .query('mirrors')
       .withIndex('by_user', (q) => q.eq('userId', userId))
       .unique()
+  },
+})
+
+// Internal: upsert a user's mirror given a server-derived userId. Used by the
+// /mirror/push httpAction, which authenticates via an opaque token (not ctx.auth), so it
+// cannot use the public `push` (which derives the user from the session). Same write shape.
+export const upsertForUser = internalMutation({
+  args: {
+    userId: v.id('users'),
+    snapshot: v.any(),
+    schemaVersion: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query('mirrors')
+      .withIndex('by_user', (q) => q.eq('userId', args.userId))
+      .unique()
+
+    const fields = {
+      snapshot: args.snapshot,
+      schemaVersion: args.schemaVersion,
+      updatedAt: Date.now(),
+    }
+
+    if (existing) {
+      await ctx.db.patch(existing._id, fields)
+      return existing._id
+    }
+    return await ctx.db.insert('mirrors', { userId: args.userId, ...fields })
   },
 })
