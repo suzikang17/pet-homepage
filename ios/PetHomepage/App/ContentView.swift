@@ -16,6 +16,9 @@ struct ContentView: View {
         let recommendationStore = VetRecommendationStore(context: context)
         let reminderScheduler = MedicationReminderScheduler(scheduler: UNNotificationScheduler())
         let dueScheduler = DueReminderScheduler(scheduler: UNNotificationScheduler())
+        let healthMarkerStore = HealthMarkerStore(context: context, petStore: petStore)
+        let symptomEpisodeStore = SymptomEpisodeStore(context: context, petStore: petStore)
+        let symptomEntryStore = SymptomEntryStore(context: context)
 
         return TabView {
             PetProfileView(store: petStore)
@@ -32,6 +35,45 @@ struct ContentView: View {
                               dueScheduler: dueScheduler,
                               cadenceMonths: vetCadenceMonths)
                 .tabItem { Label("Vet", systemImage: "stethoscope") }
+            HealthTabView(healthMarkerStore: healthMarkerStore,
+                          symptomEpisodeStore: symptomEpisodeStore,
+                          symptomEntryStore: symptomEntryStore)
+                .tabItem { Label("Health", systemImage: "heart.text.square") }
+        }
+    }
+}
+
+/// The Health tab bundles markers and symptoms into a single tab via an inner picker,
+/// keeping the bottom tab bar uncrowded.
+private struct HealthTabView: View {
+    let healthMarkerStore: HealthMarkerStore
+    let symptomEpisodeStore: SymptomEpisodeStore
+    let symptomEntryStore: SymptomEntryStore
+
+    @State private var section: Section = .markers
+
+    private enum Section: String, CaseIterable, Identifiable {
+        case markers = "Markers"
+        case symptoms = "Symptoms"
+        var id: String { rawValue }
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Picker("Section", selection: $section) {
+                ForEach(Section.allCases) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal)
+            .padding(.top, 8)
+
+            switch section {
+            case .markers:
+                HealthMarkersView(store: healthMarkerStore)
+            case .symptoms:
+                SymptomsListView(episodeStore: symptomEpisodeStore,
+                                 entryStore: symptomEntryStore)
+            }
         }
     }
 }
