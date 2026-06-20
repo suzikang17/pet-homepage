@@ -49,6 +49,7 @@ struct HeroHeader: View {
     var subtitle: String? = nil
     var systemImage: String = "pawprint.fill"
     var onAdd: (() -> Void)? = nil
+    var onSettings: (() -> Void)? = nil
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
@@ -78,21 +79,30 @@ struct HeroHeader: View {
         }
         .frame(height: 200)
         .overlay(alignment: .topTrailing) {
-            if let onAdd {
-                Button(action: onAdd) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(Theme.primary)
-                        .frame(width: 42, height: 42)
-                        .background(.white, in: Circle())
-                        .shadow(color: Theme.ink.opacity(0.18), radius: 8, y: 3)
+            HStack(spacing: 12) {
+                if let onSettings {
+                    heroIconButton("gearshape.fill", action: onSettings)
                 }
-                .padding(.trailing, 20)
-                .padding(.top, 62)
+                if let onAdd {
+                    heroIconButton("plus", action: onAdd)
+                }
             }
+            .padding(.trailing, 20)
+            .padding(.top, 62)
         }
         .clipShape(.rect(bottomLeadingRadius: 30, bottomTrailingRadius: 30, style: .continuous))
         .shadow(color: Theme.primary.opacity(0.25), radius: 16, y: 8)
+    }
+
+    private func heroIconButton(_ systemName: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(Theme.primary)
+                .frame(width: 42, height: 42)
+                .background(.white, in: Circle())
+                .shadow(color: Theme.ink.opacity(0.18), radius: 8, y: 3)
+        }
     }
 }
 

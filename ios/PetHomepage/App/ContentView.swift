@@ -80,7 +80,7 @@ struct ContentView: View {
         )
 
         return TabView {
-            PetProfileView(store: petStore)
+            PetProfileView(store: petStore, settings: settingsViewModel)
                 .tabItem { Label("Profile", systemImage: "pawprint") }
             MedicationsListView(medicationStore: medicationStore,
                                 doseLogStore: doseLogStore,
@@ -98,8 +98,6 @@ struct ContentView: View {
                           symptomEpisodeStore: symptomEpisodeStore,
                           symptomEntryStore: symptomEntryStore)
                 .tabItem { Label("Health", systemImage: "heart.text.square") }
-            SettingsView(model: settingsViewModel)
-                .tabItem { Label("Settings", systemImage: "gearshape") }
         }
         .tint(Theme.primary)
     }

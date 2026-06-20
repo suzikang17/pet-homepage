@@ -3,9 +3,13 @@ import SwiftUI
 
 struct PetProfileView: View {
     @State private var model: PetProfileViewModel
+    @State private var showSettings = false
 
-    init(store: PetStore) {
+    private let settings: SettingsViewModel?
+
+    init(store: PetStore, settings: SettingsViewModel? = nil) {
         _model = State(initialValue: PetProfileViewModel(store: store))
+        self.settings = settings
     }
 
     var body: some View {
@@ -14,7 +18,8 @@ struct PetProfileView: View {
                 HeroHeader(
                     title: model.name.isEmpty ? "Your pet" : model.name,
                     subtitle: "Profile",
-                    systemImage: speciesIcon
+                    systemImage: speciesIcon,
+                    onSettings: settings != nil ? { showSettings = true } : nil
                 )
 
                 BrandCard {
@@ -46,6 +51,11 @@ struct PetProfileView: View {
                 }
                 .buttonStyle(PrimaryButtonStyle())
                 .disabled(model.name.isEmpty)
+            }
+            .sheet(isPresented: $showSettings) {
+                if let settings {
+                    SettingsView(model: settings)
+                }
             }
         }
     }
