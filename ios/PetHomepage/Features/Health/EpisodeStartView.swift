@@ -21,15 +21,19 @@ struct EpisodeStartView: View {
                     TextField("Title (optional)", text: $model.title)
                     DatePicker("Started", selection: $model.startedAt, displayedComponents: .date)
                 }
-                Section {
-                    Button("Start tracking") {
+            }
+            .navigationTitle("New episode")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Start") {
                         try? model.start()
                         dismiss()
                     }
                     .disabled(!model.isValid)
                 }
             }
-            .navigationTitle("New episode")
             .scrollContentBackground(.hidden)
             .background(Theme.bg)
             .tint(Theme.primary)

@@ -37,7 +37,12 @@ struct MedicationEditView: View {
                         DatePicker("Ended", selection: $model.endedAt, displayedComponents: .date)
                     }
                 }
-                Section {
+            }
+            .navigationTitle("Medication")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         Task {
                             try? await model.save()
@@ -47,7 +52,6 @@ struct MedicationEditView: View {
                     .disabled(!model.isValid)
                 }
             }
-            .navigationTitle("Medication")
             .scrollContentBackground(.hidden)
             .background(Theme.bg)
             .tint(Theme.primary)

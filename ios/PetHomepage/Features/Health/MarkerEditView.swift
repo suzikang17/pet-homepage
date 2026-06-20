@@ -23,7 +23,12 @@ struct MarkerEditView: View {
                     TextField("Unit (optional)", text: $model.unit)
                     DatePicker("Recorded", selection: $model.recordedAt)
                 }
-                Section {
+            }
+            .navigationTitle("Add marker")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         try? model.save()
                         dismiss()
@@ -31,7 +36,6 @@ struct MarkerEditView: View {
                     .disabled(!model.isValid)
                 }
             }
-            .navigationTitle("Add marker")
             .scrollContentBackground(.hidden)
             .background(Theme.bg)
             .tint(Theme.primary)

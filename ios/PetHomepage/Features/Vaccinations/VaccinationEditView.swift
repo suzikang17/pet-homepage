@@ -24,7 +24,12 @@ struct VaccinationEditView: View {
                         DatePicker("Due", selection: $model.nextDueAt, displayedComponents: .date)
                     }
                 }
-                Section {
+            }
+            .navigationTitle("Vaccination")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         Task {
                             try? await model.save()
@@ -34,7 +39,6 @@ struct VaccinationEditView: View {
                     .disabled(!model.isValid)
                 }
             }
-            .navigationTitle("Vaccination")
             .scrollContentBackground(.hidden)
             .background(Theme.bg)
             .tint(Theme.primary)

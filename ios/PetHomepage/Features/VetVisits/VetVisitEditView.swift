@@ -28,7 +28,12 @@ struct VetVisitEditView: View {
                         DatePicker("Next visit", selection: $model.nextVisitDate, displayedComponents: .date)
                     }
                 }
-                Section {
+            }
+            .navigationTitle("Vet visit")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         Task {
                             try? await model.save()
@@ -37,7 +42,6 @@ struct VetVisitEditView: View {
                     }
                 }
             }
-            .navigationTitle("Vet visit")
             .scrollContentBackground(.hidden)
             .background(Theme.bg)
             .tint(Theme.primary)
