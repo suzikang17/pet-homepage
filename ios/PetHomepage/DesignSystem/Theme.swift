@@ -48,6 +48,7 @@ struct HeroHeader: View {
     let title: String
     var subtitle: String? = nil
     var systemImage: String = "pawprint.fill"
+    var onAdd: (() -> Void)? = nil
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
@@ -76,6 +77,20 @@ struct HeroHeader: View {
             .padding(.top, 56) // clear the status bar (header bleeds to the top edge)
         }
         .frame(height: 200)
+        .overlay(alignment: .topTrailing) {
+            if let onAdd {
+                Button(action: onAdd) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(Theme.primary)
+                        .frame(width: 42, height: 42)
+                        .background(.white, in: Circle())
+                        .shadow(color: Theme.ink.opacity(0.18), radius: 8, y: 3)
+                }
+                .padding(.trailing, 20)
+                .padding(.top, 62)
+            }
+        }
         .clipShape(.rect(bottomLeadingRadius: 30, bottomTrailingRadius: 30, style: .continuous))
         .shadow(color: Theme.primary.opacity(0.25), radius: 16, y: 8)
     }
@@ -144,5 +159,62 @@ struct BrandScreen<Content: View, Action: View>: View {
                 .background(.ultraThinMaterial)
         }
         .toolbar(.hidden, for: .navigationBar)
+    }
+}
+
+/// A List styled as the brand: a gradient hero header (with an optional add
+/// button), brand background, and rows you style with `.brandRow()`. Stays a
+/// List, so swipe actions and NavigationLinks keep working.
+struct BrandList<Content: View>: View {
+    let title: String
+    var subtitle: String? = nil
+    var systemImage: String = "pawprint.fill"
+    var onAdd: (() -> Void)? = nil
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        List {
+            HeroHeader(title: title, subtitle: subtitle, systemImage: systemImage, onAdd: onAdd)
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                .padding(.bottom, 6)
+            content
+        }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(Theme.bg)
+        .ignoresSafeArea(edges: .top)
+        .toolbar(.hidden, for: .navigationBar)
+    }
+}
+
+extension View {
+    /// Styles a List row as a floating white brand card.
+    func brandRow() -> some View {
+        self
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.card, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .shadow(color: Theme.ink.opacity(0.05), radius: 10, y: 4)
+            .listRowInsets(EdgeInsets(top: 5, leading: 18, bottom: 5, trailing: 18))
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+    }
+}
+
+/// An uppercased section label for use between brand cards.
+struct BrandSectionLabel: View {
+    let text: String
+    init(_ text: String) { self.text = text }
+    var body: some View {
+        Text(text.uppercased())
+            .font(.system(.caption, design: .rounded).weight(.heavy))
+            .tracking(1.2)
+            .foregroundStyle(Theme.inkSoft)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .listRowInsets(EdgeInsets(top: 8, leading: 22, bottom: 2, trailing: 18))
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
     }
 }

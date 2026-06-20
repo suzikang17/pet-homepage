@@ -23,41 +23,22 @@ struct MedicationsListView: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            BrandList(title: "Medications", subtitle: "Meds",
+                      systemImage: "pills.fill", onAdd: { showingAdd = true }) {
+                if model.rows.isEmpty {
+                    Text("No medications yet. Tap + to add one.")
+                        .font(Theme.body()).foregroundStyle(Theme.inkSoft)
+                        .brandRow()
+                }
                 ForEach(model.rows) { row in
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text(row.drugName).font(.headline)
-                            Spacer()
-                            Button("Log dose") {
-                                Task { try? await model.logDose(row) }
-                            }
-                            .buttonStyle(.borderless)
-                        }
-                        Text(row.dosage).font(.subheadline).foregroundStyle(.secondary)
-                        Text(lastGivenText(row.lastGiven)).font(.caption).foregroundStyle(.secondary)
-                        if let nextDue = row.nextDue {
-                            Text("Next: \(nextDue.formatted(date: .omitted, time: .shortened))")
-                                .font(.caption).foregroundStyle(.secondary)
-                        }
-                        if let refill = row.refillDueAt {
-                            Text("Refill due \(refill.formatted(date: .abbreviated, time: .omitted))")
-                                .font(.caption)
-                                .foregroundStyle(row.isRefillDueSoon ? .orange : .secondary)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture { editing = row.medication }
+                    medRow(row)
+                        .brandRow()
+                        .contentShape(Rectangle())
+                        .onTapGesture { editing = row.medication }
                 }
                 .onDelete { indexSet in
                     let targets = indexSet.map { model.rows[$0] }
                     Task { for row in targets { try? await model.delete(row) } }
-                }
-            }
-            .navigationTitle("Medications")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button { showingAdd = true } label: { Image(systemName: "plus") }
                 }
             }
             .sheet(isPresented: $showingAdd, onDismiss: { try? model.load() }) {
@@ -71,6 +52,33 @@ struct MedicationsListView: View {
                                    editing: med)
             }
             .onAppear { try? model.load() }
+        }
+    }
+
+    @ViewBuilder
+    private func medRow(_ row: MedicationRow) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(row.drugName).font(Theme.headline()).foregroundStyle(Theme.ink)
+                Spacer()
+                Button("Log dose") { Task { try? await model.logDose(row) } }
+                    .buttonStyle(.borderless)
+                    .font(.system(.subheadline, design: .rounded).weight(.bold))
+                    .foregroundStyle(Theme.primary)
+            }
+            if !row.dosage.isEmpty {
+                Text(row.dosage).font(.subheadline).foregroundStyle(Theme.inkSoft)
+            }
+            Text(lastGivenText(row.lastGiven)).font(.caption).foregroundStyle(Theme.inkSoft)
+            if let nextDue = row.nextDue {
+                Text("Next: \(nextDue.formatted(date: .omitted, time: .shortened))")
+                    .font(.caption).foregroundStyle(Theme.inkSoft)
+            }
+            if let refill = row.refillDueAt {
+                Text("Refill due \(refill.formatted(date: .abbreviated, time: .omitted))")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(row.isRefillDueSoon ? Theme.warn : Theme.inkSoft)
+            }
         }
     }
 

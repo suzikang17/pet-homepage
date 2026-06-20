@@ -11,69 +11,103 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Desktop mirror") {
-                    Toggle("Mirror to dashboard", isOn: $model.isMirroringEnabled)
-                    Text(model.privacyNote)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+            ScrollView {
+                VStack(spacing: 18) {
+                    HeroHeader(title: "Settings", subtitle: "Preferences", systemImage: "gearshape.fill")
 
-                    TextField(
-                        "Deployment URL",
-                        text: $model.mirrorEndpoint,
-                        prompt: Text("https://…convex.site/mirror/push")
-                    )
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .keyboardType(.URL)
+                    BrandCard {
+                        VStack(alignment: .leading, spacing: 14) {
+                            BrandCardTitle("Desktop mirror")
+                            Toggle("Mirror to dashboard", isOn: $model.isMirroringEnabled)
+                                .font(Theme.body().weight(.semibold))
+                                .tint(Theme.primary)
+                            Text(model.privacyNote)
+                                .font(.footnote).foregroundStyle(Theme.inkSoft)
 
-                    SecureField(
-                        "Mirror token",
-                        text: $model.mirrorToken,
-                        prompt: Text("Paste token from dashboard")
-                    )
+                            field {
+                                TextField("Deployment URL", text: $model.mirrorEndpoint,
+                                          prompt: Text("https://…convex.site/mirror/push"))
+                                    .textInputAutocapitalization(.never)
+                                    .autocorrectionDisabled()
+                                    .keyboardType(.URL)
+                            }
+                            field {
+                                SecureField("Mirror token", text: $model.mirrorToken,
+                                            prompt: Text("Paste token from dashboard"))
+                            }
+                            Text("Mint a token on the web dashboard, then paste it here with your deployment URL. The token is stored in the device Keychain.")
+                                .font(.footnote).foregroundStyle(Theme.inkSoft)
 
-                    Text("Mint a token on the web dashboard, then paste it here along with your deployment URL. The token is stored in the device Keychain.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                            Button("Sync now") {
+                                Task {
+                                    do { _ = try await model.syncNow() }
+                                    catch { syncError = error.localizedDescription }
+                                }
+                            }
+                            .buttonStyle(PrimaryButtonStyle())
+                            .disabled(!model.isMirroringEnabled)
 
-                    Button("Sync now") {
-                        Task {
-                            do { _ = try await model.syncNow() }
-                            catch { syncError = error.localizedDescription }
+                            if let syncError {
+                                Text(syncError).font(.footnote).foregroundStyle(Theme.danger)
+                            }
                         }
                     }
-                    .disabled(!model.isMirroringEnabled)
-                    if let syncError {
-                        Text(syncError).font(.footnote).foregroundStyle(.red)
-                    }
-                }
+                    .padding(.horizontal, 18)
 
-                Section("Documents (iCloud Drive)") {
-                    if model.documentRows.isEmpty {
-                        Text("No documents yet. Uploaded records appear here.")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(model.documentRows) { row in
-                            documentRow(row)
+                    BrandCard {
+                        VStack(alignment: .leading, spacing: 12) {
+                            BrandCardTitle("Documents · iCloud Drive")
+                            if model.documentRows.isEmpty {
+                                Text("No documents yet. Uploaded records appear here.")
+                                    .font(Theme.body()).foregroundStyle(Theme.inkSoft)
+                            } else {
+                                ForEach(model.documentRows) { row in
+                                    documentRow(row)
+                                }
+                            }
                         }
                     }
+                    .padding(.horizontal, 18)
                 }
+                .padding(.bottom, 28)
             }
-            .navigationTitle("Settings")
+            .scrollIndicators(.hidden)
+            .background(Theme.bg)
+            .ignoresSafeArea(edges: .top)
+            .toolbar(.hidden, for: .navigationBar)
             .onAppear { model.loadDocuments() }
         }
+    }
+
+    @ViewBuilder
+    private func field<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        content()
+            .font(Theme.body())
+            .padding(.vertical, 12).padding(.horizontal, 14)
+            .background(Theme.bg, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     @ViewBuilder
     private func documentRow(_ row: DocumentRow) -> some View {
         if let url = try? model.shareURL(for: row) {
             ShareLink(item: url) {
-                Label(row.reference.fileName, systemImage: "doc")
+                Label(row.reference.fileName, systemImage: "doc.fill").tint(Theme.primary)
             }
         } else {
             Label(row.reference.fileName, systemImage: "doc")
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.inkSoft)
         }
+    }
+}
+
+/// Small heavy uppercased title used at the top of a BrandCard.
+struct BrandCardTitle: View {
+    let text: String
+    init(_ text: String) { self.text = text }
+    var body: some View {
+        Text(text.uppercased())
+            .font(.system(.caption, design: .rounded).weight(.heavy))
+            .tracking(1.2)
+            .foregroundStyle(Theme.inkSoft)
     }
 }

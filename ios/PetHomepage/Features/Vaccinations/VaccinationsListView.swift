@@ -17,28 +17,22 @@ struct VaccinationsListView: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            BrandList(title: "Vaccinations", subtitle: "Vaccines",
+                      systemImage: "syringe.fill", onAdd: { showingAdd = true }) {
+                if model.rows.isEmpty {
+                    Text("No vaccinations yet. Tap + to add one.")
+                        .font(Theme.body()).foregroundStyle(Theme.inkSoft)
+                        .brandRow()
+                }
                 ForEach(model.rows) { row in
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(row.vaccineName).font(.headline)
-                        Text(lastText(row.lastGiven)).font(.caption).foregroundStyle(.secondary)
-                        if let next = row.nextDue {
-                            Text("Next due \(next.formatted(date: .abbreviated, time: .omitted))")
-                                .font(.caption).foregroundStyle(.secondary)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture { editing = row.vaccination }
+                    vaxRow(row)
+                        .brandRow()
+                        .contentShape(Rectangle())
+                        .onTapGesture { editing = row.vaccination }
                 }
                 .onDelete { indexSet in
                     let targets = indexSet.map { model.rows[$0] }
                     Task { for row in targets { try? await model.delete(row) } }
-                }
-            }
-            .navigationTitle("Vaccinations")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button { showingAdd = true } label: { Image(systemName: "plus") }
                 }
             }
             .sheet(isPresented: $showingAdd, onDismiss: { try? model.load() }) {
@@ -49,6 +43,26 @@ struct VaccinationsListView: View {
             }
             .onAppear { try? model.load() }
         }
+    }
+
+    @ViewBuilder
+    private func vaxRow(_ row: VaccinationRow) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(row.vaccineName).font(Theme.headline()).foregroundStyle(Theme.ink)
+            Text(lastText(row.lastGiven)).font(.caption).foregroundStyle(Theme.inkSoft)
+            if let next = row.nextDue {
+                Text("Next due \(next.formatted(date: .abbreviated, time: .omitted))")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(dueColor(next))
+            }
+        }
+    }
+
+    private func dueColor(_ date: Date) -> Color {
+        let now = Date()
+        if date < now { return Theme.danger }
+        if date.timeIntervalSince(now) < 42 * 24 * 60 * 60 { return Theme.warn }
+        return Theme.inkSoft
     }
 
     private func lastText(_ date: Date?) -> String {

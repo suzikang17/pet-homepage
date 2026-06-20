@@ -49,6 +49,8 @@ struct HealthMarkersView: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Theme.bg)
             .navigationTitle("Health")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {

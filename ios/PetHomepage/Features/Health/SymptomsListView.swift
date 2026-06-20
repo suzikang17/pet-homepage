@@ -42,6 +42,8 @@ struct SymptomsListView: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Theme.bg)
             .navigationTitle("Symptoms")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {

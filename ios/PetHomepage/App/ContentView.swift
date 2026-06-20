@@ -137,5 +137,6 @@ private struct HealthTabView: View {
                                  entryStore: symptomEntryStore)
             }
         }
+        .background(Theme.bg)
     }
 }
