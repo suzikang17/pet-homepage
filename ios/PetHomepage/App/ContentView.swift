@@ -20,13 +20,19 @@ struct ContentView: View {
         let symptomEpisodeStore = SymptomEpisodeStore(context: context, petStore: petStore)
         let symptomEntryStore = SymptomEntryStore(context: context)
 
-        // Phase 5 — opt-in desktop mirror wiring. The endpoint is a deferred-backend
-        // placeholder; nothing leaves iCloud unless the owner opts in (default off).
+        // Web integration bridge: build the mirror push client from the user-entered endpoint
+        // + token (Settings). Blank endpoint falls back to the build-time Convex .site default.
         let mirrorSettings = UserDefaultsMirrorSettings()
+        let defaultMirrorEndpoint = "https://your-deployment.convex.site/mirror/push"
+        let mirrorEndpointString = mirrorSettings.mirrorEndpoint.isEmpty
+            ? defaultMirrorEndpoint
+            : mirrorSettings.mirrorEndpoint
+        let mirrorEndpoint = URL(string: mirrorEndpointString)
+            ?? URL(string: defaultMirrorEndpoint)!
         let mirrorService = URLSessionMirrorService(
             config: MirrorConfig(
-                endpoint: URL(string: "https://example.com/api/mirror")!,
-                token: nil
+                endpoint: mirrorEndpoint,
+                token: mirrorSettings.mirrorToken.isEmpty ? nil : mirrorSettings.mirrorToken
             )
         )
         let snapshotBuilder = SnapshotBuilder(

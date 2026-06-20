@@ -21,4 +21,14 @@ final class InMemoryMirrorSettings: MirrorSettings {
         get { defaults.bool(forKey: "isMirroringEnabled") }
         set { defaults.set(newValue, forKey: "isMirroringEnabled") }
     }
+
+    var mirrorEndpoint: String {
+        get { defaults.string(forKey: "mirrorEndpoint") ?? "" }
+        set { defaults.set(newValue, forKey: "mirrorEndpoint") }
+    }
+
+    var mirrorToken: String {
+        get { defaults.string(forKey: "mirrorToken") ?? "" }
+        set { defaults.set(newValue, forKey: "mirrorToken") }
+    }
 }

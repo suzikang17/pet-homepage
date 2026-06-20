@@ -67,4 +67,16 @@ final class MirrorCoordinatorTests: XCTestCase {
         settings.isMirroringEnabled = true
         XCTAssertTrue(settings.isMirroringEnabled)
     }
+
+    func testEndpointAndTokenDefaultEmptyAndPersist() {
+        let settings = UserDefaultsMirrorSettings(
+            defaults: UserDefaults(suiteName: "endpoint-check-\(UUID().uuidString)")!
+        )
+        XCTAssertEqual(settings.mirrorEndpoint, "")
+        XCTAssertEqual(settings.mirrorToken, "")
+        settings.mirrorEndpoint = "https://dep.convex.site/mirror/push"
+        settings.mirrorToken = "tok-xyz"
+        XCTAssertEqual(settings.mirrorEndpoint, "https://dep.convex.site/mirror/push")
+        XCTAssertEqual(settings.mirrorToken, "tok-xyz")
+    }
 }
