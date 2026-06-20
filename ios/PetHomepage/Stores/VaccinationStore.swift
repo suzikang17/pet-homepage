@@ -65,7 +65,7 @@ final class VaccinationStore {
         request.predicate = NSPredicate(format: "pet == %@ AND vaccineName == %@", pet, vaccineName)
         request.sortDescriptors = [NSSortDescriptor(key: "administeredAt", ascending: false)]
         request.fetchLimit = 1
-        return try context.fetch(request).first?.administeredAt
+        return try context.fetch(request).first?.administeredAt ?? nil
     }
 
     /// Earliest `nextDueAt` for a given vaccine name on the current pet, or nil.
@@ -75,6 +75,6 @@ final class VaccinationStore {
         request.predicate = NSPredicate(format: "pet == %@ AND vaccineName == %@ AND nextDueAt != nil", pet, vaccineName)
         request.sortDescriptors = [NSSortDescriptor(key: "nextDueAt", ascending: true)]
         request.fetchLimit = 1
-        return try context.fetch(request).first?.nextDueAt
+        return try context.fetch(request).first?.nextDueAt ?? nil
     }
 }
