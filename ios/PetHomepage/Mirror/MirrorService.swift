@@ -1,11 +1,12 @@
 // ios/PetHomepage/Mirror/MirrorService.swift
 import Foundation
 
-/// Where the opt-in mirror endpoint lives. The Convex sink + Next.js dashboard are DEFERRED —
-/// this client is built entirely against the protocol below (tests use FakeMirrorService;
-/// the production impl is exercised via a URLProtocol stub).
+/// Where the opt-in mirror endpoint lives, plus the per-user capability token the dashboard
+/// minted. `endpoint` is the Convex httpAction URL (`<deployment>.convex.site/mirror/push`).
+/// `token` is the opaque bearer token (nil/empty until the user pastes one into Settings).
 struct MirrorConfig {
     let endpoint: URL
+    let token: String?
 }
 
 enum MirrorError: Error, Equatable {
@@ -34,7 +35,20 @@ final class URLSessionMirrorService: MirrorService {
         var request = URLRequest(url: config.endpoint)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try MirrorSnapshot.encoder.encode(snapshot)
+        if let token = config.token, !token.isEmpty {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        // Envelope the snapshot as { snapshot, schema_version } for the httpAction. Encode the
+        // snapshot with MirrorSnapshot.encoder so its keys/dates stay identical to the dashboard
+        // contract, then wrap it without re-encoding the inner object.
+        let snapshotData = try MirrorSnapshot.encoder.encode(snapshot)
+        let snapshotObject = try JSONSerialization.jsonObject(with: snapshotData)
+        let envelope: [String: Any] = [
+            "snapshot": snapshotObject,
+            "schema_version": snapshot.schemaVersion,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: envelope)
 
         let (_, response) = try await session.data(for: request)
         if let http = response as? HTTPURLResponse, http.statusCode != 200 {

@@ -24,7 +24,10 @@ struct ContentView: View {
         // placeholder; nothing leaves iCloud unless the owner opts in (default off).
         let mirrorSettings = UserDefaultsMirrorSettings()
         let mirrorService = URLSessionMirrorService(
-            config: MirrorConfig(endpoint: URL(string: "https://example.com/api/mirror")!)
+            config: MirrorConfig(
+                endpoint: URL(string: "https://example.com/api/mirror")!,
+                token: nil
+            )
         )
         let snapshotBuilder = SnapshotBuilder(
             petStore: petStore,

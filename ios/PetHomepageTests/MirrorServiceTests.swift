@@ -8,12 +8,14 @@ final class MirrorStubURLProtocol: URLProtocol {
     nonisolated(unsafe) static var statusCode: Int = 200
     nonisolated(unsafe) static var lastRequestBody: Data?
     nonisolated(unsafe) static var lastHTTPMethod: String?
+    nonisolated(unsafe) static var lastAuthorization: String?
 
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
     override func startLoading() {
         MirrorStubURLProtocol.lastHTTPMethod = request.httpMethod
+        MirrorStubURLProtocol.lastAuthorization = request.value(forHTTPHeaderField: "Authorization")
         if let stream = request.httpBodyStream {
             stream.open()
             var data = Data()
@@ -47,12 +49,14 @@ final class MirrorServiceTests: XCTestCase {
         MirrorStubURLProtocol.statusCode = 200
         MirrorStubURLProtocol.lastRequestBody = nil
         MirrorStubURLProtocol.lastHTTPMethod = nil
+        MirrorStubURLProtocol.lastAuthorization = nil
     }
 
     override func tearDown() {
         MirrorStubURLProtocol.statusCode = 200
         MirrorStubURLProtocol.lastRequestBody = nil
         MirrorStubURLProtocol.lastHTTPMethod = nil
+        MirrorStubURLProtocol.lastAuthorization = nil
         super.tearDown()
     }
 
@@ -73,24 +77,44 @@ final class MirrorServiceTests: XCTestCase {
         )
     }
 
-    func testPushPostsEncodedSnapshot() async throws {
+    func testPushPostsEnvelopeWithBearerToken() async throws {
         let service = URLSessionMirrorService(
-            config: MirrorConfig(endpoint: URL(string: "https://example.com/api/mirror")!),
+            config: MirrorConfig(
+                endpoint: URL(string: "https://example.com/mirror/push")!,
+                token: "tok-abc-123"
+            ),
             session: makeSession()
         )
 
         try await service.push(sampleSnapshot())
 
         XCTAssertEqual(MirrorStubURLProtocol.lastHTTPMethod, "POST")
+        XCTAssertEqual(MirrorStubURLProtocol.lastAuthorization, "Bearer tok-abc-123")
+
         let body = MirrorStubURLProtocol.lastRequestBody ?? Data()
-        let decoded = try MirrorSnapshot.decoder.decode(MirrorSnapshot.self, from: body)
-        XCTAssertEqual(decoded.pet.name, "Sandy")
+        let envelope = try JSONSerialization.jsonObject(with: body) as? [String: Any]
+        XCTAssertEqual(envelope?["schema_version"] as? Int, 1)
+        let snapshot = envelope?["snapshot"] as? [String: Any]
+        let pet = snapshot?["pet"] as? [String: Any]
+        XCTAssertEqual(pet?["name"] as? String, "Sandy")
+    }
+
+    func testPushOmitsAuthorizationWhenTokenMissing() async throws {
+        let service = URLSessionMirrorService(
+            config: MirrorConfig(
+                endpoint: URL(string: "https://example.com/mirror/push")!,
+                token: nil
+            ),
+            session: makeSession()
+        )
+        try await service.push(sampleSnapshot())
+        XCTAssertNil(MirrorStubURLProtocol.lastAuthorization)
     }
 
     func testPushThrowsOnNon200() async {
         MirrorStubURLProtocol.statusCode = 500
         let service = URLSessionMirrorService(
-            config: MirrorConfig(endpoint: URL(string: "https://example.com/api/mirror")!),
+            config: MirrorConfig(endpoint: URL(string: "https://example.com/mirror/push")!, token: "tok"),
             session: makeSession()
         )
         do {
