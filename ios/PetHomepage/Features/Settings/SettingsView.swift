@@ -75,6 +75,7 @@ struct SettingsView: View {
             .background(Theme.bg)
             .ignoresSafeArea(edges: .top)
             .toolbar(.hidden, for: .navigationBar)
+            .presentationDragIndicator(.visible)
             .onAppear { model.loadDocuments() }
         }
     }

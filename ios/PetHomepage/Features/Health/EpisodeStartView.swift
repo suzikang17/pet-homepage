@@ -33,6 +33,7 @@ struct EpisodeStartView: View {
             .scrollContentBackground(.hidden)
             .background(Theme.bg)
             .tint(Theme.primary)
+            .presentationDragIndicator(.visible)
         }
     }
 }
