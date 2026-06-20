@@ -28,7 +28,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: pet.homepage.PetHomepage
-        CODE_SIGNING_ALLOWED: NO
+        DEVELOPMENT_TEAM: L5PTDF7GUW
+        CODE_SIGN_STYLE: Automatic
   PetHomepageTests:
     type: bundle.unit-test
     platform: iOS
