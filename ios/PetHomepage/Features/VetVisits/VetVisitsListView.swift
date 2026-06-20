@@ -4,6 +4,7 @@ import SwiftUI
 struct VetVisitsListView: View {
     @State private var model: VetVisitsListViewModel
     @State private var showingAdd = false
+    @State private var editing: VetVisit?
 
     private let store: VetVisitStore
     private let recommendationStore: VetRecommendationStore
@@ -31,12 +32,16 @@ struct VetVisitsListView: View {
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(row.clinicName ?? "Vet visit").font(.headline)
-                            Text((row.occurredAt ?? Date()).formatted(date: .abbreviated, time: .omitted))
+                            Text(row.occurredAt.formatted(date: .abbreviated, time: .omitted))
                                 .font(.caption).foregroundStyle(.secondary)
                             if let reason = row.reason {
                                 Text(reason).font(.caption).foregroundStyle(.secondary)
                             }
                         }
+                    }
+                    .swipeActions(edge: .leading) {
+                        Button("Edit") { editing = row.visit }
+                            .tint(.blue)
                     }
                 }
                 .onDelete { indexSet in
@@ -56,6 +61,12 @@ struct VetVisitsListView: View {
             }) {
                 VetVisitEditView(store: store, dueScheduler: dueScheduler, cadenceMonths: cadenceMonths, editing: nil)
             }
+            .sheet(item: $editing, onDismiss: {
+                try? model.load()
+                Task { await model.syncCadence() }
+            }) { visit in
+                VetVisitEditView(store: store, dueScheduler: dueScheduler, cadenceMonths: cadenceMonths, editing: visit)
+            }
             .onAppear {
                 try? model.load()
                 Task { await model.syncCadence() }
@@ -63,3 +74,5 @@ struct VetVisitsListView: View {
         }
     }
 }
+
+extension VetVisit: Identifiable {}

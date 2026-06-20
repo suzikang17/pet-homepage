@@ -3,9 +3,12 @@ import Foundation
 import Observation
 
 struct VetVisitRow: Identifiable {
-    let id: UUID?
+    /// Non-optional stable identity. The store always sets id = UUID() on create;
+    /// a nil id here would be a programmer error and is treated as a precondition failure.
+    let id: UUID
     let visit: VetVisit
-    let occurredAt: Date?
+    /// Non-optional; the store always sets occurredAt on create.
+    let occurredAt: Date
     let clinicName: String?
     let reason: String?
 }
@@ -26,7 +29,7 @@ final class VetVisitsListViewModel {
 
     func load() throws {
         rows = try store.visits().map { visit in
-            VetVisitRow(id: visit.id, visit: visit, occurredAt: visit.occurredAt,
+            VetVisitRow(id: visit.idValue, visit: visit, occurredAt: visit.occurredAtValue,
                         clinicName: visit.clinicName, reason: visit.reason)
         }
     }

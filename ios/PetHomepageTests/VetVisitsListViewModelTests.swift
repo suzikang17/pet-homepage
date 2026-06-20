@@ -40,7 +40,7 @@ final class VetVisitsListViewModelTests: XCTestCase {
         let vm = VetVisitsListViewModel(store: store, dueScheduler: dueScheduler, cadenceMonths: 6)
         try vm.load()
 
-        try await vm.delete(VetVisitRow(id: visit.id, visit: visit, occurredAt: visit.occurredAt,
+        try await vm.delete(VetVisitRow(id: visit.id!, visit: visit, occurredAt: visit.occurredAtValue,
                                         clinicName: "A", reason: nil))
 
         XCTAssertTrue(try store.visits().isEmpty)
