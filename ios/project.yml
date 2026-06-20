@@ -15,6 +15,8 @@ targets:
     platform: iOS
     sources:
       - path: PetHomepage
+        excludes:
+          - "**/.omc/**"
     entitlements:
       path: PetHomepage/PetHomepage.entitlements
       properties:
@@ -39,6 +41,8 @@ targets:
     platform: iOS
     sources:
       - path: PetHomepageTests
+        excludes:
+          - "**/.omc/**"
     dependencies:
       - target: PetHomepage
 schemes:
