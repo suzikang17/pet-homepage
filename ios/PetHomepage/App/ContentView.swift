@@ -20,6 +20,39 @@ struct ContentView: View {
         let symptomEpisodeStore = SymptomEpisodeStore(context: context, petStore: petStore)
         let symptomEntryStore = SymptomEntryStore(context: context)
 
+        // Phase 5 — opt-in desktop mirror wiring. The endpoint is a deferred-backend
+        // placeholder; nothing leaves iCloud unless the owner opts in (default off).
+        let mirrorSettings = UserDefaultsMirrorSettings()
+        let mirrorService = URLSessionMirrorService(
+            config: MirrorConfig(endpoint: URL(string: "https://example.com/api/mirror")!)
+        )
+        let snapshotBuilder = SnapshotBuilder(
+            petStore: petStore,
+            medicationStore: medicationStore,
+            doseLogStore: doseLogStore,
+            vaccinationStore: vaccinationStore,
+            vetVisitStore: vetVisitStore,
+            recommendationStore: recommendationStore,
+            healthMarkerStore: healthMarkerStore,
+            symptomEpisodeStore: symptomEpisodeStore,
+            symptomEntryStore: symptomEntryStore
+        )
+        let mirrorCoordinator = MirrorCoordinator(
+            builder: snapshotBuilder,
+            service: mirrorService,
+            settings: mirrorSettings
+        )
+        let documentSharing = DocumentSharing(
+            documentStore: DocumentStore.iCloudDrive()
+                ?? DocumentStore(baseURL: FileManager.default.temporaryDirectory)
+        )
+        let settingsViewModel = SettingsViewModel(
+            settings: mirrorSettings,
+            coordinator: mirrorCoordinator,
+            documentSharing: documentSharing,
+            documentNames: []
+        )
+
         return TabView {
             PetProfileView(store: petStore)
                 .tabItem { Label("Profile", systemImage: "pawprint") }
@@ -39,6 +72,8 @@ struct ContentView: View {
                           symptomEpisodeStore: symptomEpisodeStore,
                           symptomEntryStore: symptomEntryStore)
                 .tabItem { Label("Health", systemImage: "heart.text.square") }
+            SettingsView(model: settingsViewModel)
+                .tabItem { Label("Settings", systemImage: "gearshape") }
         }
     }
 }
