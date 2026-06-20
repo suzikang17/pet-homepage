@@ -51,6 +51,23 @@ struct ContentView: View {
             service: mirrorService,
             settings: mirrorSettings
         )
+        // DEFERRED (Task 7, Step 5): The extraction UI (RecordUploadView / RecordUploadViewModel)
+        // is not yet wired here — no production code path creates a URLSessionExtractionService
+        // with a `secret:` value, which means the x-extract-secret header never reaches
+        // /api/extract in a real run. When the extraction tab/sheet is wired, construct:
+        //
+        //   let extractSecret = UserDefaults.standard.string(forKey: "extractSecret") ?? ""
+        //   let extractionService = URLSessionExtractionService(
+        //       config: ExtractionConfig(
+        //           endpoint: URL(string: "https://<host>/api/extract")!,
+        //           secret: extractSecret.isEmpty ? nil : extractSecret
+        //       )
+        //   )
+        //
+        // and inject it into RecordUploadView. Until then the build links correctly because
+        // RecordUploadView is compiled (it takes an injected ExtractionService) but is simply
+        // not presented from any tab.
+
         let documentSharing = DocumentSharing(
             documentStore: DocumentStore.iCloudDrive()
                 ?? DocumentStore(baseURL: FileManager.default.temporaryDirectory)

@@ -46,6 +46,10 @@ final class RecordUploadViewModelTests: XCTestCase {
 
         XCTAssertEqual(vm.state, .parsed([result]))
         XCTAssertEqual(fake.lastMimeType, "application/pdf")
+        // Regression guard: fileName must flow through to the service (not silently dropped to
+        // the "upload" convenience default). If this assertion fails, RecordUploadViewModel is
+        // calling the 2-arg convenience overload instead of the full 5-arg protocol method.
+        XCTAssertEqual(fake.lastFileName, "r.pdf")
     }
 
     func testConfirmSaveIngestsAndSavesFile() async throws {

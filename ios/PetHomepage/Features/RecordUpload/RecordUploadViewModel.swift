@@ -26,10 +26,19 @@ final class RecordUploadViewModel {
     }
 
     /// Runs extraction and parks the parsed results for user confirmation.
+    /// `fileName` flows through to the server so /api/extract receives the actual document name
+    /// (ExtractRequestSchema requires fileName). Uses the full 5-arg protocol method so the
+    /// caller-supplied name is not silently substituted with the "upload" convenience default.
     func extract(fileData: Data, fileName: String, mimeType: String) async {
         state = .extracting
         do {
-            let results = try await extractionService.extract(fileData: fileData, mimeType: mimeType)
+            let results = try await extractionService.extract(
+                fileData: fileData,
+                mimeType: mimeType,
+                fileName: fileName,
+                note: nil,
+                date: nil
+            )
             state = .parsed(results)
         } catch {
             state = .failed(String(describing: error))
