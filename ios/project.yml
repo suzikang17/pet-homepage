@@ -28,7 +28,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: pet.homepage.PetHomepage
-        DEVELOPMENT_TEAM: L5PTDF7GUW
+        DEVELOPMENT_TEAM: X5C7XC8SAV
         CODE_SIGN_STYLE: Automatic
         # Without a launch screen, iOS renders the app letterboxed (black bars,
         # scaled into a smaller box). This synthesizes an empty UILaunchScreen so
