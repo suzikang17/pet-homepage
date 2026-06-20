@@ -8,11 +8,13 @@ final class StubURLProtocol: URLProtocol {
     nonisolated(unsafe) static var responseData: Data = Data()
     nonisolated(unsafe) static var statusCode: Int = 200
     nonisolated(unsafe) static var lastRequestBody: Data?
+    nonisolated(unsafe) static var lastSecretHeader: String?
 
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
     override func startLoading() {
+        StubURLProtocol.lastSecretHeader = request.value(forHTTPHeaderField: "x-extract-secret")
         if let stream = request.httpBodyStream {
             stream.open()
             var data = Data()
@@ -46,12 +48,14 @@ final class ExtractionServiceTests: XCTestCase {
         StubURLProtocol.responseData = Data()
         StubURLProtocol.statusCode = 200
         StubURLProtocol.lastRequestBody = nil
+        StubURLProtocol.lastSecretHeader = nil
     }
 
     override func tearDown() {
         StubURLProtocol.responseData = Data()
         StubURLProtocol.statusCode = 200
         StubURLProtocol.lastRequestBody = nil
+        StubURLProtocol.lastSecretHeader = nil
         super.tearDown()
     }
 
@@ -61,10 +65,11 @@ final class ExtractionServiceTests: XCTestCase {
         return URLSession(configuration: config)
     }
 
-    func testPostsAndDecodesResults() async throws {
+    func testPostsJSONBodyWithSecretHeaderAndDecodesResults() async throws {
         StubURLProtocol.statusCode = 200
         StubURLProtocol.responseData = Data("""
         {
+          "ok": true,
           "results": [
             {
               "event_type": "vaccination",
@@ -77,24 +82,40 @@ final class ExtractionServiceTests: XCTestCase {
         """.utf8)
 
         let service = URLSessionExtractionService(
-            config: ExtractionConfig(endpoint: URL(string: "https://example.com/api/extract")!),
+            config: ExtractionConfig(
+                endpoint: URL(string: "https://example.com/api/extract")!,
+                secret: "extract-secret-123"
+            ),
             session: makeSession()
         )
 
-        let results = try await service.extract(fileData: Data("pdfbytes".utf8), mimeType: "application/pdf")
+        let results = try await service.extract(
+            fileData: Data("pdfbytes".utf8),
+            mimeType: "application/pdf",
+            fileName: "rabies.pdf",
+            note: "from vet",
+            date: "2026-03-01"
+        )
 
         XCTAssertEqual(results.count, 1)
         XCTAssertEqual(results.first?.eventType, .vaccination)
-        XCTAssertNotNil(StubURLProtocol.lastRequestBody)
-        let bodyString = String(decoding: StubURLProtocol.lastRequestBody ?? Data(), as: UTF8.self)
-        XCTAssertTrue(bodyString.contains("application/pdf"))
+        XCTAssertEqual(StubURLProtocol.lastSecretHeader, "extract-secret-123")
+
+        let body = StubURLProtocol.lastRequestBody ?? Data()
+        let json = try JSONSerialization.jsonObject(with: body) as? [String: Any]
+        XCTAssertEqual(json?["mimeType"] as? String, "application/pdf")
+        XCTAssertEqual(json?["fileName"] as? String, "rabies.pdf")
+        XCTAssertEqual(json?["note"] as? String, "from vet")
+        XCTAssertEqual(json?["date"] as? String, "2026-03-01")
+        // content is base64 of the file bytes
+        XCTAssertEqual(json?["content"] as? String, Data("pdfbytes".utf8).base64EncodedString())
     }
 
     func testThrowsOnNon200() async {
         StubURLProtocol.statusCode = 500
         StubURLProtocol.responseData = Data("{}".utf8)
         let service = URLSessionExtractionService(
-            config: ExtractionConfig(endpoint: URL(string: "https://example.com/api/extract")!),
+            config: ExtractionConfig(endpoint: URL(string: "https://example.com/api/extract")!, secret: "s"),
             session: makeSession()
         )
         do {
@@ -130,7 +151,7 @@ final class ExtractionServiceTests: XCTestCase {
         { "results": [] }
         """.utf8)
         let service = URLSessionExtractionService(
-            config: ExtractionConfig(endpoint: URL(string: "https://example.com/api/extract")!),
+            config: ExtractionConfig(endpoint: URL(string: "https://example.com/api/extract")!, secret: "s"),
             session: makeSession()
         )
         do {

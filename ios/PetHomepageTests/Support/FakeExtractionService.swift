@@ -9,6 +9,9 @@ final class FakeExtractionService: ExtractionService {
     var errorToThrow: Error?
     private(set) var lastFileData: Data?
     private(set) var lastMimeType: String?
+    private(set) var lastFileName: String?
+    private(set) var lastNote: String?
+    private(set) var lastDate: String?
     private(set) var callCount = 0
 
     init(results: [ExtractionResult] = [], errorToThrow: Error? = nil) {
@@ -16,10 +19,19 @@ final class FakeExtractionService: ExtractionService {
         self.errorToThrow = errorToThrow
     }
 
-    func extract(fileData: Data, mimeType: String) async throws -> [ExtractionResult] {
+    func extract(
+        fileData: Data,
+        mimeType: String,
+        fileName: String,
+        note: String?,
+        date: String?
+    ) async throws -> [ExtractionResult] {
         callCount += 1
         lastFileData = fileData
         lastMimeType = mimeType
+        lastFileName = fileName
+        lastNote = note
+        lastDate = date
         if let errorToThrow { throw errorToThrow }
         return results
     }

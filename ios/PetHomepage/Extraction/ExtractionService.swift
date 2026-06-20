@@ -1,10 +1,11 @@
 // ios/PetHomepage/Extraction/ExtractionService.swift
 import Foundation
 
-/// Where the AI extraction endpoint lives. The server `/api/extract` is DEFERRED —
-/// this client is built entirely against the protocol below (tests use a fake).
+/// Where the AI extraction endpoint lives, plus the shared secret the route requires.
+/// `secret` is sent as the `x-extract-secret` header; nil/empty omits it (the route 401s).
 struct ExtractionConfig {
     let endpoint: URL
+    let secret: String?
 }
 
 enum ExtractionError: Error, Equatable {
@@ -16,10 +17,25 @@ enum ExtractionError: Error, Equatable {
 /// returns the structured events Claude parsed out. Injected everywhere so tests
 /// never hit the network or a real Claude.
 protocol ExtractionService {
-    func extract(fileData: Data, mimeType: String) async throws -> [ExtractionResult]
+    func extract(
+        fileData: Data,
+        mimeType: String,
+        fileName: String,
+        note: String?,
+        date: String?
+    ) async throws -> [ExtractionResult]
 }
 
-/// Production adapter: POSTs multipart/form-data to a configurable URL.
+extension ExtractionService {
+    /// Convenience: keep existing call sites working with sensible defaults.
+    func extract(fileData: Data, mimeType: String) async throws -> [ExtractionResult] {
+        try await extract(fileData: fileData, mimeType: mimeType,
+                          fileName: "upload", note: nil, date: nil)
+    }
+}
+
+/// Production adapter: POSTs JSON to a configurable URL, matching the /api/extract
+/// route's ExtractRequestSchema: { fileName, mimeType, content (base64), note?, date? }.
 /// The ONLY ExtractionService that touches URLSession.
 final class URLSessionExtractionService: ExtractionService {
     private let config: ExtractionConfig
@@ -30,12 +46,29 @@ final class URLSessionExtractionService: ExtractionService {
         self.session = session
     }
 
-    func extract(fileData: Data, mimeType: String) async throws -> [ExtractionResult] {
-        let boundary = "Boundary-\(UUID().uuidString)"
+    func extract(
+        fileData: Data,
+        mimeType: String,
+        fileName: String,
+        note: String?,
+        date: String?
+    ) async throws -> [ExtractionResult] {
         var request = URLRequest(url: config.endpoint)
         request.httpMethod = "POST"
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        request.httpBody = Self.multipartBody(fileData: fileData, mimeType: mimeType, boundary: boundary)
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let secret = config.secret, !secret.isEmpty {
+            request.setValue(secret, forHTTPHeaderField: "x-extract-secret")
+        }
+
+        // Matches lib/schemas/extract-request.ts: { fileName, mimeType, content(base64), note?, date? }
+        var payload: [String: Any] = [
+            "fileName": fileName,
+            "mimeType": mimeType,
+            "content": fileData.base64EncodedString(),
+        ]
+        if let note { payload["note"] = note }
+        if let date { payload["date"] = date }
+        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
 
         let (data, response) = try await session.data(for: request)
         if let http = response as? HTTPURLResponse, http.statusCode != 200 {
@@ -44,23 +77,5 @@ final class URLSessionExtractionService: ExtractionService {
         let decoded = try ExtractionResult.decoder.decode(ExtractionResponse.self, from: data)
         if decoded.results.isEmpty { throw ExtractionError.emptyResults }
         return decoded.results
-    }
-
-    private static func multipartBody(fileData: Data, mimeType: String, boundary: String) -> Data {
-        var body = Data()
-        func append(_ string: String) { body.append(Data(string.utf8)) }
-
-        append("--\(boundary)\r\n")
-        append("Content-Disposition: form-data; name=\"mimeType\"\r\n\r\n")
-        append("\(mimeType)\r\n")
-
-        append("--\(boundary)\r\n")
-        append("Content-Disposition: form-data; name=\"file\"; filename=\"upload\"\r\n")
-        append("Content-Type: \(mimeType)\r\n\r\n")
-        body.append(fileData)
-        append("\r\n")
-
-        append("--\(boundary)--\r\n")
-        return body
     }
 }
