@@ -89,4 +89,19 @@ final class MedicationsListViewModelTests: XCTestCase {
 
         XCTAssertTrue(vm.rows.isEmpty)
     }
+
+    func testHasAnyRefillDueSoonReflectsRows() throws {
+        let soon = calendar.date(byAdding: .day, value: 3, to: Date())!
+        let far = calendar.date(byAdding: .day, value: 30, to: Date())!
+        _ = try makeMed("Apoquel", refillDueAt: far)
+        let vm = makeVM()
+        try vm.load()
+
+        XCTAssertFalse(vm.hasAnyRefillDueSoon)
+
+        _ = try makeMed("Zyrtec", refillDueAt: soon)
+        try vm.load()
+
+        XCTAssertTrue(vm.hasAnyRefillDueSoon)
+    }
 }
