@@ -15,6 +15,20 @@ export default defineSchema({
     updatedAt:     v.number(),
   }).index('by_user', ['userId']),
 
+  // Opaque per-user capability tokens for the iOS mirror push (Approach B). The raw
+  // token is shown to the dashboard user once and stored only on the device Keychain;
+  // we persist SHA-256(MIRROR_TOKEN_PEPPER + rawToken). The /mirror/push httpAction looks
+  // a token up by hash and resolves the userId — it never uses ctx.auth (opaque, not a JWT).
+  mirrorTokens: defineTable({
+    userId:    v.id('users'),
+    tokenHash: v.string(),          // SHA-256(pepper + rawToken), hex
+    label:     v.optional(v.string()),
+    createdAt: v.number(),
+    revokedAt: v.optional(v.number()),
+  })
+    .index('by_token_hash', ['tokenHash'])
+    .index('by_user', ['userId']),
+
   pets: defineTable({
     userId:          v.string(),              // Convex auth tokenIdentifier
     name:            v.string(),
