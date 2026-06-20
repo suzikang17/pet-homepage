@@ -101,6 +101,7 @@ struct ContentView: View {
             SettingsView(model: settingsViewModel)
                 .tabItem { Label("Settings", systemImage: "gearshape") }
         }
+        .tint(Theme.primary)
     }
 }
 
