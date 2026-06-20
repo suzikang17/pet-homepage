@@ -62,6 +62,11 @@ final class MedicationEditViewModel {
                              refillDueAt: refill)
             medication = existing
         } else {
+            // endedAt is passed atomically into create() — a single context.save().
+            // Never use a separate store.update() for endedAt after create(): a crash
+            // between the two saves would persist a record with endedAt=nil even when
+            // hasEnded=true (the bug introduced in 180f092, fixed here in the green
+            // phase of the Task 5 TDD remediation pair).
             medication = try store.create(drugName: drugName,
                                           dosage: dosage,
                                           frequency: frequency,
