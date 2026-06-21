@@ -18,7 +18,7 @@ export default function SignUpPage() {
     data.set('flow', 'signUp')
     try {
       await signIn('password', data)
-      router.replace('/onboarding')
+      router.replace('/dashboard')
     } catch (err: any) {
       setError(err?.message ?? 'Could not create account.')
       setLoading(false)
