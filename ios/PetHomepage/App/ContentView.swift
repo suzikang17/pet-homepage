@@ -78,22 +78,27 @@ struct ContentView: View {
             documentNames: []
         )
 
+        // The unified read stream + everything its rows need to open each record's editor.
+        let timelineServices = TimelineServices(
+            vaccinationStore: vaccinationStore,
+            vetVisitStore: vetVisitStore,
+            medicationStore: medicationStore,
+            healthMarkerStore: healthMarkerStore,
+            symptomEpisodeStore: symptomEpisodeStore,
+            symptomEntryStore: symptomEntryStore,
+            recommendationStore: recommendationStore,
+            reminderScheduler: reminderScheduler,
+            dueScheduler: dueScheduler,
+            cadenceMonths: vetCadenceMonths
+        )
+
         return TabView {
             PetProfileView(store: petStore, settings: settingsViewModel,
-                           extractionService: extractionService, ingestionService: ingestionService)
-                .tabItem { Label("Profile", systemImage: "pawprint") }
-            MedicationsListView(medicationStore: medicationStore,
-                                doseLogStore: doseLogStore,
-                                reminderScheduler: reminderScheduler)
-                .tabItem { Label("Meds", systemImage: "pills") }
-            VaccinationsListView(store: vaccinationStore,
-                                 dueScheduler: dueScheduler)
-                .tabItem { Label("Vaccines", systemImage: "syringe") }
-            VetVisitsListView(store: vetVisitStore,
-                              recommendationStore: recommendationStore,
-                              dueScheduler: dueScheduler,
-                              cadenceMonths: vetCadenceMonths)
-                .tabItem { Label("Vet", systemImage: "stethoscope") }
+                           extractionService: extractionService, ingestionService: ingestionService,
+                           timelineServices: timelineServices)
+                .tabItem { Label("Home", systemImage: "house") }
+            TimelineView(services: timelineServices)
+                .tabItem { Label("Timeline", systemImage: "calendar") }
             HealthTabView(healthMarkerStore: healthMarkerStore,
                           symptomEpisodeStore: symptomEpisodeStore,
                           symptomEntryStore: symptomEntryStore)
