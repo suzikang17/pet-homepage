@@ -33,6 +33,22 @@ It was setup, not magic. Seven things stacked up:
 6. **Permissive execution** — tool calls ran without per-call approval. On a default "ask every time" mode, autonomy stalls constantly.
 7. **Durable state** — per-task git commits as a recovery ledger; specs/plans on disk; resumable workflows. An hour of work survived context limits.
 
+## The flow
+
+```mermaid
+flowchart TD
+  U["⌨ you say &quot;ultracode&quot;"] --> P["Brainstorm → Spec → Plan<br/>superpowers · Opus"]
+  P --> A
+  subgraph PH["Per phase × 6 — one background Workflow each, run in sequence"]
+    direction TB
+    A["① Plan ⟳ Critic — Opus, until clean"] --> B["② per task, sequential (shared git tree):<br/>✕ failing test → implement → ✓ xcodebuild test → git commit"]
+    B --> C["③ Reviewer (adversarial) ⟳ fix-loop — Sonnet"]
+    C --> D["④ Final whole-phase review — Opus"]
+  end
+  PH --> V["✓ you re-run the full suite — the human checkpoint"]
+  V --> R["📱 working iOS app · 144 tests green"]
+```
+
 ## The per-phase loop
 
 ```
