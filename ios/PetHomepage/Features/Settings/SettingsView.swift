@@ -5,6 +5,10 @@ struct SettingsView: View {
     @State private var model: SettingsViewModel
     @State private var syncError: String?
 
+    // "Scan a record" → /api/extract config (read by ContentView when building the service).
+    @AppStorage("extractEndpoint") private var extractEndpoint = ""
+    @AppStorage("extractSecret") private var extractSecret = ""
+
     init(model: SettingsViewModel) {
         _model = State(initialValue: model)
     }
@@ -50,6 +54,26 @@ struct SettingsView: View {
                             if let syncError {
                                 Text(syncError).font(.footnote).foregroundStyle(Theme.danger)
                             }
+                        }
+                    }
+                    .padding(.horizontal, 18)
+
+                    BrandCard {
+                        VStack(alignment: .leading, spacing: 14) {
+                            BrandCardTitle("AI record extraction")
+                            field {
+                                TextField("Endpoint URL", text: $extractEndpoint,
+                                          prompt: Text("https://…/api/extract"))
+                                    .textInputAutocapitalization(.never)
+                                    .autocorrectionDisabled()
+                                    .keyboardType(.URL)
+                            }
+                            field {
+                                SecureField("Extract secret", text: $extractSecret,
+                                            prompt: Text("x-extract-secret"))
+                            }
+                            Text("Powers “Scan a record.” Point this at your deployed /api/extract and paste its EXTRACT_SECRET.")
+                                .font(.footnote).foregroundStyle(Theme.inkSoft)
                         }
                     }
                     .padding(.horizontal, 18)

@@ -51,26 +51,25 @@ struct ContentView: View {
             service: mirrorService,
             settings: mirrorSettings
         )
-        // DEFERRED (Task 7, Step 5): The extraction UI (RecordUploadView / RecordUploadViewModel)
-        // is not yet wired here — no production code path creates a URLSessionExtractionService
-        // with a `secret:` value, which means the x-extract-secret header never reaches
-        // /api/extract in a real run. When the extraction tab/sheet is wired, construct:
-        //
-        //   let extractSecret = UserDefaults.standard.string(forKey: "extractSecret") ?? ""
-        //   let extractionService = URLSessionExtractionService(
-        //       config: ExtractionConfig(
-        //           endpoint: URL(string: "https://<host>/api/extract")!,
-        //           secret: extractSecret.isEmpty ? nil : extractSecret
-        //       )
-        //   )
-        //
-        // and inject it into RecordUploadView. Until then the build links correctly because
-        // RecordUploadView is compiled (it takes an injected ExtractionService) but is simply
-        // not presented from any tab.
-
-        let documentSharing = DocumentSharing(
-            documentStore: DocumentStore.iCloudDrive()
-                ?? DocumentStore(baseURL: FileManager.default.temporaryDirectory)
+        // AI record extraction: the "Scan a record" sheet picks a PDF/photo → /api/extract
+        // (Claude) → writes the parsed records. Endpoint + secret are configured in Settings
+        // (UserDefaults); a blank endpoint just means the upload errors until it's set.
+        let documentStore = DocumentStore.iCloudDrive()
+            ?? DocumentStore(baseURL: FileManager.default.temporaryDirectory)
+        let documentSharing = DocumentSharing(documentStore: documentStore)
+        let ingestionService = RecordIngestionService(
+            vaccinationStore: vaccinationStore,
+            vetVisitStore: vetVisitStore,
+            medicationStore: medicationStore,
+            documentStore: documentStore
+        )
+        let extractEndpoint = UserDefaults.standard.string(forKey: "extractEndpoint") ?? ""
+        let extractSecret = UserDefaults.standard.string(forKey: "extractSecret") ?? ""
+        let extractionService = URLSessionExtractionService(
+            config: ExtractionConfig(
+                endpoint: URL(string: extractEndpoint) ?? URL(string: "https://example.invalid/api/extract")!,
+                secret: extractSecret.isEmpty ? nil : extractSecret
+            )
         )
         let settingsViewModel = SettingsViewModel(
             settings: mirrorSettings,
@@ -80,7 +79,8 @@ struct ContentView: View {
         )
 
         return TabView {
-            PetProfileView(store: petStore, settings: settingsViewModel)
+            PetProfileView(store: petStore, settings: settingsViewModel,
+                           extractionService: extractionService, ingestionService: ingestionService)
                 .tabItem { Label("Profile", systemImage: "pawprint") }
             MedicationsListView(medicationStore: medicationStore,
                                 doseLogStore: doseLogStore,
