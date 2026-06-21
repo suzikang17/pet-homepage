@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 928" role="img" aria-label="Flow of the autonomous build" font-family="system-ui, sans-serif">
+  <defs>
+    <marker id="fa" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#1b1830"/></marker>
+    <marker id="fc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#ff6a4d"/></marker>
+    <linearGradient id="gi" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5b4be8"/><stop offset="1" stop-color="#7b5cf0"/></linearGradient>
+  </defs>
+  <style>
+    .bx{fill:#fff;stroke:#d9d3c6;stroke-width:1.4}
+    .dec{fill:#fff;stroke:#ff6a4d;stroke-width:1.7}
+    .tx{fill:#1b1830;font-size:14px;font-weight:700}
+    .sub{fill:#6c6781;font-size:11px}
+    .fwd{stroke:#1b1830;stroke-width:1.8;fill:none;marker-end:url(#fa)}
+    .lp{stroke:#ff6a4d;stroke-width:1.6;fill:none;stroke-dasharray:5 4;marker-end:url(#fc)}
+    .yes{fill:#1aa179;font-size:11px;font-weight:800}
+    .no{fill:#ff6a4d;font-size:11px;font-weight:800}
+  </style>
+  <rect width="700" height="928" fill="#f7f4ee"/>
+
+  <rect x="250" y="16" width="200" height="42" rx="21" fill="url(#gi)"/>
+  <text x="350" y="42" text-anchor="middle" fill="#fff" font-size="14" font-weight="800">⌨  you say “ultracode”</text>
+  <path class="fwd" d="M350 58 L350 80"/>
+
+  <rect class="bx" x="190" y="80" width="320" height="54" rx="13"/>
+  <text class="tx" x="350" y="104" text-anchor="middle">Brainstorm → Spec → Plan</text>
+  <text class="sub" x="350" y="122" text-anchor="middle">superpowers skills</text>
+  <rect x="438" y="89" width="50" height="18" rx="9" fill="#5b4be814"/><text x="463" y="102" text-anchor="middle" fill="#5b4be8" font-size="10" font-weight="800">Opus</text>
+  <path class="fwd" d="M350 134 L350 158"/>
+
+  <rect x="44" y="158" width="612" height="566" rx="20" fill="#fffdf9" stroke="#e0c9bf" stroke-width="1.4"/>
+  <text x="66" y="184" fill="#ff6a4d" font-size="11.5" font-weight="800">ONE BACKGROUND WORKFLOW · repeats per phase ×6</text>
+
+  <rect class="bx" x="208" y="198" width="334" height="46" rx="12"/>
+  <text class="tx" x="228" y="226">① Plan the phase</text>
+  <rect x="476" y="211" width="50" height="18" rx="9" fill="#5b4be814"/><text x="501" y="224" text-anchor="middle" fill="#5b4be8" font-size="10" font-weight="800">Opus</text>
+  <path class="fwd" d="M375 244 L375 264"/>
+
+  <rect class="dec" x="208" y="264" width="334" height="42" rx="12"/>
+  <text class="tx" x="375" y="290" text-anchor="middle">Critic: plan clean &amp; complete?</text>
+  <path class="lp" d="M208 285 C 120 285 120 220 206 220"/>
+  <text class="no" x="120" y="252" text-anchor="middle">revise</text>
+  <path class="fwd" d="M375 306 L375 330"/><text class="yes" x="388" y="322">yes</text>
+
+  <rect class="bx" x="208" y="330" width="334" height="46" rx="12"/>
+  <text class="tx" x="228" y="358">② Implement one task</text>
+  <rect x="462" y="343" width="64" height="18" rx="9" fill="#0e9e9414"/><text x="494" y="356" text-anchor="middle" fill="#0e9e94" font-size="10" font-weight="800">Sonnet</text>
+  <path class="fwd" d="M375 376 L375 396"/>
+
+  <rect class="dec" x="208" y="396" width="334" height="42" rx="12"/>
+  <text class="tx" x="375" y="422" text-anchor="middle">xcodebuild test passes?</text>
+  <path class="lp" d="M208 417 C 104 417 104 353 206 353"/>
+  <text class="no" x="104" y="386" text-anchor="middle">fail</text>
+  <path class="fwd" d="M375 438 L375 458"/><text class="yes" x="388" y="454">pass</text>
+
+  <rect class="bx" x="270" y="458" width="210" height="34" rx="11"/>
+  <text x="375" y="480" text-anchor="middle" fill="#1aa179" font-size="13" font-weight="800">✓ git commit</text>
+  <path class="fwd" d="M375 492 L375 512"/>
+
+  <rect class="dec" x="208" y="512" width="334" height="42" rx="12"/>
+  <text class="tx" x="375" y="538" text-anchor="middle">③ Adversarial review clean?</text>
+  <path class="lp" d="M208 533 C 78 533 78 352 206 352"/>
+  <text class="no" x="80" y="470" text-anchor="middle">findings → fix</text>
+  <path class="fwd" d="M375 554 L375 578"/><text class="yes" x="388" y="570">clean</text>
+
+  <rect class="bx" x="208" y="578" width="334" height="46" rx="12"/>
+  <text class="tx" x="228" y="606">④ Final whole-phase review</text>
+  <rect x="476" y="591" width="50" height="18" rx="9" fill="#5b4be814"/><text x="501" y="604" text-anchor="middle" fill="#5b4be8" font-size="10" font-weight="800">Opus</text>
+
+  <text x="375" y="662" text-anchor="middle" class="sub">↻ this whole box runs once per phase — foundation → meds → vet → health → mirror → web</text>
+  <text x="375" y="694" text-anchor="middle" fill="#5b4be8" font-size="12" font-weight="800">11 · 21 · 50 · 23 · 15 · 27 agents</text>
+  <path class="fwd" d="M350 724 L350 748"/>
+
+  <rect x="170" y="748" width="360" height="48" rx="13" fill="#eafaf3" stroke="#1aa179" stroke-width="1.5"/>
+  <text x="350" y="770" text-anchor="middle" fill="#0c7a55" font-size="14" font-weight="800">✓ you re-run the full suite yourself</text>
+  <text x="350" y="787" text-anchor="middle" class="sub">the human checkpoint between phases — keeps it honest</text>
+  <path class="fwd" d="M350 796 L350 820"/>
+
+  <rect x="208" y="820" width="284" height="48" rx="13" fill="url(#gi)"/>
+  <text x="350" y="850" text-anchor="middle" fill="#fff" font-size="15" font-weight="900">📱 working iOS app · 144 tests</text>
+
+  <g transform="translate(0,896)">
+    <rect x="60" y="0" width="13" height="13" rx="3" fill="#5b4be8"/><text x="80" y="11" font-size="11.5" fill="#6c6781">Opus</text>
+    <rect x="138" y="0" width="13" height="13" rx="3" fill="#0e9e94"/><text x="158" y="11" font-size="11.5" fill="#6c6781">Sonnet</text>
+    <rect x="222" y="0" width="13" height="13" rx="3" fill="#fff" stroke="#ff6a4d" stroke-width="1.6"/><text x="242" y="11" font-size="11.5" fill="#6c6781">decision gate</text>
+    <line x1="330" y1="7" x2="356" y2="7" stroke="#ff6a4d" stroke-width="1.6" stroke-dasharray="5 4"/><text x="362" y="11" font-size="11.5" fill="#6c6781">caught &amp; retried</text>
+  </g>
+</svg>

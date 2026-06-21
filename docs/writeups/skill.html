@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Skill — phased-autonomous-build</title>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<nav class="nav"><div class="in">
+  <a class="brand" href="index.html">🐾 Autonomous Build</a>
+  <a href="index.html">Overview</a>
+  <a href="blog.html">Blog</a>
+  <a href="anatomy.html">Anatomy</a>
+  <a class="on" href="skill.html">Skill</a>
+</div></nav>
+
+<main>
+  <div class="eyebrow">Reusable · Claude Code skill</div>
+  <h1>phased-autonomous-build</h1>
+
+  <div class="callout">
+    <p style="margin:.2em 0"><strong>name:</strong> <code>phased-autonomous-build</code></p>
+    <p style="margin:.5em 0 .2em"><strong>description:</strong> Use when building or migrating a large multi-phase software project mostly hands-off — orchestrate each phase as plan → critique → implement/review/fix → verify via the <code>Workflow</code> tool, gated on a REAL automated test signal. Use when the user opts into heavy multi-agent orchestration (e.g. says “ultracode”) AND the project can build/test headlessly from the CLI.</p>
+    <p style="margin:.6em 0 .2em;font-size:14px;color:var(--muted)">Lives at <code>~/.claude/skills/phased-autonomous-build/SKILL.md</code> — global, so it’s available in every project.</p>
+  </div>
+
+  <p>Run a large build as a sequence of self-verifying phases, each orchestrated by the <code>Workflow</code> tool, so a human can step away and come back to working, reviewed code. This is the pattern that produced a 144-test iOS app v1 across ~7 background workflow runs.</p>
+
+  <h2>When to use</h2>
+  <ul>
+    <li>A multi-phase build or migration where phases are <strong>sequential and each is independently shippable</strong> (e.g. an app from scratch, a framework migration, a broad refactor).</li>
+    <li>The user has <strong>explicitly opted into multi-agent orchestration</strong> — the <code>Workflow</code> tool requires this (the “ultracode” keyword, or a direct ask).</li>
+    <li>There is a <strong>real automated pass/fail signal</strong>: a test runner, type checker, or build. Without one, do NOT run autonomously — agents will ship confident, broken code.</li>
+  </ul>
+
+  <h2>Preconditions — verify these FIRST</h2>
+  <ol>
+    <li><strong>Headless toolchain.</strong> You can build AND test from the CLI with zero GUI steps. For iOS this specifically means <strong><code>xcodegen</code></strong> (generate the <code>.xcodeproj</code> from a <code>project.yml</code> — an agent cannot create one through the Xcode GUI), plus <code>xcodebuild</code> + installed simulators. For web: the test/typecheck/lint/build CLIs.</li>
+    <li><strong>Permissive execution.</strong> Tool calls run without per-call approval (or the human is present). Otherwise autonomy stalls on permission prompts every few seconds.</li>
+    <li><strong>A spec and a plan.</strong> Brainstorm and write the design first (<code>superpowers:brainstorming</code> → <code>superpowers:writing-plans</code>). Agents that <em>transcribe-and-verify a precise plan</em> are far more reliable than agents that free-solve.</li>
+  </ol>
+
+  <h2>The per-phase loop (one Workflow script per phase)</h2>
+<pre><code>Plan      → Opus agent writes a bite-sized TDD plan to disk (exact code per step,
+            exact verify commands). A second Opus CRITIC gates it; revise until clean.
+Implement → for each task IN SEQUENCE (they share git state): a cheap implementer
+            writes the failing test → implements → runs the real test → commits.
+Review    → an adversarial reviewer checks each task's diff for spec-compliance AND
+            quality; a fix-loop runs until there are no blocking findings.
+Final     → one Opus pass over the whole-phase diff.</code></pre>
+  <p>Run <strong>one Workflow per phase, in sequence</strong>. Between phases, <strong>re-run the full test suite yourself</strong> before launching the next — that independent checkpoint is what keeps the whole thing honest (it once caught a primary screen that was built + unit-tested but never wired into navigation).</p>
+
+  <h2>Model routing</h2>
+  <p>Planner / critic / final-review = most capable (Opus). Implementers transcribing exact plan code = cheapest tier. Reviewers = mid-tier scaled to diff size. Always set the model explicitly.</p>
+
+  <h2>Hard-won gotchas</h2>
+  <ul>
+    <li><strong>Sequential, not parallel, when sharing git state.</strong> Tasks that build on each other’s commits must <code>await</code> each other; parallel implementers on one working tree conflict.</li>
+    <li><strong><code>args</code> does NOT reliably thread through <code>Workflow({scriptPath})</code>.</strong> Hardcode the phase parameters in the script’s <code>default</code> values and edit them per phase. (A whole phase silently re-ran the <em>wrong</em> work — ~2M wasted tokens — because args fell back to the default.)</li>
+    <li><strong>Pin the simulator OS</strong> (<code>name=iPhone 16,OS=18.2</code>) — a bare device name is ambiguous and rejected by <code>xcodebuild</code>.</li>
+    <li><strong>Exclude tooling/state dirs</strong> (<code>.omc/</code>, <code>.build/</code>, etc.) from the build’s source glob, or you get “Multiple commands produce …” duplicate-resource errors.</li>
+    <li><strong><code>DEVELOPMENT_TEAM</code> is the team ID, not the cert ID.</strong> Put it in <code>project.yml</code> so it survives <code>xcodegen generate</code>; otherwise it reverts every regeneration and the human re-sets it by hand.</li>
+    <li><strong>Trust the build, not the editor.</strong> Background SourceKit/LSP diagnostics (“Cannot find type X in scope”) are false alarms when the generated project isn’t loaded in the IDE — the <code>xcodebuild</code>/<code>tsc</code> result is ground truth.</li>
+    <li><strong>Verify before claiming done.</strong> Re-run the suite; one flaky test-host launch reported <code>TEST FAILED</code> with zero real failures. Don’t trust a single run.</li>
+    <li><strong>CloudKit/offline-first helps testability.</strong> In-memory Core Data + fakes for notifications/network = fast, self-contained, headless tests that don’t need a backend or signed build.</li>
+  </ul>
+
+  <h2>Cost awareness</h2>
+  <p>This is token-heavy — a real v1-app run was ~180 subagents and ~10M subagent tokens. Only run it on explicit opt-in. The single biggest waste is re-running a phase by mistake, so <strong>confirm the script targets the intended phase before launching</strong> (read back the defaults).</p>
+
+  <h2>Cross-references</h2>
+  <ul>
+    <li><code>superpowers:brainstorming</code>, <code>superpowers:writing-plans</code> — produce the spec/plan this consumes</li>
+    <li><code>superpowers:subagent-driven-development</code> — the manual, in-session version of this same loop (use when the user has NOT opted into background orchestration)</li>
+  </ul>
+
+  <p style="margin-top:2em"><a href="anatomy.html">← the anatomy</a> · <a href="index.html">back to overview →</a></p>
+</main>
+
+<footer>Built with Claude Code · pet-homepage 🐾</footer>
+</body>
+</html>

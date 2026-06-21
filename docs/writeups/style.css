@@ -1,0 +1,75 @@
+/* Autonomous-build writeups — shared editorial theme */
+:root{
+  --paper:#f7f4ee; --card:#ffffff; --ink:#1b1830; --muted:#6c6781;
+  --accent:#5b4be8; --accent2:#ff6a4d; --teal:#0e9e94; --ok:#1aa179;
+  --rule:#e7e1d5; --codebg:#1b1830; --codefg:#ece9f7;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font:17px/1.72 system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+
+/* nav */
+.nav{position:sticky;top:0;z-index:20;background:rgba(247,244,238,.82);
+  backdrop-filter:saturate(140%) blur(10px);border-bottom:1px solid var(--rule)}
+.nav .in{max-width:780px;margin:0 auto;display:flex;gap:2px;align-items:center;padding:11px 22px;flex-wrap:wrap}
+.nav .brand{font-weight:800;letter-spacing:-.01em;margin-right:auto;color:var(--ink);border:0}
+.nav a{padding:7px 12px;border-radius:9px;color:var(--muted);font-weight:600;font-size:14.5px;text-decoration:none;border:0}
+.nav a:hover{color:var(--ink);background:#1b18300d}
+.nav a.on{color:var(--accent);background:#5b4be815}
+
+main{max-width:780px;margin:0 auto;padding:54px 22px 40px}
+.eyebrow{font-size:13px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:Georgia,"Iowan Old Style",serif;font-weight:800;font-size:clamp(33px,6vw,52px);
+  line-height:1.06;letter-spacing:-.02em;margin:.18em 0 .35em}
+h2{font-family:Georgia,serif;font-weight:700;font-size:clamp(22px,3.6vw,31px);
+  letter-spacing:-.01em;margin:1.9em 0 .5em;padding-top:.2em}
+h3{font-size:19px;margin:1.6em 0 .35em}
+p{margin:.95em 0}
+.lede{font-size:21px;line-height:1.5;color:var(--muted)}
+a{color:var(--accent);text-decoration:none;border-bottom:1px solid #5b4be840}
+a:hover{border-bottom-color:var(--accent)}
+strong,b{font-weight:700}
+ul,ol{padding-left:1.25em}
+li{margin:.38em 0}
+hr{border:0;border-top:1px solid var(--rule);margin:2.6em 0}
+blockquote{margin:1.5em 0;padding:16px 24px;border-left:4px solid var(--accent);
+  background:var(--card);border-radius:0 14px 14px 0;font-size:18.5px;box-shadow:0 14px 36px -28px var(--ink)}
+blockquote p{margin:.3em 0}
+code{font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:#1b18300f;
+  padding:2px 6px;border-radius:6px;color:#3a3357;word-break:break-word}
+pre{background:var(--codebg);color:var(--codefg);padding:18px 20px;border-radius:14px;
+  overflow:auto;font:13.5px/1.62 ui-monospace,Menlo,monospace;box-shadow:0 18px 44px -30px var(--ink)}
+pre code{background:none;color:inherit;padding:0}
+table{border-collapse:collapse;width:100%;margin:1.3em 0;font-size:15px}
+th,td{border:1px solid var(--rule);padding:9px 13px;text-align:left;vertical-align:top}
+th{background:var(--card);font-weight:700}
+
+.callout{background:var(--card);border:1px solid var(--rule);border-radius:16px;
+  padding:16px 20px;margin:1.4em 0;box-shadow:0 14px 40px -30px var(--ink)}
+.callout.warn{border-left:4px solid var(--accent2)}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:34px 0}
+.stat{background:var(--card);border:1px solid var(--rule);border-radius:18px;padding:20px 10px;text-align:center;
+  box-shadow:0 14px 40px -32px var(--ink)}
+.stat .n{font-family:Georgia,serif;font-weight:800;font-size:clamp(25px,5vw,38px);color:var(--accent);letter-spacing:-.01em}
+.stat .l{font-size:12px;color:var(--muted);margin-top:4px}
+@media(max-width:640px){.stats{grid-template-columns:repeat(2,1fr)}}
+
+.cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:26px 0}
+@media(max-width:680px){.cards{grid-template-columns:1fr}}
+.rc{display:block;background:var(--card);border:1px solid var(--rule);border-radius:18px;padding:20px;
+  box-shadow:0 16px 44px -34px var(--ink);transition:transform .15s,box-shadow .15s;border-bottom:1px solid var(--rule)}
+.rc:hover{transform:translateY(-4px);box-shadow:0 22px 50px -30px var(--accent)}
+.rc .tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--accent);background:#5b4be814;padding:3px 9px;border-radius:999px}
+.rc h3{margin:11px 0 6px}
+.rc p{margin:0 0 10px;color:var(--muted);font-size:15px}
+.rc code{font-size:12px}
+
+.diagram{margin:30px 0}
+.diagram svg{width:100%;height:auto;max-width:680px;display:block;margin:0 auto;
+  font-family:system-ui,sans-serif}
+.cap{text-align:center;color:var(--muted);font-size:13.5px;margin-top:8px}
+
+footer{max-width:780px;margin:0 auto;padding:26px 22px 80px;color:var(--muted);font-size:13px}

@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Anatomy of an Autonomous Build — pet-homepage</title>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<nav class="nav"><div class="in">
+  <a class="brand" href="index.html">🐾 Autonomous Build</a>
+  <a class="on" href="index.html">Overview</a>
+  <a href="blog.html">Blog</a>
+  <a href="anatomy.html">Anatomy</a>
+  <a href="skill.html">Skill</a>
+</div></nav>
+
+<main>
+  <div class="eyebrow">pet-homepage · case study</div>
+  <h1>I said “ultracode it,” and got a working iOS app.</h1>
+  <p class="lede">A native iOS health-tracking app, built mostly hands-off by orchestrated AI agents. Here’s the machine that made the autonomy work — and where it broke.</p>
+
+  <div class="stats" id="stats">
+    <div class="stat"><div class="n" data-to="8">0</div><div class="l">Workflow runs</div></div>
+    <div class="stat"><div class="n" data-to="183">0</div><div class="l">Sub-agents</div></div>
+    <div class="stat"><div class="n" data-to="10.7" data-suffix="M">0</div><div class="l">Agent tokens</div></div>
+    <div class="stat"><div class="n" data-to="144">0</div><div class="l">Tests, green</div></div>
+  </div>
+
+  <h2>The machine, drawn</h2>
+  <p>Every box had to prove itself before the next one ran. The dashed coral arrows are the feedback loops — where bad work got caught and sent back.</p>
+
+  <div class="diagram">
+  <svg viewBox="0 0 700 928" role="img" aria-label="Flow of the autonomous build">
+    <defs>
+      <marker id="fa" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#1b1830"/></marker>
+      <marker id="fc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#ff6a4d"/></marker>
+      <linearGradient id="gi" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5b4be8"/><stop offset="1" stop-color="#7b5cf0"/></linearGradient>
+    </defs>
+    <style>
+      .bx{fill:#fff;stroke:#d9d3c6;stroke-width:1.4}
+      .dec{fill:#fff;stroke:#ff6a4d;stroke-width:1.7}
+      .tx{fill:#1b1830;font-size:14px;font-weight:700}
+      .sub{fill:#6c6781;font-size:11px}
+      .fwd{stroke:#1b1830;stroke-width:1.8;fill:none;marker-end:url(#fa)}
+      .lp{stroke:#ff6a4d;stroke-width:1.6;fill:none;stroke-dasharray:5 4;marker-end:url(#fc)}
+      .yes{fill:#1aa179;font-size:11px;font-weight:800}
+      .no{fill:#ff6a4d;font-size:11px;font-weight:800}
+    </style>
+
+    <!-- trigger -->
+    <rect x="250" y="16" width="200" height="42" rx="21" fill="url(#gi)"/>
+    <text x="350" y="42" text-anchor="middle" fill="#fff" font-size="14" font-weight="800">⌨  you say “ultracode”</text>
+    <path class="fwd" d="M350 58 L350 80"/>
+
+    <!-- spec -->
+    <rect class="bx" x="190" y="80" width="320" height="54" rx="13"/>
+    <text class="tx" x="350" y="104" text-anchor="middle">Brainstorm → Spec → Plan</text>
+    <text class="sub" x="350" y="122" text-anchor="middle">superpowers skills</text>
+    <rect x="438" y="89" width="50" height="18" rx="9" fill="#5b4be814"/><text x="463" y="102" text-anchor="middle" fill="#5b4be8" font-size="10" font-weight="800">Opus</text>
+    <path class="fwd" d="M350 134 L350 158"/>
+
+    <!-- workflow card -->
+    <rect x="44" y="158" width="612" height="566" rx="20" fill="#fffdf9" stroke="#e0c9bf" stroke-width="1.4"/>
+    <text x="66" y="184" fill="#ff6a4d" font-size="11.5" font-weight="800">ONE BACKGROUND WORKFLOW · repeats per phase ×6</text>
+
+    <!-- plan -->
+    <rect class="bx" x="208" y="198" width="334" height="46" rx="12"/>
+    <text class="tx" x="228" y="226">① Plan the phase</text>
+    <rect x="476" y="211" width="50" height="18" rx="9" fill="#5b4be814"/><text x="501" y="224" text-anchor="middle" fill="#5b4be8" font-size="10" font-weight="800">Opus</text>
+    <path class="fwd" d="M375 244 L375 264"/>
+
+    <!-- critic decision -->
+    <rect class="dec" x="208" y="264" width="334" height="42" rx="12"/>
+    <text class="tx" x="375" y="290" text-anchor="middle">Critic: plan clean &amp; complete?</text>
+    <path class="lp" d="M208 285 C 120 285 120 220 206 220"/>
+    <text class="no" x="120" y="252" text-anchor="middle">revise</text>
+    <path class="fwd" d="M375 306 L375 330"/>
+    <text class="yes" x="388" y="322">yes</text>
+
+    <!-- implement -->
+    <rect class="bx" x="208" y="330" width="334" height="46" rx="12"/>
+    <text class="tx" x="228" y="358">② Implement one task</text>
+    <rect x="462" y="343" width="64" height="18" rx="9" fill="#0e9e9414"/><text x="494" y="356" text-anchor="middle" fill="#0e9e94" font-size="10" font-weight="800">Sonnet</text>
+    <path class="fwd" d="M375 376 L375 396"/>
+
+    <!-- test decision -->
+    <rect class="dec" x="208" y="396" width="334" height="42" rx="12"/>
+    <text class="tx" x="375" y="422" text-anchor="middle">xcodebuild test passes?</text>
+    <path class="lp" d="M208 417 C 104 417 104 353 206 353"/>
+    <text class="no" x="104" y="386" text-anchor="middle">fail</text>
+    <path class="fwd" d="M375 438 L375 458"/>
+    <text class="yes" x="388" y="454">pass</text>
+
+    <!-- commit -->
+    <rect class="bx" x="270" y="458" width="210" height="34" rx="11"/>
+    <text x="375" y="480" text-anchor="middle" fill="#1aa179" font-size="13" font-weight="800">✓ git commit</text>
+    <path class="fwd" d="M375 492 L375 512"/>
+
+    <!-- review decision -->
+    <rect class="dec" x="208" y="512" width="334" height="42" rx="12"/>
+    <text class="tx" x="375" y="538" text-anchor="middle">③ Adversarial review clean?</text>
+    <path class="lp" d="M208 533 C 78 533 78 352 206 352"/>
+    <text class="no" x="80" y="470" text-anchor="middle">findings → fix</text>
+    <path class="fwd" d="M375 554 L375 578"/>
+    <text class="yes" x="388" y="570">clean</text>
+
+    <!-- final -->
+    <rect class="bx" x="208" y="578" width="334" height="46" rx="12"/>
+    <text class="tx" x="228" y="606">④ Final whole-phase review</text>
+    <rect x="476" y="591" width="50" height="18" rx="9" fill="#5b4be814"/><text x="501" y="604" text-anchor="middle" fill="#5b4be8" font-size="10" font-weight="800">Opus</text>
+
+    <text x="375" y="662" text-anchor="middle" class="sub">↻ this whole box runs once per phase — foundation → meds → vet → health → mirror → web</text>
+    <text x="375" y="694" text-anchor="middle" fill="#5b4be8" font-size="12" font-weight="800">11 · 21 · 50 · 23 · 15 · 27 agents</text>
+
+    <path class="fwd" d="M350 724 L350 748"/>
+
+    <!-- checkpoint -->
+    <rect x="170" y="748" width="360" height="48" rx="13" fill="#eafaf3" stroke="#1aa179" stroke-width="1.5"/>
+    <text x="350" y="770" text-anchor="middle" fill="#0c7a55" font-size="14" font-weight="800">✓ you re-run the full suite yourself</text>
+    <text x="350" y="787" text-anchor="middle" class="sub">the human checkpoint between phases — keeps it honest</text>
+    <path class="fwd" d="M350 796 L350 820"/>
+
+    <!-- result -->
+    <rect x="208" y="820" width="284" height="48" rx="13" fill="url(#gi)"/>
+    <text x="350" y="850" text-anchor="middle" fill="#fff" font-size="15" font-weight="900">📱 working iOS app · 144 tests</text>
+
+    <!-- legend -->
+    <g transform="translate(0,896)">
+      <rect x="60" y="0" width="13" height="13" rx="3" fill="#5b4be8"/><text x="80" y="11" font-size="11.5" fill="#6c6781">Opus</text>
+      <rect x="138" y="0" width="13" height="13" rx="3" fill="#0e9e94"/><text x="158" y="11" font-size="11.5" fill="#6c6781">Sonnet</text>
+      <rect x="222" y="0" width="13" height="13" rx="3" fill="#fff" stroke="#ff6a4d" stroke-width="1.6"/><text x="242" y="11" font-size="11.5" fill="#6c6781">decision gate</text>
+      <line x1="330" y1="7" x2="356" y2="7" stroke="#ff6a4d" stroke-width="1.6" stroke-dasharray="5 4"/><text x="362" y="11" font-size="11.5" fill="#6c6781">caught &amp; retried</text>
+    </g>
+  </svg>
+  </div>
+
+  <h2>The recipe, in one line</h2>
+  <p>It wasn’t that the AI got smarter. Seven boring things stacked up: <strong>background orchestration</strong> + <strong>a real test signal</strong> + <strong>a headless toolchain</strong> (esp. <code>xcodegen</code>) + <strong>adversarial review</strong> + <strong>planning scaffolding</strong> + <strong>permissive execution</strong> + <strong>durable git-commit state</strong> — with a <strong>human checkpoint</strong> at each phase boundary. The <a href="anatomy.html">anatomy</a> breaks down each one.</p>
+
+  <h2>Go deeper</h2>
+  <div class="cards">
+    <a class="rc" href="anatomy.html"><span class="tag">Reference</span><h3>The Anatomy</h3><p>The structured case study: the recipe, the real numbers, the loop, and every failure mode.</p><code>anatomy.html</code></a>
+    <a class="rc" href="blog.html"><span class="tag">Narrative</span><h3>The Blog</h3><p>The story, publish-ready and honest about the mess: what it was, and what it wasn’t.</p><code>blog.html</code></a>
+    <a class="rc" href="skill.html"><span class="tag">Reusable</span><h3>The Skill</h3><p>A Claude Code skill that codifies the pattern so it triggers on your next big build.</p><code>skill.html</code></a>
+  </div>
+
+  <blockquote><strong>The one-liner:</strong> the test signal <em>is</em> the product. Background orchestration is impressive and multi-agent review is clever, but the thing that turns “AI wrote some code” into “an app that runs on my phone” is that every step had to prove itself against a build that either passed or didn’t. Then go re-run the tests yourself. Always.</blockquote>
+</main>
+
+<footer>Built with Claude Code · pet-homepage · the accent is indigo this time, but the loop is the same 🐾</footer>
+
+<script>
+const fmt=(v,s)=>(Number.isInteger(v)?v:v.toFixed(1))+(s||'');
+const io=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;
+ document.querySelectorAll('.stat .n').forEach(el=>{const to=parseFloat(el.dataset.to),s=el.dataset.suffix||'';let t0=null;
+  const step=ts=>{t0=t0||ts;const k=Math.min(1,(ts-t0)/900);el.textContent=fmt(to*(0.5-Math.cos(Math.PI*k)/2),s);if(k<1)requestAnimationFrame(step);};
+  requestAnimationFrame(step);});io.disconnect();});},{threshold:.4});
+io.observe(document.getElementById('stats'));
+</script>
+</body>
+</html>

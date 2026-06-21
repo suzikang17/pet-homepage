@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>I said “ultracode it” and came back to a working iOS app</title>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<nav class="nav"><div class="in">
+  <a class="brand" href="index.html">🐾 Autonomous Build</a>
+  <a href="index.html">Overview</a>
+  <a class="on" href="blog.html">Blog</a>
+  <a href="anatomy.html">Anatomy</a>
+  <a href="skill.html">Skill</a>
+</div></nav>
+
+<main>
+  <div class="eyebrow">Narrative · the story</div>
+  <h1>I said “ultracode it” and came back to a working iOS app</h1>
+
+  <p>I had a half-built web app for keeping track of my dog’s health — vet visits, vaccinations, when I last gave the flea meds, that kind of thing. Somewhere along the way I changed my mind. I didn’t want a website. I wanted a real iPhone app I could open with my thumb on a walk.</p>
+
+  <p>So I told Claude Code to do it. Not “help me do it.” Do it. I typed one word — <strong>ultracode</strong> — and went to make coffee. An hour or so later there was a native iOS app installed on my phone: profile, meds with reminders, vaccinations, vet visits, weight charts, symptom tracking, the whole thing. 144 passing tests. It even synced to a little web dashboard.</p>
+
+  <p>I want to be honest about what that actually was, because “AI built my app while I made coffee” is the kind of sentence that’s either a lie or a misunderstanding, and this was neither.</p>
+
+  <h2>What actually happened</h2>
+  <p>It didn’t write the app in one heroic shot. It ran it as <strong>phases</strong>, and each phase was a small, self-checking machine:</p>
+  <ol>
+    <li><strong>Plan it.</strong> A high-capability model wrote a detailed, test-first implementation plan — exact code, exact commands — and a <em>second</em> model reviewed that plan and sent it back until it was solid.</li>
+    <li><strong>Build it.</strong> For each task in the plan, a cheaper, faster model wrote a failing test, wrote the code, <strong>ran the real test</strong>, and committed. Not “I think this works” — <code>xcodebuild test</code>, pass or fail, on an actual simulator.</li>
+    <li><strong>Review it.</strong> A separate agent played skeptic on every change, trying to find what was wrong. If it found something blocking, a fixer fixed it and the reviewer looked again.</li>
+    <li><strong>Review it again.</strong> At the end of each phase, the most capable model read the entire diff and gave a verdict.</li>
+  </ol>
+  <p>Then it did that five times — foundation, meds, vet records, health tracking, the desktop sync — each phase building on the last. Between phases, <strong>the tests got re-run from scratch</strong> before the next one started. That checkpoint mattered: one review caught a screen that was fully built and unit-tested but accidentally never linked into the app’s navigation. You’d never have found that from “all tests pass.”</p>
+
+  <h2>The part nobody tells you</h2>
+  <p>The reason this worked isn’t that the AI got smarter. It’s that a bunch of boring infrastructure lined up:</p>
+  <ul>
+    <li>A way to <strong>run work in the background</strong> and get pinged when it’s done (so it could grind while I was AFK).</li>
+    <li>A <strong>real pass/fail signal</strong> — tests, type-checks, a compiler. This is the whole ballgame. Without it, an AI will hand you beautiful, confident, broken code.</li>
+    <li>A <strong>headless toolchain.</strong> The unsung hero here was a tool called <code>xcodegen</code>, which lets you generate an Xcode project from a text file. An AI agent can’t click through Xcode’s “New Project” wizard — but it can write a config file. That one tool is the difference between “possible” and “impossible.”</li>
+    <li><strong>Adversarial review</strong> between agents, so mistakes got caught by a different agent instead of shipped.</li>
+    <li>A <strong>plan written first</strong>, so the builders were transcribing-and-checking, not improvising.</li>
+    <li>And honestly: <strong>permission to just run.</strong> I’d set it up so it didn’t stop to ask me before every command. On a normal “approve each step” setup, none of this happens — it just stalls.</li>
+  </ul>
+  <p>By the numbers: about <strong>180 sub-agents</strong> and <strong>~10 million tokens</strong> of orchestrated work. It’s not cheap, and it shouldn’t run unless you ask for it.</p>
+
+  <h2>It wasn’t clean</h2>
+  <p>I don’t want to oversell it. The “autonomous” runs needed a babysitter at the seams:</p>
+  <ul>
+    <li>One run <strong>silently rebuilt the wrong phase</strong> because of a parameter-passing bug, burning ~2M tokens on nothing.</li>
+    <li>A test flaked and screamed <code>FAILED</code> with zero actual failures; re-running it was fine.</li>
+    <li>It put the wrong Apple signing ID in the config and I had to keep fixing it by hand until we found the real bug.</li>
+    <li>A stray tooling folder broke the build entirely.</li>
+  </ul>
+  <p>None of that got fixed by magic. It got fixed by <strong>re-running the tests and looking.</strong> The autonomy was real, but it was <em>bounded</em> — it worked because there was a tight loop of “make a change, prove it with a test, have another agent check it,” with me sanity-checking at the phase lines.</p>
+
+  <h2>The takeaway</h2>
+  <p>If you remember one thing: <strong>the test signal is the product.</strong> The orchestration is impressive, the multi-agent review is clever, but the thing that turns “AI wrote some code” into “AI wrote an app that runs on my phone” is that every single step had to prove itself against a build that either compiled and passed, or didn’t.</p>
+  <p>Give an AI a true way to check its own work, a headless way to build, and permission to keep going — and you can hand it a phase, walk away, and come back to something real.</p>
+  <blockquote>Then go re-run the tests yourself. Always.</blockquote>
+
+  <p style="margin-top:2em"><a href="index.html">← back to the overview</a> · <a href="anatomy.html">the technical anatomy →</a></p>
+</main>
+
+<footer>Built with Claude Code · pet-homepage 🐾</footer>
+</body>
+</html>

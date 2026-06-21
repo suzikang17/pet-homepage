@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Anatomy of an Autonomous Multi-Agent iOS Build</title>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<nav class="nav"><div class="in">
+  <a class="brand" href="index.html">🐾 Autonomous Build</a>
+  <a href="index.html">Overview</a>
+  <a href="blog.html">Blog</a>
+  <a class="on" href="anatomy.html">Anatomy</a>
+  <a href="skill.html">Skill</a>
+</div></nav>
+
+<main>
+  <div class="eyebrow">Reference · case study</div>
+  <h1>Anatomy of an Autonomous Multi-Agent iOS Build</h1>
+  <p class="lede">How a native iOS app v1 got built mostly hands-off — what made it possible, and where it broke.</p>
+
+  <h2>What got built</h2>
+  <p>A pivot from a half-finished web product to a <strong>native iOS health-tracking app</strong>, taken to a working v1 on a real iPhone:</p>
+  <ul>
+    <li>Offline-first health record (pet profile, medications + dose logs, vaccinations, vet visits + recommendations, weight/health markers, symptom episodes/entries) on <strong>Core Data + CloudKit</strong></li>
+    <li>Local notification reminders, an opt-in desktop <strong>mirror</strong> (Convex token-auth + a Next.js read-only dashboard), and a stateless <strong>Claude extraction</strong> endpoint</li>
+    <li>A full <strong>bold visual redesign</strong> (design system, gradient heroes, 5 clean tabs)</li>
+    <li><strong>~104 Swift files, 144 passing tests</strong>, ~80 commits</li>
+  </ul>
+
+  <h2>The numbers</h2>
+  <table>
+    <tr><td><code>Workflow</code> tool invocations</td><td><strong>8</strong> (7 ran; 1 failed instantly on a script bug)</td></tr>
+    <tr><td>Sub-agents spawned</td><td><strong>183</strong></td></tr>
+    <tr><td>Sub-agent tokens</td><td><strong>~10.7M</strong></td></tr>
+    <tr><td>Tests at v1</td><td>144, green</td></tr>
+    <tr><td>Human role</td><td>spec decisions + a re-run-the-tests checkpoint between phases</td></tr>
+  </table>
+
+  <h2>The flow</h2>
+  <div class="diagram"><img src="flow.svg" alt="Flow: ultracode → spec → per-phase plan/critic/implement/test/review loop → human checkpoint → working app"/></div>
+
+  <h2>The recipe (what actually enabled the autonomy)</h2>
+  <p>It was setup, not magic. Seven things stacked up:</p>
+  <ol>
+    <li><strong>A background orchestration primitive</strong> — the <code>Workflow</code> tool runs a deterministic script <em>detached</em>, spawns fresh subagents, takes schema-validated output so the script can branch, and <strong>re-invokes the main loop on completion</strong>. That’s why an hour of work could happen “by itself.”</li>
+    <li><strong>A real test signal</strong> — <code>xcodebuild test</code> (144 tests), <code>xcodegen</code>, <code>tsc</code>, <code>git</code>. Every task wrote a failing test, implemented, and re-ran it. Ground truth, not vibes. <em>This is the difference between working code and confident garbage.</em></li>
+    <li><strong>A headless toolchain that was already installed</strong> — Xcode, simulators, git, the Convex CLI, and crucially <strong><code>xcodegen</code></strong> (generate the <code>.xcodeproj</code> from <code>project.yml</code> with no GUI). Without it, an agent literally cannot create an Xcode project.</li>
+    <li><strong>Self-correction in the structure</strong> — per-task <strong>adversarial review</strong> + fix-loops, plus an Opus whole-phase review. Other agents caught what implementers missed (e.g. a fully-tested screen never wired into navigation).</li>
+    <li><strong>Planning scaffolding</strong> — brainstorm → spec → a <strong>bite-sized TDD plan with exact code</strong>. Implementers transcribed-and-verified rather than free-solving.</li>
+    <li><strong>Permissive execution</strong> — tool calls ran without per-call approval. On a default “ask every time” mode, autonomy stalls constantly.</li>
+    <li><strong>Durable state</strong> — per-task git commits as a recovery ledger; specs/plans on disk; resumable workflows. An hour of work survived context limits.</li>
+  </ol>
+
+  <h2>The per-phase loop</h2>
+<pre><code>brainstorm → spec → writing-plans (Phase 1 only)
+then per phase, as ONE background Workflow:
+  Plan (Opus)   → bite-sized TDD plan to disk
+  Critic (Opus) → gate the plan; revise until clean
+  Implement     → per task, sequentially: failing test → code → run test → commit
+  Review        → adversarial per-task review + fix loop
+  Final (Opus)  → whole-phase diff review
+between phases → re-run the full suite independently before continuing</code></pre>
+
+  <h2>Where it broke (the honest part)</h2>
+  <p>“Autonomous” still needed babysitting at the seams:</p>
+  <ul>
+    <li><strong>A wasted phase.</strong> <code>args</code> didn’t thread through <code>Workflow({scriptPath})</code>, so a run fell back to its default and <strong>re-built Phase 2 instead of Phase 3</strong> — ~36 agents, ~2M tokens, no new work. Fix: hardcode phase params in the script, don’t pass <code>args</code>.</li>
+    <li><strong>A flaky scare.</strong> One test-host launch reported <code>TEST FAILED</code> with <em>zero</em> real failures (a CloudKit-init hiccup in the simulator). Re-running showed 144/144. Lesson: never trust a single run.</li>
+    <li><strong>Wrong signing Team ID.</strong> The certificate’s parenthesized ID was mistaken for the team ID, so <code>xcodegen</code> reverted it every regeneration and the human re-fixed it by hand each time.</li>
+    <li><strong>A build-breaking artifact.</strong> Tooling <code>.omc/</code> state dirs landed in the source tree and <code>xcodegen</code> globbed them as duplicate resources → “Multiple commands produce.”</li>
+    <li><strong>Editor false alarms.</strong> Constant SourceKit “Cannot find type X” diagnostics — all noise; the real <code>xcodebuild</code> result was green.</li>
+  </ul>
+
+  <h2>The one-line takeaway</h2>
+  <blockquote>Autonomy = <strong>background orchestration + a true test signal + adversarial review + a headless toolchain + permissive execution</strong>, with a <strong>human checkpoint at phase boundaries.</strong> Remove the test signal or the headless toolchain and it falls apart fast.</blockquote>
+
+  <p style="margin-top:2em"><a href="blog.html">← the story</a> · <a href="skill.html">the reusable skill →</a></p>
+</main>
+
+<footer>Built with Claude Code · pet-homepage 🐾</footer>
+</body>
+</html>
