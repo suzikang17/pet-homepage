@@ -37,6 +37,8 @@ targets:
         # scaled into a smaller box). This synthesizes an empty UILaunchScreen so
         # the app draws full-screen at native resolution on every device.
         INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
+        # Required for the "Pair a device" QR scanner (VisionKit DataScannerViewController).
+        INFOPLIST_KEY_NSCameraUsageDescription: "Scan the pairing QR code shown on your dashboard."
   PetHomepageTests:
     type: bundle.unit-test
     platform: iOS

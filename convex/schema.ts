@@ -30,4 +30,16 @@ export default defineSchema({
   })
     .index('by_token_hash', ['tokenHash'])
     .index('by_user', ['userId']),
+
+  // Short-lived device-pairing codes. The dashboard (authed) mints one; the iOS app
+  // claims it (by QR scan or by typing it) at /mirror/pair, which exchanges a valid,
+  // unexpired, unclaimed code for a freshly minted mirrorToken. Single-use + expiring,
+  // so the typable code can be short without weakening the long capability token.
+  pairingCodes: defineTable({
+    code: v.string(), // unambiguous uppercase alnum, no dashes stored
+    userId: v.id('users'),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+    claimedAt: v.optional(v.number()),
+  }).index('by_code', ['code']),
 })

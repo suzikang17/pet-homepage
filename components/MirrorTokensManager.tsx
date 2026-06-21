@@ -1,5 +1,6 @@
 'use client'
 import { useMutation, useQuery } from 'convex/react'
+import { QRCodeSVG } from 'qrcode.react'
 import { useState } from 'react'
 import { api } from '@/convex/_generated/api'
 import type { Id } from '@/convex/_generated/dataModel'
@@ -31,10 +32,13 @@ export function MirrorTokensManager() {
   const tokens = useQuery(api.mirrorTokens.listMirrorTokens)
   const mint = useMutation(api.mirrorTokens.mintMirrorToken)
   const revoke = useMutation(api.mirrorTokens.revokeMirrorToken)
+  const createPair = useMutation(api.pairing.createPairingCode)
 
   const [label, setLabel] = useState('')
   const [freshToken, setFreshToken] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [pair, setPair] = useState<{ code: string; expiresAt: number; endpoint: string } | null>(null)
+  const [pairBusy, setPairBusy] = useState(false)
 
   async function handleMint() {
     setBusy(true)
@@ -46,6 +50,18 @@ export function MirrorTokensManager() {
       setBusy(false)
     }
   }
+
+  async function handlePair() {
+    setPairBusy(true)
+    try {
+      setPair(await createPair())
+    } finally {
+      setPairBusy(false)
+    }
+  }
+
+  // Fall back to the build-time site URL if the server env didn't return one.
+  const pairEndpoint = pair?.endpoint || process.env.NEXT_PUBLIC_CONVEX_SITE_URL || ''
 
   return (
     <section style={{ maxWidth: 720, margin: '0 auto', padding: '0 20px 24px' }}>
@@ -59,7 +75,86 @@ export function MirrorTokensManager() {
           margin: '0 0 10px',
         }}
       >
-        Mobile mirror tokens
+        Pair your phone
+      </h2>
+
+      <div style={box}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+          <p style={{ margin: 0, fontSize: 13, color: '#6b7280' }}>
+            In the app: <strong style={{ color: '#111827' }}>Settings → Pair a device</strong>. Scan the
+            QR, or type the code.
+          </p>
+          <button
+            type="button"
+            onClick={handlePair}
+            disabled={pairBusy}
+            style={{
+              padding: '8px 14px',
+              border: 'none',
+              borderRadius: 8,
+              background: '#4f46e5',
+              color: '#ffffff',
+              fontSize: 14,
+              fontWeight: 600,
+              whiteSpace: 'nowrap',
+              cursor: pairBusy ? 'default' : 'pointer',
+              opacity: pairBusy ? 0.6 : 1,
+            }}
+          >
+            {pairBusy ? 'Generating…' : pair ? 'New code' : 'Pair a device'}
+          </button>
+        </div>
+
+        {pair && (
+          <div
+            style={{
+              marginTop: 14,
+              display: 'flex',
+              gap: 18,
+              alignItems: 'center',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ background: '#fff', padding: 10, border: '1px solid #e5e7eb', borderRadius: 10 }}>
+              <QRCodeSVG value={JSON.stringify({ e: pairEndpoint, c: pair.code })} size={132} />
+            </div>
+            <div>
+              <p style={{ margin: '0 0 4px', fontSize: 12, color: '#6b7280' }}>Or enter this code:</p>
+              <code
+                style={{
+                  fontSize: 28,
+                  fontWeight: 700,
+                  letterSpacing: '0.14em',
+                  color: '#111827',
+                  fontFamily: 'ui-monospace, SFMono-Regular, monospace',
+                }}
+              >
+                {pair.code.slice(0, 4)} {pair.code.slice(4)}
+              </code>
+              <p style={{ margin: '8px 0 0', fontSize: 12, color: '#9ca3af' }}>
+                Expires{' '}
+                {new Date(pair.expiresAt).toLocaleTimeString('en-US', {
+                  hour: 'numeric',
+                  minute: '2-digit',
+                })}{' '}
+                · one-time use
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <h2
+        style={{
+          fontSize: 13,
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          color: '#6b7280',
+          margin: '18px 0 10px',
+        }}
+      >
+        Or paste a token manually
       </h2>
 
       <div style={box}>

@@ -55,6 +55,14 @@ final class SettingsViewModel {
         self.mirrorToken = settings.mirrorToken
     }
 
+    /// Apply a successful device pairing: store the minted token + push endpoint and turn
+    /// mirroring on. Setters write through to MirrorSettings (Keychain for the token).
+    func applyPairing(token: String, endpoint: String) {
+        mirrorEndpoint = endpoint
+        mirrorToken = token
+        isMirroringEnabled = true
+    }
+
     /// Populate `documentRows` with only the candidate documents that actually exist on disk.
     func loadDocuments() {
         documentRows = documentSharing

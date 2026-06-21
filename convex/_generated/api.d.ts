@@ -13,6 +13,7 @@ import type * as crypto from "../crypto.js";
 import type * as http from "../http.js";
 import type * as mirror from "../mirror.js";
 import type * as mirrorTokens from "../mirrorTokens.js";
+import type * as pairing from "../pairing.js";
 
 import type {
   ApiFromModules,
@@ -26,6 +27,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   mirror: typeof mirror;
   mirrorTokens: typeof mirrorTokens;
+  pairing: typeof pairing;
 }>;
 
 /**

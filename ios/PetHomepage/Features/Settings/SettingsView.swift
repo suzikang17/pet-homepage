@@ -4,6 +4,7 @@ import SwiftUI
 struct SettingsView: View {
     @State private var model: SettingsViewModel
     @State private var syncError: String?
+    @State private var showPair = false
 
     // "Scan a record" → /api/extract config (read by ContentView when building the service).
     @AppStorage("extractEndpoint") private var extractEndpoint = ""
@@ -28,6 +29,18 @@ struct SettingsView: View {
                             Text(model.privacyNote)
                                 .font(.footnote).foregroundStyle(Theme.inkSoft)
 
+                            Button {
+                                showPair = true
+                            } label: {
+                                Label("Pair a device", systemImage: "qrcode.viewfinder")
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(PrimaryButtonStyle())
+                            Text("Scan the QR on your dashboard, or type the short code — no copy-paste.")
+                                .font(.footnote).foregroundStyle(Theme.inkSoft)
+
+                            DisclosureGroup("Set up manually") {
+                              VStack(alignment: .leading, spacing: 14) {
                             field {
                                 TextField("Deployment URL", text: $model.mirrorEndpoint,
                                           prompt: Text("https://…convex.site/mirror/push"))
@@ -41,6 +54,9 @@ struct SettingsView: View {
                             }
                             Text("Mint a token on the web dashboard, then paste it here with your deployment URL. The token is stored in the device Keychain.")
                                 .font(.footnote).foregroundStyle(Theme.inkSoft)
+                              }
+                            }
+                            .tint(Theme.primary)
 
                             Button("Sync now") {
                                 Task {
@@ -57,6 +73,11 @@ struct SettingsView: View {
                         }
                     }
                     .padding(.horizontal, 18)
+                    .sheet(isPresented: $showPair) {
+                        PairDeviceView(service: URLSessionPairingService()) { token, endpoint in
+                            model.applyPairing(token: token, endpoint: endpoint)
+                        }
+                    }
 
                     BrandCard {
                         VStack(alignment: .leading, spacing: 14) {

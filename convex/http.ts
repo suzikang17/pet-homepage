@@ -76,4 +76,52 @@ http.route({
   }),
 })
 
+// Device pairing claim. The iOS app (unauthenticated) POSTs a short code it scanned
+// from a QR or typed in; a valid code is exchanged for a freshly minted mirror token
+// plus the push endpoint, so the app fully self-configures. See convex/pairing.ts.
+http.route({
+  path: '/mirror/pair',
+  method: 'POST',
+  handler: httpAction(async (ctx, request) => {
+    if (!process.env.MIRROR_TOKEN_PEPPER) {
+      return new Response(JSON.stringify({ error: 'Server misconfigured' }), {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
+    const code = (body as { code?: unknown }).code
+    if (typeof code !== 'string' || code.trim() === '') {
+      return new Response(JSON.stringify({ error: 'Missing code' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
+    const result = await ctx.runMutation(internal.pairing.claim, { code })
+    if (!result) {
+      return new Response(JSON.stringify({ error: 'Invalid or expired code' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
+    const origin = process.env.CONVEX_SITE_URL ?? ''
+    return new Response(
+      JSON.stringify({ token: result.rawToken, push_endpoint: `${origin}/mirror/push` }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } },
+    )
+  }),
+})
+
 export default http
