@@ -19,6 +19,7 @@ struct PetProfileView: View {
     @State private var latestWeight: HealthMarker?
     @State private var nextVetVisit: Date?
 
+    private let petStore: PetStore
     private let settings: SettingsViewModel?
     private let extractionService: ExtractionService?
     private let ingestionService: RecordIngestionService?
@@ -30,6 +31,7 @@ struct PetProfileView: View {
          ingestionService: RecordIngestionService? = nil,
          timelineServices: TimelineServices? = nil) {
         _model = State(initialValue: PetProfileViewModel(store: store))
+        self.petStore = store
         self.settings = settings
         self.extractionService = extractionService
         self.ingestionService = ingestionService
@@ -43,11 +45,10 @@ struct PetProfileView: View {
             BrandScreen {
                 HeroHeader(
                     title: "Home",
-                    subtitle: "Your pet",
+                    subtitle: model.name.isEmpty ? "Your pet" : model.name,
                     systemImage: speciesIcon,
                     avatar: avatarImage,
                     onTapAvatar: { showPhotoPicker = true },
-                    editableSubtitle: $model.name,
                     onSettings: settings != nil ? { showSettings = true } : nil
                 )
 
@@ -69,9 +70,8 @@ struct PetProfileView: View {
                         .padding(.horizontal, 18)
                 }
             }
-            .onChange(of: model.name) { _, _ in autosave() }
             .sheet(isPresented: $showSettings) {
-                if let settings { SettingsView(model: settings) }
+                if let settings { SettingsView(model: settings, petStore: petStore) }
             }
             .sheet(isPresented: $showUpload, onDismiss: refresh) {
                 if let extractionService, let ingestionService {
@@ -248,10 +248,6 @@ struct PetProfileView: View {
         refresh()
     }
 
-    private func autosave() {
-        guard !model.name.trimmingCharacters(in: .whitespaces).isEmpty else { return }
-        try? model.save()
-    }
 
     private var weightText: String {
         guard let w = latestWeight else { return "—" }

@@ -102,8 +102,7 @@ struct ContentView: View {
                 .tabItem { Label("Timeline", systemImage: "calendar") }
             HealthTabView(healthMarkerStore: healthMarkerStore,
                           symptomEpisodeStore: symptomEpisodeStore,
-                          symptomEntryStore: symptomEntryStore,
-                          petStore: petStore)
+                          symptomEntryStore: symptomEntryStore)
                 .tabItem { Label("Health", systemImage: "heart.text.square") }
         }
         .tint(Theme.primary)
@@ -116,12 +115,10 @@ private struct HealthTabView: View {
     let healthMarkerStore: HealthMarkerStore
     let symptomEpisodeStore: SymptomEpisodeStore
     let symptomEntryStore: SymptomEntryStore
-    let petStore: PetStore
 
     @State private var section: Section = .markers
     @State private var addMarker = false
     @State private var addEpisode = false
-    @State private var species: String = "dog"
 
     private enum Section: String, CaseIterable, Identifiable {
         case markers = "Markers"
@@ -138,19 +135,6 @@ private struct HealthTabView: View {
                     systemImage: "heart.text.square.fill",
                     onAdd: { if section == .markers { addMarker = true } else { addEpisode = true } }
                 )
-                BrandCard {
-                    FieldRow(label: "Species") {
-                        Picker("", selection: $species) {
-                            Text("🐶  Dog").tag("dog")
-                            Text("🐱  Cat").tag("cat")
-                            Text("🐾  Other").tag("other")
-                        }
-                        .labelsHidden()
-                        .tint(Theme.primary)
-                    }
-                }
-                .padding(.horizontal, 18)
-                .onChange(of: species) { _, newValue in try? petStore.setSpecies(newValue) }
                 Picker("Section", selection: $section) {
                     ForEach(Section.allCases) { Text($0.rawValue).tag($0) }
                 }
@@ -169,7 +153,6 @@ private struct HealthTabView: View {
             .background(Theme.bg)
             .ignoresSafeArea(edges: .top)
             .toolbar(.hidden, for: .navigationBar)
-            .onAppear { species = (try? petStore.currentPet()?.species) ?? "dog" }
         }
     }
 }

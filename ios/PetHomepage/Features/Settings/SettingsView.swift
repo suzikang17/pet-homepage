@@ -5,13 +5,18 @@ struct SettingsView: View {
     @State private var model: SettingsViewModel
     @State private var syncError: String?
     @State private var showPair = false
+    @State private var petName = ""
+    @State private var petSpecies = "dog"
+
+    private let petStore: PetStore
 
     // "Scan a record" → /api/extract config (read by ContentView when building the service).
     @AppStorage("extractEndpoint") private var extractEndpoint = ""
     @AppStorage("extractSecret") private var extractSecret = ""
 
-    init(model: SettingsViewModel) {
+    init(model: SettingsViewModel, petStore: PetStore) {
         _model = State(initialValue: model)
+        self.petStore = petStore
     }
 
     var body: some View {
@@ -19,6 +24,37 @@ struct SettingsView: View {
             ScrollView {
                 VStack(spacing: 18) {
                     HeroHeader(title: "Settings", subtitle: "Preferences", systemImage: "gearshape.fill")
+
+                    BrandCard {
+                        VStack(spacing: 0) {
+                            FieldRow(label: "Name") {
+                                TextField("e.g. Sandy", text: $petName)
+                                    .multilineTextAlignment(.trailing)
+                                    .foregroundStyle(Theme.ink)
+                                    .onChange(of: petName) { _, new in
+                                        let trimmed = new.trimmingCharacters(in: .whitespaces)
+                                        if !trimmed.isEmpty { try? petStore.setName(trimmed) }
+                                    }
+                            }
+                            Divider().overlay(Theme.bg)
+                            FieldRow(label: "Species") {
+                                Picker("", selection: $petSpecies) {
+                                    Text("🐶  Dog").tag("dog")
+                                    Text("🐱  Cat").tag("cat")
+                                    Text("🐾  Other").tag("other")
+                                }
+                                .labelsHidden().tint(Theme.primary)
+                                .onChange(of: petSpecies) { _, new in try? petStore.setSpecies(new) }
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 18)
+                    .onAppear {
+                        if let pet = try? petStore.currentPet() {
+                            petName = pet.name
+                            petSpecies = pet.species
+                        }
+                    }
 
                     BrandCard {
                         VStack(alignment: .leading, spacing: 14) {
