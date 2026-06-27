@@ -24,20 +24,22 @@ struct DiaryView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 12) {
-                HeroHeader(
-                    title: "Diary",
-                    subtitle: section.rawValue,
-                    systemImage: "book.fill",
-                    onAdd: section == .entries ? { addEntry = true } : nil
-                )
-                Picker("Section", selection: $section) {
-                    ForEach(DiarySection.allCases) { Text($0.rawValue).tag($0) }
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, 18)
+            ZStack(alignment: .bottomTrailing) {
+                VStack(spacing: 12) {
+                    HeroHeader(
+                        title: "Diary",
+                        subtitle: section.rawValue,
+                        systemImage: "book.fill"
+                    )
+                    Picker("Section", selection: $section) {
+                        ForEach(DiarySection.allCases) { Text($0.rawValue).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal, 18)
 
-                if section == .entries { entriesList } else { photoGrid }
+                    if section == .entries { entriesList } else { photoGrid }
+                }
+                if section == .entries { addButton }
             }
             .background(Theme.bg)
             .ignoresSafeArea(edges: .top)
@@ -50,6 +52,20 @@ struct DiaryView: View {
                 DiaryEntryEditView(store: store, editing: entry)
             }
         }
+    }
+
+    /// Floating add button — bottom-trailing, matching the Timeline.
+    private var addButton: some View {
+        Button { addEntry = true } label: {
+            Image(systemName: "plus")
+                .font(.system(size: 24, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 60, height: 60)
+                .background(Theme.primary, in: Circle())
+                .shadow(color: Theme.primary.opacity(0.35), radius: 12, y: 5)
+        }
+        .padding(.trailing, 22)
+        .padding(.bottom, 24)
     }
 
     @ViewBuilder
