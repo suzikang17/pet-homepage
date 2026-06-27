@@ -20,6 +20,7 @@ struct ContentView: View {
         let symptomEpisodeStore = SymptomEpisodeStore(context: context, petStore: petStore)
         let symptomEntryStore = SymptomEntryStore(context: context)
         let veterinarianStore = VeterinarianStore(context: context, petStore: petStore)
+        let diaryStore = DiaryStore(context: context, petStore: petStore)
 
         // Web integration bridge: build the mirror push client from the user-entered endpoint
         // + token (Settings). Blank endpoint falls back to the build-time Convex .site default.
@@ -103,61 +104,11 @@ struct ContentView: View {
                 .tabItem { Label("Home", systemImage: "house") }
             TimelineView(services: timelineServices)
                 .tabItem { Label("Timeline", systemImage: "calendar") }
-            HealthTabView(healthMarkerStore: healthMarkerStore,
-                          symptomEpisodeStore: symptomEpisodeStore,
-                          symptomEntryStore: symptomEntryStore)
-                .tabItem { Label("Health", systemImage: "heart.text.square") }
+            DiaryView(store: diaryStore)
+                .tabItem { Label("Diary", systemImage: "book") }
             CareTeamView(store: veterinarianStore)
                 .tabItem { Label("Care Team", systemImage: "stethoscope") }
         }
         .tint(Theme.primary)
-    }
-}
-
-/// The Health tab bundles markers and symptoms into a single tab via an inner picker,
-/// keeping the bottom tab bar uncrowded.
-private struct HealthTabView: View {
-    let healthMarkerStore: HealthMarkerStore
-    let symptomEpisodeStore: SymptomEpisodeStore
-    let symptomEntryStore: SymptomEntryStore
-
-    @State private var section: Section = .markers
-    @State private var addMarker = false
-    @State private var addEpisode = false
-
-    private enum Section: String, CaseIterable, Identifiable {
-        case markers = "Markers"
-        case symptoms = "Symptoms"
-        var id: String { rawValue }
-    }
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 14) {
-                HeroHeader(
-                    title: "Health",
-                    subtitle: section.rawValue,
-                    systemImage: "heart.text.square.fill",
-                    onAdd: { if section == .markers { addMarker = true } else { addEpisode = true } }
-                )
-                Picker("Section", selection: $section) {
-                    ForEach(Section.allCases) { Text($0.rawValue).tag($0) }
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, 18)
-
-                switch section {
-                case .markers:
-                    HealthMarkersView(store: healthMarkerStore, showingAdd: $addMarker)
-                case .symptoms:
-                    SymptomsListView(episodeStore: symptomEpisodeStore,
-                                     entryStore: symptomEntryStore,
-                                     showingStart: $addEpisode)
-                }
-            }
-            .background(Theme.bg)
-            .ignoresSafeArea(edges: .top)
-            .toolbar(.hidden, for: .navigationBar)
-        }
     }
 }
