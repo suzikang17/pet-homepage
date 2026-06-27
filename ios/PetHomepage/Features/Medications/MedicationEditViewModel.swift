@@ -14,6 +14,14 @@ final class MedicationEditViewModel {
     var frequencyLabel: String {
         MedFrequency(interval: frequencyInterval, unit: frequencyUnit).label
     }
+
+    /// Default the next reminder to one cadence-interval from now, so it follows the chosen
+    /// frequency rather than defaulting to today. Called when the user changes the frequency.
+    func resetNextReminderFromFrequency(now: Date = Date()) {
+        let component = frequencyUnit.calendarComponent
+        startedAt = Calendar.current.date(byAdding: component, value: max(1, frequencyInterval), to: now) ?? now
+    }
+
     var startedAt: Date = Date()
     var hasRefillDue: Bool = false
     var refillDueAt: Date = Date()

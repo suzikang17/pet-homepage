@@ -28,6 +28,7 @@ struct MedicationEditView: View {
                     }
                     .pickerStyle(.segmented)
                     .listRowSeparator(.hidden)
+                    .onChange(of: model.frequencyUnit) { _, _ in model.resetNextReminderFromFrequency() }
                     Stepper(value: $model.frequencyInterval, in: 1...60) {
                         HStack {
                             Text("Every")
@@ -38,14 +39,15 @@ struct MedicationEditView: View {
                         }
                     }
                     .listRowSeparator(.hidden)
+                    .onChange(of: model.frequencyInterval) { _, _ in model.resetNextReminderFromFrequency() }
                 }
                 Section {
                     DatePicker("Reminder time", selection: $model.scheduleTime, displayedComponents: .hourAndMinute)
-                    DatePicker("Start date", selection: $model.startedAt, displayedComponents: .date)
+                    DatePicker("Next reminder", selection: $model.startedAt, displayedComponents: .date)
                 } header: {
                     Text("Reminder")
                 } footer: {
-                    Text("You’ll be reminded at this time, repeating \(model.frequencyLabel.lowercased()) from the start date.")
+                    Text("You’ll be reminded then, repeating \(model.frequencyLabel.lowercased()).")
                 }
                 Section("Refill") {
                     Toggle("Track refill", isOn: $model.hasRefillDue)

@@ -21,6 +21,18 @@ final class MedicationEditViewModelTests: XCTestCase {
         )
     }
 
+    func testResetNextReminderFromFrequencyAnchorsOneIntervalOut() {
+        let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, editing: nil)
+        vm.frequencyUnit = .day
+        vm.frequencyInterval = 3
+        let now = Date(timeIntervalSince1970: 1_000_000)
+
+        vm.resetNextReminderFromFrequency(now: now)
+
+        let expected = Calendar.current.date(byAdding: .day, value: 3, to: now)!
+        XCTAssertEqual(vm.startedAt, expected)
+    }
+
     func testSaveCreatesMedicationAndSchedulesReminder() async throws {
         let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, editing: nil)
         vm.drugName = "Apoquel"
