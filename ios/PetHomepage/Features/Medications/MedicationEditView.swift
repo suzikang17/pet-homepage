@@ -7,10 +7,12 @@ struct MedicationEditView: View {
 
     init(store: MedicationStore,
          reminderScheduler: MedicationReminderScheduler,
+         veterinarianStore: VeterinarianStore,
          editing: Medication?) {
         _model = State(initialValue: MedicationEditViewModel(
             store: store,
             reminderScheduler: reminderScheduler,
+            veterinarianStore: veterinarianStore,
             editing: editing
         ))
     }
@@ -27,6 +29,7 @@ struct MedicationEditView: View {
                 TextField("Drug name", text: $model.drugName)
                 TextField("Dosage", text: $model.dosage)
             }
+            VetPickerSection(vets: model.availableVets, selected: $model.selectedVet)
             Section("Frequency") {
                 Picker("Repeat by", selection: $model.frequencyUnit) {
                     Text("Days").tag(FrequencyUnit.day)

@@ -72,6 +72,7 @@ struct MedicationDetailView: View {
         .sheet(isPresented: $showEdit, onDismiss: { model.load() }) {
             MedicationEditView(store: services.medicationStore,
                                reminderScheduler: services.reminderScheduler,
+                               veterinarianStore: services.veterinarianStore,
                                editing: med)
         }
         .sheet(isPresented: $showLog, onDismiss: { model.load() }) {

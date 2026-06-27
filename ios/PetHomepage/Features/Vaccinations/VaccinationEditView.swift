@@ -5,8 +5,10 @@ struct VaccinationEditView: View {
     @State private var model: VaccinationEditViewModel
     @Environment(\.dismiss) private var dismiss
 
-    init(store: VaccinationStore, dueScheduler: DueReminderScheduler, editing: Vaccination?) {
-        _model = State(initialValue: VaccinationEditViewModel(store: store, dueScheduler: dueScheduler, editing: editing))
+    init(store: VaccinationStore, dueScheduler: DueReminderScheduler,
+         veterinarianStore: VeterinarianStore, editing: Vaccination?) {
+        _model = State(initialValue: VaccinationEditViewModel(store: store, dueScheduler: dueScheduler,
+                                                              veterinarianStore: veterinarianStore, editing: editing))
     }
 
     var body: some View {
@@ -23,6 +25,7 @@ struct VaccinationEditView: View {
                 TextField("Lot number", text: $model.lotNumber)
                 TextField("Administered by", text: $model.administeredBy)
             }
+            VetPickerSection(vets: model.availableVets, selected: $model.selectedVet)
             Section("Next due") {
                 Toggle("Schedule next due", isOn: $model.hasNextDue)
                 if model.hasNextDue {

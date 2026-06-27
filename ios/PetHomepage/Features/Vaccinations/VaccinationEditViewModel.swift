@@ -10,12 +10,15 @@ final class VaccinationEditViewModel {
     var nextDueAt: Date = Date()
     var lotNumber: String = ""
     var administeredBy: String = ""
+    var availableVets: [Veterinarian] = []
+    var selectedVet: Veterinarian?
 
     private let store: VaccinationStore
     private let dueScheduler: DueReminderScheduler
     private let editing: Vaccination?
 
-    init(store: VaccinationStore, dueScheduler: DueReminderScheduler, editing: Vaccination?) {
+    init(store: VaccinationStore, dueScheduler: DueReminderScheduler,
+         veterinarianStore: VeterinarianStore, editing: Vaccination?) {
         self.store = store
         self.dueScheduler = dueScheduler
         self.editing = editing
@@ -29,6 +32,8 @@ final class VaccinationEditViewModel {
             lotNumber = vax.lotNumber ?? ""
             administeredBy = vax.administeredBy ?? ""
         }
+        availableVets = (try? veterinarianStore.veterinarians()) ?? []
+        selectedVet = editing?.veterinarian
     }
 
     var isValid: Bool {
@@ -49,6 +54,8 @@ final class VaccinationEditViewModel {
             vaccination = try store.create(vaccineName: vaccineName, administeredAt: administeredAt,
                                            nextDueAt: due, lotNumber: lot, administeredBy: by)
         }
+        vaccination.veterinarian = selectedVet
+        try? vaccination.managedObjectContext?.save()
         await dueScheduler.syncVaccination(vaccination)
     }
 }

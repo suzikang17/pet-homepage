@@ -12,13 +12,16 @@ final class VetVisitEditViewModel {
     var treatmentNotes: String = ""
     var hasNextVisit: Bool = false
     var nextVisitDate: Date = Date()
+    var availableVets: [Veterinarian] = []
+    var selectedVet: Veterinarian?
 
     private let store: VetVisitStore
     private let dueScheduler: DueReminderScheduler
     private let cadenceMonths: Int
     private let editing: VetVisit?
 
-    init(store: VetVisitStore, dueScheduler: DueReminderScheduler, cadenceMonths: Int, editing: VetVisit?) {
+    init(store: VetVisitStore, dueScheduler: DueReminderScheduler, cadenceMonths: Int,
+         veterinarianStore: VeterinarianStore, editing: VetVisit?) {
         self.store = store
         self.dueScheduler = dueScheduler
         self.cadenceMonths = cadenceMonths
@@ -35,6 +38,8 @@ final class VetVisitEditViewModel {
                 nextVisitDate = next
             }
         }
+        availableVets = (try? veterinarianStore.veterinarians()) ?? []
+        selectedVet = editing?.veterinarian
     }
 
     var isValid: Bool { true } // occurredAt always set; other fields optional
@@ -43,17 +48,21 @@ final class VetVisitEditViewModel {
 
     func save() async throws {
         let next = hasNextVisit ? nextVisitDate : nil
+        let visit: VetVisit
         if let existing = editing {
             try store.update(existing, occurredAt: occurredAt,
                              clinicName: nilIfEmpty(clinicName), vetName: nilIfEmpty(vetName),
                              reason: nilIfEmpty(reason), diagnosis: nilIfEmpty(diagnosis),
                              treatmentNotes: nilIfEmpty(treatmentNotes), nextVisitDate: next)
+            visit = existing
         } else {
-            try store.create(occurredAt: occurredAt,
+            visit = try store.create(occurredAt: occurredAt,
                              clinicName: nilIfEmpty(clinicName), vetName: nilIfEmpty(vetName),
                              reason: nilIfEmpty(reason), diagnosis: nilIfEmpty(diagnosis),
                              treatmentNotes: nilIfEmpty(treatmentNotes), nextVisitDate: next)
         }
+        visit.veterinarian = selectedVet
+        try? visit.managedObjectContext?.save()
         // Saving a visit changes "most recent visit" → re-sync the cadence reminder.
         let lastVisit = try? store.mostRecentVisitDate()
         await dueScheduler.syncVetCadence(

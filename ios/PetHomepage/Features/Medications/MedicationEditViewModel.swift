@@ -27,6 +27,8 @@ final class MedicationEditViewModel {
     var refillDueAt: Date = Date()
     var hasEnded: Bool = false
     var endedAt: Date = Date()
+    var availableVets: [Veterinarian] = []
+    var selectedVet: Veterinarian?
 
     private let store: MedicationStore
     private let reminderScheduler: MedicationReminderScheduler
@@ -34,6 +36,7 @@ final class MedicationEditViewModel {
 
     init(store: MedicationStore,
          reminderScheduler: MedicationReminderScheduler,
+         veterinarianStore: VeterinarianStore,
          editing: Medication?) {
         self.store = store
         self.reminderScheduler = reminderScheduler
@@ -56,6 +59,8 @@ final class MedicationEditViewModel {
                 endedAt = ended
             }
         }
+        availableVets = (try? veterinarianStore.veterinarians()) ?? []
+        selectedVet = editing?.veterinarian
     }
 
     var isValid: Bool {
@@ -91,6 +96,9 @@ final class MedicationEditViewModel {
                                           endedAt: ended,
                                           refillDueAt: refill)
         }
+
+        medication.veterinarian = selectedVet
+        try? medication.managedObjectContext?.save()
 
         await reminderScheduler.sync(medication)
     }

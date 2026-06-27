@@ -46,6 +46,29 @@ struct SheetHeader: View {
     }
 }
 
+/// A Form section to attach a veterinarian to a record. Shows a hint when the care team is empty.
+struct VetPickerSection: View {
+    let vets: [Veterinarian]
+    @Binding var selected: Veterinarian?
+
+    var body: some View {
+        Section("Veterinarian") {
+            if vets.isEmpty {
+                Text("Add vets in the Care Team tab to attach one.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.inkSoft)
+            } else {
+                Picker("Vet", selection: $selected) {
+                    Text("None").tag(Veterinarian?.none)
+                    ForEach(vets) { vet in
+                        Text(vet.name).tag(Veterinarian?.some(vet))
+                    }
+                }
+            }
+        }
+    }
+}
+
 /// A modal scaffold for the add/edit sheets: a gradient SheetHeader above a cream Form body.
 /// Pass the Form's sections in the trailing `content` builder.
 struct BrandFormSheet<Content: View>: View {

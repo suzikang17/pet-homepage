@@ -80,6 +80,7 @@ final class TimelineViewModelTests: XCTestCase {
             vetVisitStore: vetVisitStore,
             medicationStore: medicationStore,
             doseLogStore: DoseLogStore(context: context),
+            veterinarianStore: VeterinarianStore(context: context, petStore: PetStore(context: context)),
             healthMarkerStore: healthMarkerStore,
             symptomEpisodeStore: symptomEpisodeStore,
             symptomEntryStore: SymptomEntryStore(context: context),

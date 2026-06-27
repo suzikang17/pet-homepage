@@ -5,8 +5,11 @@ struct VetVisitEditView: View {
     @State private var model: VetVisitEditViewModel
     @Environment(\.dismiss) private var dismiss
 
-    init(store: VetVisitStore, dueScheduler: DueReminderScheduler, cadenceMonths: Int, editing: VetVisit?) {
-        _model = State(initialValue: VetVisitEditViewModel(store: store, dueScheduler: dueScheduler, cadenceMonths: cadenceMonths, editing: editing))
+    init(store: VetVisitStore, dueScheduler: DueReminderScheduler, cadenceMonths: Int,
+         veterinarianStore: VeterinarianStore, editing: VetVisit?) {
+        _model = State(initialValue: VetVisitEditViewModel(store: store, dueScheduler: dueScheduler,
+                                                           cadenceMonths: cadenceMonths,
+                                                           veterinarianStore: veterinarianStore, editing: editing))
     }
 
     var body: some View {
@@ -22,6 +25,7 @@ struct VetVisitEditView: View {
                 TextField("Vet", text: $model.vetName)
                 TextField("Reason", text: $model.reason)
             }
+            VetPickerSection(vets: model.availableVets, selected: $model.selectedVet)
             Section("Outcome") {
                 TextField("Diagnosis", text: $model.diagnosis)
                 TextField("Treatment notes", text: $model.treatmentNotes)

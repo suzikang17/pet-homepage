@@ -8,6 +8,7 @@ struct TimelineServices {
     let vetVisitStore: VetVisitStore
     let medicationStore: MedicationStore
     let doseLogStore: DoseLogStore
+    let veterinarianStore: VeterinarianStore
     let healthMarkerStore: HealthMarkerStore
     let symptomEpisodeStore: SymptomEpisodeStore
     let symptomEntryStore: SymptomEntryStore
@@ -179,11 +180,13 @@ struct TimelineView: View {
     private func editor(for item: TimelineItem) -> some View {
         switch item.reference {
         case .vaccine(let v):
-            VaccinationEditView(store: services.vaccinationStore, dueScheduler: services.dueScheduler, editing: v)
+            VaccinationEditView(store: services.vaccinationStore, dueScheduler: services.dueScheduler,
+                                veterinarianStore: services.veterinarianStore, editing: v)
         case .vet(let v):
             VetVisitDetailView(visit: v, recommendationStore: services.recommendationStore)
         case .medication(let m):
-            MedicationEditView(store: services.medicationStore, reminderScheduler: services.reminderScheduler, editing: m)
+            MedicationEditView(store: services.medicationStore, reminderScheduler: services.reminderScheduler,
+                               veterinarianStore: services.veterinarianStore, editing: m)
         case .symptom(let ep):
             EpisodeDetailView(episode: ep, episodeStore: services.symptomEpisodeStore, entryStore: services.symptomEntryStore)
         case .marker:
@@ -195,11 +198,15 @@ struct TimelineView: View {
     private func addEditor(for kind: TimelineKind) -> some View {
         switch kind {
         case .vaccine:
-            VaccinationEditView(store: services.vaccinationStore, dueScheduler: services.dueScheduler, editing: nil)
+            VaccinationEditView(store: services.vaccinationStore, dueScheduler: services.dueScheduler,
+                                veterinarianStore: services.veterinarianStore, editing: nil)
         case .vet:
-            VetVisitEditView(store: services.vetVisitStore, dueScheduler: services.dueScheduler, cadenceMonths: services.cadenceMonths, editing: nil)
+            VetVisitEditView(store: services.vetVisitStore, dueScheduler: services.dueScheduler,
+                             cadenceMonths: services.cadenceMonths,
+                             veterinarianStore: services.veterinarianStore, editing: nil)
         case .medication:
-            MedicationEditView(store: services.medicationStore, reminderScheduler: services.reminderScheduler, editing: nil)
+            MedicationEditView(store: services.medicationStore, reminderScheduler: services.reminderScheduler,
+                               veterinarianStore: services.veterinarianStore, editing: nil)
         case .marker:
             MarkerEditView(store: services.healthMarkerStore)
         case .symptom:

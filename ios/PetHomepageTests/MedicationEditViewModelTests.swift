@@ -8,12 +8,14 @@ final class MedicationEditViewModelTests: XCTestCase {
     private var store: MedicationStore!
     private var fake: FakeNotificationScheduler!
     private var reminderScheduler: MedicationReminderScheduler!
+    private var veterinarianStore: VeterinarianStore!
 
     override func setUpWithError() throws {
         context = PersistenceController(inMemory: true).container.viewContext
         let petStore = PetStore(context: context)
         try petStore.createPet(name: "Sandy", species: "dog")
         store = MedicationStore(context: context, petStore: petStore)
+        veterinarianStore = VeterinarianStore(context: context, petStore: petStore)
         fake = FakeNotificationScheduler()
         reminderScheduler = MedicationReminderScheduler(
             scheduler: fake,
@@ -22,7 +24,7 @@ final class MedicationEditViewModelTests: XCTestCase {
     }
 
     func testResetNextReminderFromFrequencyAnchorsOneIntervalOut() {
-        let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, editing: nil)
+        let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, veterinarianStore: veterinarianStore, editing: nil)
         vm.frequencyUnit = .day
         vm.frequencyInterval = 3
         let now = Date(timeIntervalSince1970: 1_000_000)
@@ -34,7 +36,7 @@ final class MedicationEditViewModelTests: XCTestCase {
     }
 
     func testSaveCreatesMedicationAndSchedulesReminder() async throws {
-        let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, editing: nil)
+        let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, veterinarianStore: veterinarianStore, editing: nil)
         vm.drugName = "Apoquel"
         vm.dosage = "16mg"
         vm.frequencyUnit = .day
@@ -49,7 +51,7 @@ final class MedicationEditViewModelTests: XCTestCase {
     }
 
     func testIsValidRequiresDrugName() {
-        let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, editing: nil)
+        let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, veterinarianStore: veterinarianStore, editing: nil)
         XCTAssertFalse(vm.isValid)
         vm.drugName = "Apoquel"
         XCTAssertTrue(vm.isValid)
@@ -60,7 +62,7 @@ final class MedicationEditViewModelTests: XCTestCase {
         let med = try store.create(drugName: "Zyrtec", dosage: "5mg", frequency: "daily",
                                    scheduleTime: t, startedAt: t, refillDueAt: nil)
 
-        let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, editing: med)
+        let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, veterinarianStore: veterinarianStore, editing: med)
 
         XCTAssertEqual(vm.drugName, "Zyrtec")
         XCTAssertEqual(vm.dosage, "5mg")
@@ -72,7 +74,7 @@ final class MedicationEditViewModelTests: XCTestCase {
         let t = Date(timeIntervalSince1970: 0)
         let med = try store.create(drugName: "Zyrtec", dosage: "5mg", frequency: "daily",
                                    scheduleTime: t, startedAt: t, refillDueAt: nil)
-        let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, editing: med)
+        let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, veterinarianStore: veterinarianStore, editing: med)
         vm.dosage = "10mg"
         vm.hasRefillDue = true
         vm.refillDueAt = Date(timeIntervalSince1970: 86_400)
@@ -85,7 +87,7 @@ final class MedicationEditViewModelTests: XCTestCase {
     }
 
     func testSavingEndedMedicationCancelsReminder() async throws {
-        let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, editing: nil)
+        let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, veterinarianStore: veterinarianStore, editing: nil)
         vm.drugName = "Apoquel"
         vm.hasEnded = true
         vm.endedAt = Date(timeIntervalSince1970: 0) // ended in the past
@@ -102,7 +104,7 @@ final class MedicationEditViewModelTests: XCTestCase {
     /// if the process crashed between the two saves.
     func testSavingEndedMedicationPersistsEndedAtInCoreData() async throws {
         let endedDate = Date(timeIntervalSince1970: 0)
-        let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, editing: nil)
+        let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, veterinarianStore: veterinarianStore, editing: nil)
         vm.drugName = "Apoquel"
         vm.dosage = "16mg"
         vm.frequencyUnit = .day
