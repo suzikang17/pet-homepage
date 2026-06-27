@@ -6,7 +6,7 @@ import Observation
 final class MarkerEditViewModel {
     var markerType: MarkerType = .weight
     var valueText: String = ""
-    var unit: String = "kg"
+    var unit: String = "lb"
     var recordedAt: Date = Date()
 
     private let store: HealthMarkerStore
@@ -18,7 +18,7 @@ final class MarkerEditViewModel {
     /// Unit choices for the current marker type (empty = this type is unit-less).
     var unitOptions: [String] {
         switch markerType {
-        case .weight: ["kg", "lb"]
+        case .weight: ["lb", "kg"]
         case .temperature: ["°C", "°F"]
         case .appetite, .energy, .water, .other: []
         }
