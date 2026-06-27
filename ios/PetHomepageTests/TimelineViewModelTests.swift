@@ -72,4 +72,63 @@ final class TimelineViewModelTests: XCTestCase {
         XCTAssertEqual(due.count, 2) // the 90-day refill is beyond the horizon
         XCTAssertEqual(due.map(\.kind), [.vet, .vaccine]) // 5 days before 20 days
     }
+
+    private func makeServices(reminderScheduler: MedicationReminderScheduler,
+                              dueScheduler: DueReminderScheduler) -> TimelineServices {
+        TimelineServices(
+            vaccinationStore: vaccinationStore,
+            vetVisitStore: vetVisitStore,
+            medicationStore: medicationStore,
+            doseLogStore: DoseLogStore(context: context),
+            healthMarkerStore: healthMarkerStore,
+            symptomEpisodeStore: symptomEpisodeStore,
+            symptomEntryStore: SymptomEntryStore(context: context),
+            recommendationStore: VetRecommendationStore(context: context),
+            reminderScheduler: reminderScheduler,
+            dueScheduler: dueScheduler,
+            cadenceMonths: 6
+        )
+    }
+
+    func testDeleteMedicationRemovesItAndCancelsReminder() async throws {
+        let fake = FakeNotificationScheduler()
+        let reminderScheduler = MedicationReminderScheduler(scheduler: fake)
+        let med = try medicationStore.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily",
+                                             scheduleTime: day(1), startedAt: day(1), endedAt: nil, refillDueAt: nil)
+        await reminderScheduler.sync(med)
+        let before = await fake.pendingIDs(kind: .medication)
+        XCTAssertEqual(before, [med.id])
+
+        let vm = makeVM()
+        vm.load()
+        let item = try XCTUnwrap(vm.items.first { $0.kind == .medication })
+        await vm.delete(item, using: makeServices(
+            reminderScheduler: reminderScheduler,
+            dueScheduler: DueReminderScheduler(scheduler: FakeNotificationScheduler())))
+
+        XCTAssertTrue(vm.items.isEmpty)
+        let after = await fake.pendingIDs(kind: .medication)
+        XCTAssertTrue(after.isEmpty, "reminder should be cancelled on delete")
+    }
+
+    func testDeleteVaccinationRemovesItAndCancelsDueReminder() async throws {
+        let fake = FakeNotificationScheduler()
+        let dueScheduler = DueReminderScheduler(scheduler: fake)
+        let vax = try vaccinationStore.create(vaccineName: "Rabies", administeredAt: day(1),
+                                              nextDueAt: day(400), lotNumber: nil, administeredBy: nil)
+        await dueScheduler.syncVaccination(vax)
+        let before = await fake.pendingIDs(kind: .vaccination)
+        XCTAssertFalse(before.isEmpty)
+
+        let vm = makeVM()
+        vm.load()
+        let item = try XCTUnwrap(vm.items.first { $0.kind == .vaccine })
+        await vm.delete(item, using: makeServices(
+            reminderScheduler: MedicationReminderScheduler(scheduler: FakeNotificationScheduler()),
+            dueScheduler: dueScheduler))
+
+        XCTAssertTrue(vm.items.isEmpty)
+        let after = await fake.pendingIDs(kind: .vaccination)
+        XCTAssertTrue(after.isEmpty, "due reminder should be cancelled on delete")
+    }
 }

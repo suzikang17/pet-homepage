@@ -99,7 +99,7 @@ struct TimelineView: View {
                     .listRowBackground(Theme.bg)
                     .swipeActions(edge: .trailing) {
                         Button(role: .destructive) {
-                            Task { await delete(item) }
+                            Task { await model.delete(item, using: services) }
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }
@@ -163,29 +163,6 @@ struct TimelineView: View {
         return true
     }
 
-    /// Delete a record, cancelling any reminder it owned, then reload.
-    private func delete(_ item: TimelineItem) async {
-        switch item.reference {
-        case .vaccine(let v):
-            await services.dueScheduler.cancelVaccination(v)
-            try? services.vaccinationStore.delete(v)
-        case .vet(let v):
-            try? services.vetVisitStore.delete(v)
-            let last = (try? services.vetVisitStore.mostRecentVisitDate()) ?? nil
-            await services.dueScheduler.syncVetCadence(
-                lastVisit: last,
-                cadence: VetCadence(months: services.cadenceMonths, hour: 9, minute: 0)
-            )
-        case .medication(let m):
-            await services.reminderScheduler.cancel(m)
-            try? services.medicationStore.delete(m)
-        case .marker(let mk):
-            try? services.healthMarkerStore.delete(mk)
-        case .symptom(let ep):
-            try? services.symptomEpisodeStore.delete(ep)
-        }
-        model.load()
-    }
 
     @ViewBuilder
     private func editor(for item: TimelineItem) -> some View {
