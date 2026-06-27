@@ -84,6 +84,12 @@ type Snapshot = {
     website?: string
     notes?: string
   }>
+  diary?: Array<{
+    id: string
+    date: string
+    note?: string
+    photo_count: number
+  }>
 }
 
 function fmt(iso?: string): string {
@@ -182,6 +188,21 @@ export function MirrorDashboard() {
           Last synced {fmt(mirror.updatedAt ? new Date(mirror.updatedAt).toISOString() : undefined)}
         </p>
       </header>
+
+      <Section title="Diary" count={snap.diary?.length ?? 0}>
+        {(snap.diary ?? []).map((e) => (
+          <div key={e.id} style={card()}>
+            <strong>{fmt(e.date)}</strong>
+            {e.photo_count > 0 && (
+              <span style={{ color: '#6b7280' }}>
+                {' '}
+                · {e.photo_count} photo{e.photo_count === 1 ? '' : 's'}
+              </span>
+            )}
+            {e.note && <div style={meta}>{e.note}</div>}
+          </div>
+        ))}
+      </Section>
 
       <Section title="Care team" count={snap.care_team?.length ?? 0}>
         {(snap.care_team ?? []).map((vet) => (

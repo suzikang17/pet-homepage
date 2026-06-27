@@ -66,7 +66,21 @@ final class SnapshotBuilderTests: XCTestCase {
         XCTAssertEqual(snapshot.careTeam.first?.name, "Dr. Ruth")
         XCTAssertEqual(snapshot.careTeam.first?.clinic, "Maple Vet")
         XCTAssertEqual(snapshot.medications.first?.veterinarian, "Dr. Ruth")
-        XCTAssertEqual(snapshot.schemaVersion, 2)
+        XCTAssertEqual(snapshot.schemaVersion, MirrorSnapshot.currentSchemaVersion)
+    }
+
+    func testBuildIncludesDiaryWithPhotoCounts() throws {
+        try petStore.createPet(name: "Sandy", species: "dog")
+        let diaryStore = DiaryStore(context: context, petStore: petStore)
+        let entry = try diaryStore.createEntry(date: Date(timeIntervalSince1970: 1_700_000_000), note: "Beach day")
+        try diaryStore.addPhoto(to: entry, imageData: Data([0x1]))
+
+        let snapshot = try makeBuilder().build()
+
+        XCTAssertEqual(snapshot.diary.count, 1)
+        XCTAssertEqual(snapshot.diary.first?.note, "Beach day")
+        XCTAssertEqual(snapshot.diary.first?.photoCount, 1)
+        XCTAssertEqual(snapshot.schemaVersion, MirrorSnapshot.currentSchemaVersion)
     }
 
     func testBuildCapturesFullRecordWithCorrectCounts() throws {

@@ -21,6 +21,7 @@ final class SnapshotBuilder {
     private let symptomEpisodeStore: SymptomEpisodeStore
     private let symptomEntryStore: SymptomEntryStore
     private let veterinarianStore: VeterinarianStore
+    private let diaryStore: DiaryStore
     private let context: NSManagedObjectContext
     private let now: () -> Date
 
@@ -34,6 +35,7 @@ final class SnapshotBuilder {
          symptomEpisodeStore: SymptomEpisodeStore,
          symptomEntryStore: SymptomEntryStore,
          veterinarianStore: VeterinarianStore? = nil,
+         diaryStore: DiaryStore? = nil,
          now: @escaping () -> Date = { Date() }) {
         self.petStore = petStore
         self.medicationStore = medicationStore
@@ -45,6 +47,7 @@ final class SnapshotBuilder {
         self.symptomEpisodeStore = symptomEpisodeStore
         self.symptomEntryStore = symptomEntryStore
         self.veterinarianStore = veterinarianStore ?? VeterinarianStore(context: petStore.context, petStore: petStore)
+        self.diaryStore = diaryStore ?? DiaryStore(context: petStore.context, petStore: petStore)
         // The pet's managedObjectContext is the shared context every store was built with.
         self.context = petStore.context
         self.now = now
@@ -145,6 +148,10 @@ final class SnapshotBuilder {
                                  email: $0.email, address: $0.address, website: $0.website, notes: $0.notes)
         }
 
+        let diary = try diaryStore.entries().map {
+            DiaryEntrySnapshot(id: $0.id, date: $0.date, note: $0.note, photoCount: $0.photoArray.count)
+        }
+
         return MirrorSnapshot(
             schemaVersion: MirrorSnapshot.currentSchemaVersion,
             generatedAt: now(),
@@ -155,7 +162,8 @@ final class SnapshotBuilder {
             unlinkedRecommendations: unlinkedRecommendations,
             healthMarkers: healthMarkers,
             symptomEpisodes: symptomEpisodes,
-            careTeam: careTeam
+            careTeam: careTeam,
+            diary: diary
         )
     }
 
