@@ -23,7 +23,7 @@ final class SymptomEpisodeStore {
         episode.startedAt = startedAt
         episode.resolvedAt = nil
         episode.status = .active
-        episode.pet = try petStore.currentPet()
+        episode.pet = try petStore.ensurePet()
         try context.save()
         return episode
     }

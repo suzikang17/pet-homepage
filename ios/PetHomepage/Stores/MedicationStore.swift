@@ -28,7 +28,7 @@ final class MedicationStore {
         med.startedAt = startedAt
         med.endedAt = endedAt
         med.refillDueAt = refillDueAt
-        med.pet = try petStore.currentPet()
+        med.pet = try petStore.ensurePet()
         try context.save()
         return med
     }

@@ -23,7 +23,7 @@ final class HealthMarkerStore {
         marker.value = value
         marker.unit = unit
         marker.recordedAt = recordedAt
-        marker.pet = try petStore.currentPet()
+        marker.pet = try petStore.ensurePet()
         try context.save()
         return marker
     }

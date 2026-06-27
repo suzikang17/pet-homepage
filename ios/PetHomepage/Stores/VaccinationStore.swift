@@ -25,7 +25,7 @@ final class VaccinationStore {
         vax.nextDueAt = nextDueAt
         vax.lotNumber = lotNumber
         vax.administeredBy = administeredBy
-        vax.pet = try petStore.currentPet()
+        vax.pet = try petStore.ensurePet()
         try context.save()
         return vax
     }

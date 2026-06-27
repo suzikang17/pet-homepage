@@ -28,7 +28,7 @@ final class VetVisitStore {
         visit.diagnosis = diagnosis
         visit.treatmentNotes = treatmentNotes
         visit.nextVisitDate = nextVisitDate
-        visit.pet = try petStore.currentPet()
+        visit.pet = try petStore.ensurePet()
         try context.save()
         return visit
     }

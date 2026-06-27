@@ -27,6 +27,14 @@ final class PetStore {
         return try context.fetch(request).first
     }
 
+    /// The current pet, creating a default one if none exists yet. Use this when CREATING a
+    /// record so it always attaches to a pet — records added before the user names their pet
+    /// would otherwise be orphaned (pet == nil) and never appear in any list.
+    @discardableResult
+    func ensurePet(defaultName: String = "Your pet", defaultSpecies: String = "dog") throws -> Pet {
+        try currentPet() ?? createPet(name: defaultName, species: defaultSpecies)
+    }
+
     func update(_ pet: Pet, name: String, species: String) throws {
         pet.name = name
         pet.species = species

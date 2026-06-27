@@ -13,6 +13,22 @@ final class MedicationStoreTests: XCTestCase {
         try petStore.createPet(name: "Sandy", species: "dog")
     }
 
+    func testCreateMedicationWithoutAPetCreatesADefaultPetAndSaves() throws {
+        // Fresh context with NO pet — simulates adding a med before the user sets up their pet.
+        let freshContext = PersistenceController(inMemory: true).container.viewContext
+        let freshPetStore = PetStore(context: freshContext)
+        XCTAssertNil(try freshPetStore.currentPet())
+
+        let store = MedicationStore(context: freshContext, petStore: freshPetStore)
+        try store.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily",
+                         scheduleTime: Date(), startedAt: Date(), endedAt: nil, refillDueAt: nil)
+
+        let meds = try store.medications()
+        XCTAssertEqual(meds.count, 1, "med must save + list even with no pre-existing pet")
+        XCTAssertEqual(meds.first?.drugName, "Apoquel")
+        XCTAssertEqual(meds.first?.pet?.name, "Your pet", "a default pet should have been created")
+    }
+
     func testCreateMedicationIsScopedToCurrentPet() throws {
         let store = MedicationStore(context: context, petStore: petStore)
         let scheduleTime = Date(timeIntervalSince1970: 0)
