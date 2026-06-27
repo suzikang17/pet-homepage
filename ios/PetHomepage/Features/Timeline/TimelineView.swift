@@ -182,7 +182,8 @@ struct TimelineView: View {
         switch item.reference {
         case .vaccine(let v):
             VaccinationEditView(store: services.vaccinationStore, dueScheduler: services.dueScheduler,
-                                veterinarianStore: services.veterinarianStore, editing: v)
+                                veterinarianStore: services.veterinarianStore,
+                                diaryStore: services.diaryStore, editing: v)
         case .vet(let v):
             VetVisitDetailView(visit: v, recommendationStore: services.recommendationStore,
                                diaryStore: services.diaryStore)
@@ -201,7 +202,8 @@ struct TimelineView: View {
         switch kind {
         case .vaccine:
             VaccinationEditView(store: services.vaccinationStore, dueScheduler: services.dueScheduler,
-                                veterinarianStore: services.veterinarianStore, editing: nil)
+                                veterinarianStore: services.veterinarianStore,
+                                diaryStore: services.diaryStore, editing: nil)
         case .vet:
             VetVisitEditView(store: services.vetVisitStore, dueScheduler: services.dueScheduler,
                              cadenceMonths: services.cadenceMonths,

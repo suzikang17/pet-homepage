@@ -12,15 +12,19 @@ final class VaccinationEditViewModel {
     var administeredBy: String = ""
     var availableVets: [Veterinarian] = []
     var selectedVet: Veterinarian?
+    var pendingPhotos: [Data] = []
+    var existingPhotos: [Photo] = []
 
     private let store: VaccinationStore
     private let dueScheduler: DueReminderScheduler
+    private let diaryStore: DiaryStore
     private let editing: Vaccination?
 
     init(store: VaccinationStore, dueScheduler: DueReminderScheduler,
-         veterinarianStore: VeterinarianStore, editing: Vaccination?) {
+         veterinarianStore: VeterinarianStore, diaryStore: DiaryStore, editing: Vaccination?) {
         self.store = store
         self.dueScheduler = dueScheduler
+        self.diaryStore = diaryStore
         self.editing = editing
         if let vax = editing {
             vaccineName = vax.vaccineName
@@ -34,10 +38,20 @@ final class VaccinationEditViewModel {
         }
         availableVets = (try? veterinarianStore.veterinarians()) ?? []
         selectedVet = editing?.veterinarian
+        existingPhotos = editing?.photoArray ?? []
     }
 
     var isValid: Bool {
         !vaccineName.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    func addPickedPhoto(_ data: Data) { pendingPhotos.append(data) }
+    func removePending(at index: Int) {
+        if pendingPhotos.indices.contains(index) { pendingPhotos.remove(at: index) }
+    }
+    func deleteExisting(_ photo: Photo) {
+        try? diaryStore.deletePhoto(photo)
+        existingPhotos.removeAll { $0 == photo }
     }
 
     func save() async throws {
@@ -56,6 +70,9 @@ final class VaccinationEditViewModel {
         }
         vaccination.veterinarian = selectedVet
         try? vaccination.managedObjectContext?.save()
+        for data in pendingPhotos {
+            try? diaryStore.addPhoto(toVaccination: vaccination, imageData: data)
+        }
         await dueScheduler.syncVaccination(vaccination)
     }
 }

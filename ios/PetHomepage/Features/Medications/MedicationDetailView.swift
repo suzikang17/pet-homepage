@@ -7,6 +7,7 @@ struct MedicationDetailView: View {
     @State private var model: MedicationDetailViewModel
     @State private var showEdit = false
     @State private var showLog = false
+    @State private var photos: [Photo] = []
     private let services: TimelineServices
 
     init(medication: Medication, services: TimelineServices) {
@@ -38,6 +39,13 @@ struct MedicationDetailView: View {
                 }
             }
 
+            PhotoStripSection(
+                photos: photos,
+                onAdd: { try? services.diaryStore.addPhoto(toMedication: med, imageData: $0) },
+                onDelete: { try? services.diaryStore.deletePhoto($0); photos = med.photoArray },
+                onReload: { photos = med.photoArray }
+            )
+
             Section("Doses (\(model.doseCount))") {
                 Button {
                     showLog = true
@@ -67,6 +75,7 @@ struct MedicationDetailView: View {
         .brandSheet()
         .navigationTitle(med.drugName.isEmpty ? "Medication" : med.drugName)
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear { photos = med.photoArray }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Edit") { showEdit = true }

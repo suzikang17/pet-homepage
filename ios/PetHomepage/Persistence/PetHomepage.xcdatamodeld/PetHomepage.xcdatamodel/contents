@@ -29,6 +29,7 @@
         <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="medications" inverseEntity="Pet"/>
         <relationship name="doseLogs" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="DoseLog" inverseName="medication" inverseEntity="DoseLog"/>
         <relationship name="veterinarian" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Veterinarian" inverseName="medications" inverseEntity="Veterinarian"/>
+        <relationship name="photos" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Photo" inverseName="medication" inverseEntity="Photo"/>
     </entity>
     <entity name="DoseLog" representedClassName="DoseLog" syncable="YES" codeGenerationType="none">
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
@@ -45,6 +46,7 @@
         <attribute name="administeredBy" optional="YES" attributeType="String"/>
         <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="vaccinations" inverseEntity="Pet"/>
         <relationship name="veterinarian" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Veterinarian" inverseName="vaccinations" inverseEntity="Veterinarian"/>
+        <relationship name="photos" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Photo" inverseName="vaccination" inverseEntity="Photo"/>
     </entity>
     <entity name="VetVisit" representedClassName="VetVisit" syncable="YES" codeGenerationType="none">
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
@@ -121,5 +123,7 @@
         <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="photos" inverseEntity="Pet"/>
         <relationship name="diaryEntry" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="DiaryEntry" inverseName="photos" inverseEntity="DiaryEntry"/>
         <relationship name="vetVisit" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="VetVisit" inverseName="photos" inverseEntity="VetVisit"/>
+        <relationship name="medication" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Medication" inverseName="photos" inverseEntity="Medication"/>
+        <relationship name="vaccination" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Vaccination" inverseName="photos" inverseEntity="Vaccination"/>
     </entity>
 </model>

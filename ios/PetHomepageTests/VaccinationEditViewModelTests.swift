@@ -9,6 +9,7 @@ final class VaccinationEditViewModelTests: XCTestCase {
     private var dueScheduler: DueReminderScheduler!
     private var fake: FakeNotificationScheduler!
     private var veterinarianStore: VeterinarianStore!
+    private var diaryStore: DiaryStore!
 
     override func setUpWithError() throws {
         context = PersistenceController(inMemory: true).container.viewContext
@@ -16,13 +17,14 @@ final class VaccinationEditViewModelTests: XCTestCase {
         try petStore.createPet(name: "Sandy", species: "dog")
         store = VaccinationStore(context: context, petStore: petStore)
         veterinarianStore = VeterinarianStore(context: context, petStore: petStore)
+        diaryStore = DiaryStore(context: context, petStore: petStore)
         fake = FakeNotificationScheduler()
         dueScheduler = DueReminderScheduler(scheduler: fake, calendar: Calendar(identifier: .gregorian))
     }
 
     func testSaveCreatesAndSchedulesDueReminder() async throws {
         let vm = VaccinationEditViewModel(store: store, dueScheduler: dueScheduler,
-                                          veterinarianStore: veterinarianStore, editing: nil)
+                                          veterinarianStore: veterinarianStore, diaryStore: diaryStore, editing: nil)
         vm.vaccineName = "Rabies"
         vm.administeredAt = Date(timeIntervalSince1970: 1_700_000_000)
         vm.hasNextDue = true

@@ -10,6 +10,8 @@ public class Photo: NSManagedObject {
     @NSManaged public var pet: Pet?
     @NSManaged public var diaryEntry: DiaryEntry?
     @NSManaged public var vetVisit: VetVisit?
+    @NSManaged public var medication: Medication?
+    @NSManaged public var vaccination: Vaccination?
 }
 
 extension Photo {

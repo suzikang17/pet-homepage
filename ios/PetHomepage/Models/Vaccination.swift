@@ -11,10 +11,16 @@ public class Vaccination: NSManagedObject {
     @NSManaged public var administeredBy: String?
     @NSManaged public var pet: Pet?
     @NSManaged public var veterinarian: Veterinarian?
+    @NSManaged public var photos: NSSet?
 }
 
 extension Vaccination {
     @nonobjc public static func fetchRequest() -> NSFetchRequest<Vaccination> {
         NSFetchRequest<Vaccination>(entityName: "Vaccination")
+    }
+
+    /// This vaccine's photos, oldest-first.
+    var photoArray: [Photo] {
+        (photos as? Set<Photo> ?? []).sorted { $0.createdAt < $1.createdAt }
     }
 }

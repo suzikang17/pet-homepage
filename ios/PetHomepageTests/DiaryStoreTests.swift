@@ -44,6 +44,22 @@ final class DiaryStoreTests: XCTestCase {
         XCTAssertEqual(try store.allPhotos().first?.vetVisit, visit)
     }
 
+    func testMedicationAndVaccinePhotosJoinAllPhotos() throws {
+        let medStore = MedicationStore(context: context, petStore: petStore)
+        let med = try medStore.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily",
+                                      scheduleTime: Date(), startedAt: Date(), endedAt: nil, refillDueAt: nil)
+        try store.addPhoto(toMedication: med, imageData: Data([0x1]))
+
+        let vaxStore = VaccinationStore(context: context, petStore: petStore)
+        let vax = try vaxStore.create(vaccineName: "Rabies", administeredAt: Date(),
+                                      nextDueAt: nil, lotNumber: nil, administeredBy: nil)
+        try store.addPhoto(toVaccination: vax, imageData: Data([0x2]))
+
+        XCTAssertEqual(med.photoArray.count, 1)
+        XCTAssertEqual(vax.photoArray.count, 1)
+        XCTAssertEqual(try store.allPhotos().count, 2, "med + vaccine photos join the pet-wide grid")
+    }
+
     func testDeleteEntryCascadesItsPhotos() throws {
         let entry = try store.createEntry(date: Date(), note: "Walk")
         try store.addPhoto(to: entry, imageData: Data([0x1]))
