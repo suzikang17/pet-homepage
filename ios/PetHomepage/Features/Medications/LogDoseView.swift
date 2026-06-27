@@ -18,50 +18,50 @@ struct LogDoseView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if model.isConfirmed { confirmation } else { form }
+                if model.isConfirmed { confirmation } else { logForm }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .navigationTitle(model.isConfirmed ? "Dose logged" : "Log a dose")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                if !model.isConfirmed {
-                    ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                }
-            }
-            .brandSheet()
+            .background(Theme.bg)
+            .tint(Theme.primary)
+            .toolbar(.hidden, for: .navigationBar)
+            .ignoresSafeArea(edges: .top)
         }
+        .presentationDragIndicator(.hidden)
     }
 
-    private var form: some View {
-        Form {
-            Section("When") {
-                DatePicker("Given", selection: $model.givenAt)
-            }
-            Section("Note") {
-                TextField("e.g. with food, half dose", text: $model.note, axis: .vertical)
-            }
-            Section {
-                LabeledContent("Next reminder") {
-                    Text(model.nextReminder(), format: .dateTime.month().day().hour().minute())
-                        .foregroundStyle(Theme.primary)
-                        .fontWeight(.semibold)
+    private var logForm: some View {
+        VStack(spacing: 0) {
+            SheetHeader(title: "Log a dose", systemImage: "checkmark.circle.fill", onCancel: { dismiss() })
+            Form {
+                Section("When") {
+                    DatePicker("Given", selection: $model.givenAt)
                 }
-            } footer: {
-                Text("Logging this dose moves the next reminder to follow the \(model.frequency.label.lowercased()) schedule.")
-            }
-            Section {
-                Button {
-                    Task { await model.confirm() }
-                } label: {
-                    Text("Log dose").frame(maxWidth: .infinity).fontWeight(.semibold)
+                Section("Note") {
+                    TextField("e.g. with food, half dose", text: $model.note, axis: .vertical)
                 }
-                .buttonStyle(.borderedProminent)
-                .listRowInsets(EdgeInsets())
-                .listRowBackground(Color.clear)
+                Section {
+                    LabeledContent("Next reminder") {
+                        Text(model.nextReminder(), format: .dateTime.month().day().hour().minute())
+                            .foregroundStyle(Theme.primary)
+                            .fontWeight(.semibold)
+                    }
+                } footer: {
+                    Text("Logging this dose moves the next reminder to follow the \(model.frequency.label.lowercased()) schedule.")
+                }
+                Section {
+                    Button {
+                        Task { await model.confirm() }
+                    } label: {
+                        Text("Log dose").frame(maxWidth: .infinity).fontWeight(.semibold)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+                }
             }
+            .scrollContentBackground(.hidden)
+            .headerProminence(.increased)
         }
-        .scrollContentBackground(.hidden)
-        .headerProminence(.increased)
     }
 
     private var confirmation: some View {

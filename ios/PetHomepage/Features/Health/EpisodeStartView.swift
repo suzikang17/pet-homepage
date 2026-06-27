@@ -10,31 +10,23 @@ struct EpisodeStartView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("Episode") {
-                    Picker("Category", selection: $model.category) {
-                        ForEach(SymptomCategory.allCases) { category in
-                            Text(category.displayName).tag(category)
-                        }
+        BrandFormSheet(
+            title: "New episode",
+            systemImage: "waveform.path.ecg",
+            confirmTitle: "Start",
+            confirmDisabled: !model.isValid,
+            onCancel: { dismiss() },
+            onConfirm: { try? model.start(); dismiss() }
+        ) {
+            Section("Episode") {
+                Picker("Category", selection: $model.category) {
+                    ForEach(SymptomCategory.allCases) { category in
+                        Text(category.displayName).tag(category)
                     }
-                    TextField("Title (optional)", text: $model.title)
-                    DatePicker("Started", selection: $model.startedAt, displayedComponents: .date)
                 }
+                TextField("Title (optional)", text: $model.title)
+                DatePicker("Started", selection: $model.startedAt, displayedComponents: .date)
             }
-            .navigationTitle("New episode")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Start") {
-                        try? model.start()
-                        dismiss()
-                    }
-                    .disabled(!model.isValid)
-                }
-            }
-            .brandSheet()
         }
     }
 }

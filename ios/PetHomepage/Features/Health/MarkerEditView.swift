@@ -10,38 +10,29 @@ struct MarkerEditView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("Marker") {
-                    Picker("Type", selection: $model.markerType) {
-                        ForEach(MarkerType.allCases) { type in
-                            Text(type.displayName).tag(type)
-                        }
+        BrandFormSheet(
+            title: "Health marker",
+            systemImage: "chart.xyaxis.line",
+            confirmDisabled: !model.isValid,
+            onCancel: { dismiss() },
+            onConfirm: { try? model.save(); dismiss() }
+        ) {
+            Section("Reading") {
+                Picker("Type", selection: $model.markerType) {
+                    ForEach(MarkerType.allCases) { type in
+                        Text(type.displayName).tag(type)
                     }
-                    .onChange(of: model.markerType) { _, _ in model.syncUnitToType() }
-                    TextField("Value", text: $model.valueText)
-                        .keyboardType(.decimalPad)
-                    if !model.unitOptions.isEmpty {
-                        Picker("Unit", selection: $model.unit) {
-                            ForEach(model.unitOptions, id: \.self) { Text($0).tag($0) }
-                        }
-                    }
-                    DatePicker("Recorded", selection: $model.recordedAt)
                 }
-            }
-            .navigationTitle("Add marker")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        try? model.save()
-                        dismiss()
+                .onChange(of: model.markerType) { _, _ in model.syncUnitToType() }
+                TextField("Value", text: $model.valueText)
+                    .keyboardType(.decimalPad)
+                if !model.unitOptions.isEmpty {
+                    Picker("Unit", selection: $model.unit) {
+                        ForEach(model.unitOptions, id: \.self) { Text($0).tag($0) }
                     }
-                    .disabled(!model.isValid)
                 }
+                DatePicker("Recorded", selection: $model.recordedAt)
             }
-            .brandSheet()
         }
     }
 }

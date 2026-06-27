@@ -10,36 +10,25 @@ struct VaccinationEditView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("Vaccine") {
-                    TextField("Name", text: $model.vaccineName)
-                    DatePicker("Administered", selection: $model.administeredAt, displayedComponents: .date)
-                    TextField("Lot number", text: $model.lotNumber)
-                    TextField("Administered by", text: $model.administeredBy)
-                }
-                Section("Next due") {
-                    Toggle("Schedule next due", isOn: $model.hasNextDue)
-                    if model.hasNextDue {
-                        DatePicker("Due", selection: $model.nextDueAt, displayedComponents: .date)
-                    }
+        BrandFormSheet(
+            title: "Vaccine",
+            systemImage: "syringe",
+            confirmDisabled: !model.isValid,
+            onCancel: { dismiss() },
+            onConfirm: { Task { try? await model.save(); dismiss() } }
+        ) {
+            Section("Details") {
+                TextField("Name", text: $model.vaccineName)
+                DatePicker("Administered", selection: $model.administeredAt, displayedComponents: .date)
+                TextField("Lot number", text: $model.lotNumber)
+                TextField("Administered by", text: $model.administeredBy)
+            }
+            Section("Next due") {
+                Toggle("Schedule next due", isOn: $model.hasNextDue)
+                if model.hasNextDue {
+                    DatePicker("Due", selection: $model.nextDueAt, displayedComponents: .date)
                 }
             }
-            .navigationTitle("Vaccination")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        Task {
-                            try? await model.save()
-                            dismiss()
-                        }
-                    }
-                    .disabled(!model.isValid)
-                }
-            }
-            .brandSheet()
         }
     }
 }
