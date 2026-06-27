@@ -21,7 +21,6 @@ struct LogDoseView: View {
                 if model.isConfirmed { confirmation } else { form }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Theme.bg)
             .navigationTitle(model.isConfirmed ? "Dose logged" : "Log a dose")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -29,7 +28,7 @@ struct LogDoseView: View {
                     ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 }
             }
-            .tint(Theme.primary)
+            .brandSheet()
         }
     }
 

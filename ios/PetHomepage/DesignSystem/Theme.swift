@@ -191,8 +191,8 @@ struct BrandCard<Content: View>: View {
 }
 
 extension View {
-    /// Consistent light brand treatment for the Form-based add/edit sheets:
-    /// cream background, violet accent, prominent (non-stock) section headers, and a drag handle.
+    /// Consistent brand treatment for the Form-based add/edit sheets: cream background, violet
+    /// accent, prominent section headers, a drag handle, and a branded violet nav bar.
     func brandSheet() -> some View {
         self
             .scrollContentBackground(.hidden)
@@ -200,6 +200,9 @@ extension View {
             .tint(Theme.primary)
             .headerProminence(.increased)
             .presentationDragIndicator(.visible)
+            .toolbarBackground(Theme.primary, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
     }
 }
 

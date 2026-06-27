@@ -61,10 +61,7 @@ struct MedicationDetailView: View {
                 }
             }
         }
-        .scrollContentBackground(.hidden)
-        .background(Theme.bg)
-        .tint(Theme.primary)
-        .headerProminence(.increased)
+        .brandSheet()
         .navigationTitle(med.drugName.isEmpty ? "Medication" : med.drugName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
