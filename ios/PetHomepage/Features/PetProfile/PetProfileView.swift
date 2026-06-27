@@ -11,6 +11,7 @@ struct PetProfileView: View {
     @State private var showAddSymptom = false
     @State private var photoItem: PhotosPickerItem?
     @State private var showPhotoPicker = false
+    @State private var cropTarget: PickedImage?
 
     // Dashboard data, refreshed on appear + after any add.
     @State private var upcoming: [TimelineItem] = []
@@ -86,6 +87,9 @@ struct PetProfileView: View {
             }
             .photosPicker(isPresented: $showPhotoPicker, selection: $photoItem, matching: .images)
             .onChange(of: photoItem) { _, item in if let item { loadPhoto(item) } }
+            .sheet(item: $cropTarget) { picked in
+                PhotoCropView(image: picked.image) { model.setPhoto($0) }
+            }
             .onAppear { model.reload(); refresh() }
         }
     }
@@ -99,10 +103,14 @@ struct PetProfileView: View {
         Task {
             guard let data = try? await item.loadTransferable(type: Data.self),
                   let image = UIImage(data: data) else { return }
-            // Downscale so we don't store a multi-MB original in Core Data / CloudKit.
-            let avatar = image.preparingThumbnail(of: CGSize(width: 512, height: 512)) ?? image
-            model.setPhoto(avatar.jpegData(compressionQuality: 0.85))
+            // Hand off to the cropper to choose the focus; it saves the framed result.
+            await MainActor.run { cropTarget = PickedImage(image: image) }
         }
+    }
+
+    private struct PickedImage: Identifiable {
+        let id = UUID()
+        let image: UIImage
     }
 
 
