@@ -39,14 +39,20 @@ struct TimelineView: View {
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottomTrailing) {
-                Theme.bg.ignoresSafeArea()
-                VStack(spacing: 0) {
+                VStack(spacing: 12) {
+                    HeroHeader(
+                        title: "Timeline",
+                        subtitle: model.filter?.label ?? "Everything",
+                        systemImage: "calendar"
+                    )
                     chips
                     content
                 }
                 addButton
             }
-            .navigationTitle("Timeline")
+            .background(Theme.bg)
+            .ignoresSafeArea(edges: .top)
+            .toolbar(.hidden, for: .navigationBar)
             .onAppear { model.load() }
             .sheet(item: $editTarget, onDismiss: { model.load() }) { editor(for: $0) }
             .sheet(item: $addKind, onDismiss: { model.load() }) { addEditor(for: $0) }

@@ -15,6 +15,20 @@ final class MarkerEditViewModel {
         self.store = store
     }
 
+    /// Unit choices for the current marker type (empty = this type is unit-less).
+    var unitOptions: [String] {
+        switch markerType {
+        case .weight: ["kg", "lb"]
+        case .temperature: ["°C", "°F"]
+        case .appetite, .energy, .water, .other: []
+        }
+    }
+
+    /// Reset the unit to the first valid choice for the current type (or none).
+    func syncUnitToType() {
+        unit = unitOptions.first ?? ""
+    }
+
     /// Valid when the value text parses to a finite Double.
     var isValid: Bool {
         guard let parsed = Double(valueText.trimmingCharacters(in: .whitespaces)) else { return false }

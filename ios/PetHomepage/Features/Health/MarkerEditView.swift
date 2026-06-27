@@ -18,9 +18,14 @@ struct MarkerEditView: View {
                             Text(type.displayName).tag(type)
                         }
                     }
+                    .onChange(of: model.markerType) { _, _ in model.syncUnitToType() }
                     TextField("Value", text: $model.valueText)
                         .keyboardType(.decimalPad)
-                    TextField("Unit (optional)", text: $model.unit)
+                    if !model.unitOptions.isEmpty {
+                        Picker("Unit", selection: $model.unit) {
+                            ForEach(model.unitOptions, id: \.self) { Text($0).tag($0) }
+                        }
+                    }
                     DatePicker("Recorded", selection: $model.recordedAt)
                 }
             }
