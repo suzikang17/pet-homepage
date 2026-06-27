@@ -37,6 +37,11 @@ targets:
         # App uses only standard HTTPS/TLS (export-exempt) — declare it so TestFlight
         # doesn't ask the export-compliance question on every build.
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: "NO"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # Orientations (required for App Store validation). Phone is portrait-only;
+        # iPad declares all four so it isn't rejected for multitasking.
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
         # Without a launch screen, iOS renders the app letterboxed (black bars,
         # scaled into a smaller box). This synthesizes an empty UILaunchScreen so
         # the app draws full-screen at native resolution on every device.
