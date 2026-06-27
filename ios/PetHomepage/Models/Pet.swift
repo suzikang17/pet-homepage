@@ -11,6 +11,7 @@ public class Pet: NSManagedObject {
     @NSManaged public var adoptionDate: Date?
     @NSManaged public var photoData: Data?
     @NSManaged public var medications: NSSet?
+    @NSManaged public var veterinarians: NSSet?
 }
 
 extension Pet {

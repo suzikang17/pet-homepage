@@ -17,6 +17,7 @@ public class VetVisit: NSManagedObject {
     @NSManaged public var nextVisitDate: Date?
     @NSManaged public var pet: Pet?
     @NSManaged public var recommendations: NSSet?
+    @NSManaged public var veterinarian: Veterinarian?
 }
 
 extension VetVisit {

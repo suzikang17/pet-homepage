@@ -10,6 +10,7 @@ public class Vaccination: NSManagedObject {
     @NSManaged public var lotNumber: String?
     @NSManaged public var administeredBy: String?
     @NSManaged public var pet: Pet?
+    @NSManaged public var veterinarian: Veterinarian?
 }
 
 extension Vaccination {

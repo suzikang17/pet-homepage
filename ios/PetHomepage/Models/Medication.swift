@@ -13,6 +13,7 @@ public class Medication: NSManagedObject {
     @NSManaged public var refillDueAt: Date?
     @NSManaged public var pet: Pet?
     @NSManaged public var doseLogs: NSSet?
+    @NSManaged public var veterinarian: Veterinarian?
 }
 
 extension Medication {
