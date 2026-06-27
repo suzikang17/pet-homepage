@@ -83,6 +83,7 @@ struct ContentView: View {
             vaccinationStore: vaccinationStore,
             vetVisitStore: vetVisitStore,
             medicationStore: medicationStore,
+            doseLogStore: doseLogStore,
             healthMarkerStore: healthMarkerStore,
             symptomEpisodeStore: symptomEpisodeStore,
             symptomEntryStore: symptomEntryStore,

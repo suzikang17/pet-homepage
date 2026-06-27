@@ -7,6 +7,7 @@ struct TimelineServices {
     let vaccinationStore: VaccinationStore
     let vetVisitStore: VetVisitStore
     let medicationStore: MedicationStore
+    let doseLogStore: DoseLogStore
     let healthMarkerStore: HealthMarkerStore
     let symptomEpisodeStore: SymptomEpisodeStore
     let symptomEntryStore: SymptomEntryStore
