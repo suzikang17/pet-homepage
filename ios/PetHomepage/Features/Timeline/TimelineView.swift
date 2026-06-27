@@ -37,15 +37,15 @@ struct TimelineView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
+            ZStack(alignment: .bottomTrailing) {
                 Theme.bg.ignoresSafeArea()
                 VStack(spacing: 0) {
                     chips
                     content
                 }
+                addButton
             }
             .navigationTitle("Timeline")
-            .toolbar { addMenu }
             .onAppear { model.load() }
             .sheet(item: $editTarget, onDismiss: { model.load() }) { editor(for: $0) }
             .sheet(item: $addKind, onDismiss: { model.load() }) { addEditor(for: $0) }
@@ -130,18 +130,24 @@ struct TimelineView: View {
         .contentShape(Rectangle())
     }
 
-    private var addMenu: some ToolbarContent {
-        ToolbarItem(placement: .primaryAction) {
-            Menu {
-                Button { addKind = .vaccine } label: { Label("Vaccine", systemImage: "syringe") }
-                Button { addKind = .vet } label: { Label("Vet visit", systemImage: "stethoscope") }
-                Button { addKind = .medication } label: { Label("Medication", systemImage: "pills") }
-                Button { addKind = .marker } label: { Label("Health marker", systemImage: "chart.xyaxis.line") }
-                Button { addKind = .symptom } label: { Label("Symptom", systemImage: "waveform.path.ecg") }
-            } label: {
-                Image(systemName: "plus")
-            }
+    /// Floating add button — bottom-trailing so it's in easy thumb reach.
+    private var addButton: some View {
+        Menu {
+            Button { addKind = .vaccine } label: { Label("Vaccine", systemImage: "syringe") }
+            Button { addKind = .vet } label: { Label("Vet visit", systemImage: "stethoscope") }
+            Button { addKind = .medication } label: { Label("Medication", systemImage: "pills") }
+            Button { addKind = .marker } label: { Label("Health marker", systemImage: "chart.xyaxis.line") }
+            Button { addKind = .symptom } label: { Label("Symptom", systemImage: "waveform.path.ecg") }
+        } label: {
+            Image(systemName: "plus")
+                .font(.system(size: 24, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 60, height: 60)
+                .background(Theme.primary, in: Circle())
+                .shadow(color: Theme.primary.opacity(0.35), radius: 12, y: 5)
         }
+        .padding(.trailing, 22)
+        .padding(.bottom, 24)
     }
 
     private func hasEditor(_ item: TimelineItem) -> Bool {

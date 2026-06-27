@@ -39,6 +39,12 @@ struct PetProfileView: View {
 
     private var canScan: Bool { extractionService != nil && ingestionService != nil }
 
+    /// Persist profile edits silently (no Save button) once there's a name.
+    private func autosave() {
+        guard !model.name.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        try? model.save()
+    }
+
     var body: some View {
         NavigationStack {
             BrandScreen {
@@ -80,15 +86,9 @@ struct PetProfileView: View {
                         .buttonStyle(.plain)
                         .padding(.horizontal, 18)
                 }
-            } action: {
-                Button {
-                    try? model.save()
-                } label: {
-                    Text(model.isSaved ? "Saved" : "Save profile")
-                }
-                .buttonStyle(PrimaryButtonStyle())
-                .disabled(model.name.isEmpty)
             }
+            .onChange(of: model.name) { _, _ in autosave() }
+            .onChange(of: model.species) { _, _ in autosave() }
             .sheet(isPresented: $showSettings) {
                 if let settings { SettingsView(model: settings) }
             }

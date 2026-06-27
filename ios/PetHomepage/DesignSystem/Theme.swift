@@ -162,13 +162,24 @@ struct BrandScreen<Content: View, Action: View>: View {
         .background(Theme.bg)
         .ignoresSafeArea(edges: .top)
         .safeAreaInset(edge: .bottom) {
-            action
-                .padding(.horizontal, 18)
-                .padding(.top, 10)
-                .padding(.bottom, 6)
-                .background(.ultraThinMaterial)
+            // No pinned action bar when there's no action (e.g. the dashboard Home).
+            if Action.self != EmptyView.self {
+                action
+                    .padding(.horizontal, 18)
+                    .padding(.top, 10)
+                    .padding(.bottom, 6)
+                    .background(.ultraThinMaterial)
+            }
         }
         .toolbar(.hidden, for: .navigationBar)
+    }
+}
+
+extension BrandScreen where Action == EmptyView {
+    /// A scrolling brand screen with no pinned bottom action bar.
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+        self.action = EmptyView()
     }
 }
 
