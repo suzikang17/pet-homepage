@@ -19,6 +19,7 @@ struct ContentView: View {
         let healthMarkerStore = HealthMarkerStore(context: context, petStore: petStore)
         let symptomEpisodeStore = SymptomEpisodeStore(context: context, petStore: petStore)
         let symptomEntryStore = SymptomEntryStore(context: context)
+        let veterinarianStore = VeterinarianStore(context: context, petStore: petStore)
 
         // Web integration bridge: build the mirror push client from the user-entered endpoint
         // + token (Settings). Blank endpoint falls back to the build-time Convex .site default.
@@ -104,6 +105,8 @@ struct ContentView: View {
                           symptomEpisodeStore: symptomEpisodeStore,
                           symptomEntryStore: symptomEntryStore)
                 .tabItem { Label("Health", systemImage: "heart.text.square") }
+            CareTeamView(store: veterinarianStore)
+                .tabItem { Label("Care Team", systemImage: "stethoscope") }
         }
         .tint(Theme.primary)
     }

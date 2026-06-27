@@ -22,3 +22,5 @@ extension Veterinarian {
         NSFetchRequest<Veterinarian>(entityName: "Veterinarian")
     }
 }
+
+extension Veterinarian: Identifiable {} // `id: UUID` satisfies Identifiable for sheets/lists
