@@ -49,17 +49,35 @@ struct HeroHeader: View {
     var subtitle: String? = nil
     var systemImage: String = "pawprint.fill"
     var avatar: Image? = nil
+    /// When set, the photo fills the whole header (with a legibility scrim) instead of the gradient.
+    var backgroundImage: Image? = nil
     var onTapAvatar: (() -> Void)? = nil
     /// When provided, the subtitle becomes an inline editable field (placeholder = `subtitle`).
     var editableSubtitle: Binding<String>? = nil
     var onAdd: (() -> Void)? = nil
     var onSettings: (() -> Void)? = nil
 
+    private var hasPhotoBackground: Bool { backgroundImage != nil }
+
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            Theme.brandGradient
+            if let backgroundImage {
+                GeometryReader { geo in
+                    backgroundImage
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: geo.size.width, height: geo.size.height)
+                        .clipped()
+                }
+                LinearGradient(
+                    colors: [.black.opacity(0.05), .black.opacity(0.15), .black.opacity(0.65)],
+                    startPoint: .top, endPoint: .bottom
+                )
+            } else {
+                Theme.brandGradient
+            }
             VStack(alignment: .leading, spacing: 12) {
-                avatarView
+                if !hasPhotoBackground { avatarView }
                 VStack(alignment: .leading, spacing: 2) {
                     if let editableSubtitle {
                         ZStack(alignment: .leading) {
@@ -88,7 +106,14 @@ struct HeroHeader: View {
             .padding(22)
             .padding(.top, 56) // clear the status bar (header bleeds to the top edge)
         }
-        .frame(height: 200)
+        .frame(height: hasPhotoBackground ? 260 : 200)
+        .overlay(alignment: .topLeading) {
+            if hasPhotoBackground, let onTapAvatar {
+                heroIconButton("camera.fill", action: onTapAvatar)
+                    .padding(.leading, 20)
+                    .padding(.top, 62)
+            }
+        }
         .overlay(alignment: .topTrailing) {
             HStack(spacing: 12) {
                 if let onSettings {

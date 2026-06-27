@@ -47,7 +47,7 @@ struct PetProfileView: View {
                     title: "Home",
                     subtitle: model.name.isEmpty ? "Your pet" : model.name,
                     systemImage: speciesIcon,
-                    avatar: avatarImage,
+                    backgroundImage: avatarImage,
                     onTapAvatar: { showPhotoPicker = true },
                     onSettings: settings != nil ? { showSettings = true } : nil
                 )
