@@ -19,7 +19,23 @@ struct MedicationEditView: View {
                 Section("Medication") {
                     TextField("Drug name", text: $model.drugName)
                     TextField("Dosage", text: $model.dosage)
-                    TextField("Frequency", text: $model.frequency)
+                }
+                Section("Frequency") {
+                    Picker("Repeat by", selection: $model.frequencyUnit) {
+                        Text("Days").tag(FrequencyUnit.day)
+                        Text("Weeks").tag(FrequencyUnit.week)
+                        Text("Months").tag(FrequencyUnit.month)
+                    }
+                    .pickerStyle(.segmented)
+                    Stepper(value: $model.frequencyInterval, in: 1...60) {
+                        HStack {
+                            Text("Every")
+                            Spacer()
+                            Text(model.frequencyLabel)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(Theme.primary)
+                        }
+                    }
                 }
                 Section("Reminder") {
                     DatePicker("Time", selection: $model.scheduleTime, displayedComponents: .hourAndMinute)

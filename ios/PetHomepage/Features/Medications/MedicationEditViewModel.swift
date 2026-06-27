@@ -6,8 +6,14 @@ import Observation
 final class MedicationEditViewModel {
     var drugName: String = ""
     var dosage: String = ""
-    var frequency: String = "daily"
+    var frequencyInterval: Int = 1
+    var frequencyUnit: FrequencyUnit = .day
     var scheduleTime: Date = Date()
+
+    /// The canonical label for the chosen cadence (e.g. "Daily", "Every 3 days").
+    var frequencyLabel: String {
+        MedFrequency(interval: frequencyInterval, unit: frequencyUnit).label
+    }
     var startedAt: Date = Date()
     var hasRefillDue: Bool = false
     var refillDueAt: Date = Date()
@@ -28,7 +34,9 @@ final class MedicationEditViewModel {
         if let med = editing {
             drugName = med.drugName
             dosage = med.dosage
-            frequency = med.frequency
+            let parsed = MedFrequency(parsing: med.frequency)
+            frequencyInterval = parsed.interval
+            frequencyUnit = parsed.unit
             scheduleTime = med.scheduleTime
             startedAt = med.startedAt
             if let refill = med.refillDueAt {
@@ -55,7 +63,7 @@ final class MedicationEditViewModel {
             try store.update(existing,
                              drugName: drugName,
                              dosage: dosage,
-                             frequency: frequency,
+                             frequency: frequencyLabel,
                              scheduleTime: scheduleTime,
                              startedAt: startedAt,
                              endedAt: ended,
@@ -69,7 +77,7 @@ final class MedicationEditViewModel {
             // phase of the Task 5 TDD remediation pair).
             medication = try store.create(drugName: drugName,
                                           dosage: dosage,
-                                          frequency: frequency,
+                                          frequency: frequencyLabel,
                                           scheduleTime: scheduleTime,
                                           startedAt: startedAt,
                                           endedAt: ended,

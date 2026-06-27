@@ -31,6 +31,31 @@ final class MedicationReminderSchedulerTests: XCTestCase {
         return med
     }
 
+    func testDailyMedicationUsesRepeatingTrigger() throws {
+        let med = try makeMed(hour: 8, minute: 0) // frequency "daily"
+        let scheduler = MedicationReminderScheduler(scheduler: FakeNotificationScheduler(), calendar: calendar)
+        // Daily → a repeating trigger (nil dateComponents), no specific date.
+        XCTAssertNil(scheduler.reminder(for: med).dateComponents)
+    }
+
+    func testIntervalMedicationSchedulesOneShotOnNextOccurrence() throws {
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = TimeZone(identifier: "UTC")!
+        let start = Date(timeIntervalSince1970: 0)                  // 1970-01-01 00:00 UTC
+        let scheduleTime = Date(timeIntervalSince1970: 8 * 3600)    // 08:00
+        let med = try medStore.create(drugName: "Heartgard", dosage: "1",
+                                      frequency: "Every 3 days",
+                                      scheduleTime: scheduleTime, startedAt: start, refillDueAt: nil)
+        let fixedNow = Date(timeIntervalSince1970: 10 * 86_400 + 9 * 3600) // day 10, 09:00
+        let scheduler = MedicationReminderScheduler(scheduler: FakeNotificationScheduler(),
+                                                    calendar: utc, now: { fixedNow })
+
+        let reminder = scheduler.reminder(for: med)
+        // Non-daily → a one-shot on the next 3-day boundary at 08:00 (day 12).
+        let comps = try XCTUnwrap(reminder.dateComponents)
+        XCTAssertEqual(utc.date(from: comps), Date(timeIntervalSince1970: 12 * 86_400 + 8 * 3600))
+    }
+
     func testReminderExtractsHourAndMinuteFromScheduleTime() throws {
         let scheduler = MedicationReminderScheduler(scheduler: FakeNotificationScheduler(), calendar: calendar)
         let med = try makeMed(hour: 18, minute: 30)

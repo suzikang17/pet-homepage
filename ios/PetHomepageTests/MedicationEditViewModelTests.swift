@@ -25,7 +25,7 @@ final class MedicationEditViewModelTests: XCTestCase {
         let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, editing: nil)
         vm.drugName = "Apoquel"
         vm.dosage = "16mg"
-        vm.frequency = "daily"
+        vm.frequencyUnit = .day
 
         try await vm.save()
 
@@ -93,7 +93,7 @@ final class MedicationEditViewModelTests: XCTestCase {
         let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, editing: nil)
         vm.drugName = "Apoquel"
         vm.dosage = "16mg"
-        vm.frequency = "daily"
+        vm.frequencyUnit = .day
         vm.hasEnded = true
         vm.endedAt = endedDate
 
