@@ -6,6 +6,7 @@ import Observation
 final class PetProfileViewModel {
     var name: String = ""
     var species: String = "dog"
+    var photoData: Data?
     var isSaved: Bool = false
 
     private let store: PetStore
@@ -15,8 +16,15 @@ final class PetProfileViewModel {
         if let pet = try? store.currentPet() {
             name = pet.name
             species = pet.species
+            photoData = pet.photoData
             isSaved = true
         }
+    }
+
+    /// Persist a new pet photo (or nil to clear). Creates the pet if needed.
+    func setPhoto(_ data: Data?) {
+        try? store.setPhoto(data, defaultName: name.isEmpty ? "Your pet" : name, defaultSpecies: species)
+        photoData = data
     }
 
     func save() throws {

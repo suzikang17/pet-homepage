@@ -32,4 +32,13 @@ final class PetStore {
         pet.species = species
         try context.save()
     }
+
+    /// Set (or clear, with nil) the current pet's photo. Creates a pet if none exists yet.
+    @discardableResult
+    func setPhoto(_ data: Data?, defaultName: String = "Your pet", defaultSpecies: String = "dog") throws -> Pet {
+        let pet = try currentPet() ?? createPet(name: defaultName, species: defaultSpecies)
+        pet.photoData = data
+        try context.save()
+        return pet
+    }
 }

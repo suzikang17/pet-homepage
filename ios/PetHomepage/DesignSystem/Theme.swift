@@ -48,6 +48,8 @@ struct HeroHeader: View {
     let title: String
     var subtitle: String? = nil
     var systemImage: String = "pawprint.fill"
+    var avatar: Image? = nil
+    var onTapAvatar: (() -> Void)? = nil
     var onAdd: (() -> Void)? = nil
     var onSettings: (() -> Void)? = nil
 
@@ -55,12 +57,7 @@ struct HeroHeader: View {
         ZStack(alignment: .bottomLeading) {
             Theme.brandGradient
             VStack(alignment: .leading, spacing: 12) {
-                ZStack {
-                    Circle().fill(.white.opacity(0.22)).frame(width: 62, height: 62)
-                    Image(systemName: systemImage)
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundStyle(.white)
-                }
+                avatarView
                 VStack(alignment: .leading, spacing: 2) {
                     if let subtitle {
                         Text(subtitle.uppercased())
@@ -92,6 +89,43 @@ struct HeroHeader: View {
         }
         .clipShape(.rect(bottomLeadingRadius: 30, bottomTrailingRadius: 30, style: .continuous))
         .shadow(color: Theme.primary.opacity(0.25), radius: 16, y: 8)
+    }
+
+    @ViewBuilder
+    private var avatarView: some View {
+        if let onTapAvatar {
+            Button(action: onTapAvatar) { avatarBadge }.buttonStyle(.plain)
+        } else {
+            avatarCircle
+        }
+    }
+
+    private var avatarBadge: some View {
+        avatarCircle.overlay(alignment: .bottomTrailing) {
+            Image(systemName: "camera.fill")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(Theme.primary)
+                .frame(width: 22, height: 22)
+                .background(.white, in: Circle())
+                .offset(x: 4, y: 4)
+        }
+    }
+
+    @ViewBuilder
+    private var avatarCircle: some View {
+        if let avatar {
+            avatar.resizable().scaledToFill()
+                .frame(width: 62, height: 62)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(.white.opacity(0.7), lineWidth: 2))
+        } else {
+            ZStack {
+                Circle().fill(.white.opacity(0.22)).frame(width: 62, height: 62)
+                Image(systemName: systemImage)
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundStyle(.white)
+            }
+        }
     }
 
     private func heroIconButton(_ systemName: String, action: @escaping () -> Void) -> some View {

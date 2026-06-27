@@ -1,5 +1,7 @@
 // ios/PetHomepage/Features/PetProfile/PetProfileView.swift
+import PhotosUI
 import SwiftUI
+import UIKit
 
 struct PetProfileView: View {
     @State private var model: PetProfileViewModel
@@ -7,6 +9,8 @@ struct PetProfileView: View {
     @State private var showUpload = false
     @State private var showAddWeight = false
     @State private var showAddSymptom = false
+    @State private var photoItem: PhotosPickerItem?
+    @State private var showPhotoPicker = false
 
     // Dashboard data, refreshed on appear + after any add.
     @State private var upcoming: [TimelineItem] = []
@@ -41,6 +45,8 @@ struct PetProfileView: View {
                     title: model.name.isEmpty ? "Your pet" : model.name,
                     subtitle: "Home",
                     systemImage: speciesIcon,
+                    avatar: avatarImage,
+                    onTapAvatar: { showPhotoPicker = true },
                     onSettings: settings != nil ? { showSettings = true } : nil
                 )
 
@@ -80,7 +86,24 @@ struct PetProfileView: View {
             .sheet(isPresented: $showAddSymptom, onDismiss: refresh) {
                 if let s = timelineServices { EpisodeStartView(store: s.symptomEpisodeStore) }
             }
+            .photosPicker(isPresented: $showPhotoPicker, selection: $photoItem, matching: .images)
+            .onChange(of: photoItem) { _, item in if let item { loadPhoto(item) } }
             .onAppear(perform: refresh)
+        }
+    }
+
+    private var avatarImage: Image? {
+        guard let data = model.photoData, let ui = UIImage(data: data) else { return nil }
+        return Image(uiImage: ui)
+    }
+
+    private func loadPhoto(_ item: PhotosPickerItem) {
+        Task {
+            guard let data = try? await item.loadTransferable(type: Data.self),
+                  let image = UIImage(data: data) else { return }
+            // Downscale so we don't store a multi-MB original in Core Data / CloudKit.
+            let avatar = image.preparingThumbnail(of: CGSize(width: 512, height: 512)) ?? image
+            model.setPhoto(avatar.jpegData(compressionQuality: 0.85))
         }
     }
 
