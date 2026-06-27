@@ -3,6 +3,7 @@ import SwiftUI
 
 struct VetEditView: View {
     @State private var model: VetEditViewModel
+    @State private var showContacts = false
     @Environment(\.dismiss) private var dismiss
 
     init(store: VeterinarianStore, editing: Veterinarian?) {
@@ -17,6 +18,13 @@ struct VetEditView: View {
             onCancel: { dismiss() },
             onConfirm: { try? model.save(); dismiss() }
         ) {
+            Section {
+                Button {
+                    showContacts = true
+                } label: {
+                    Label("Import from Contacts", systemImage: "person.crop.circle.badge.plus")
+                }
+            }
             Section("Vet") {
                 TextField("Name", text: $model.name)
                 TextField("Clinic", text: $model.clinic)
@@ -37,6 +45,13 @@ struct VetEditView: View {
             Section("Notes") {
                 TextField("Notes", text: $model.notes, axis: .vertical)
             }
+        }
+        .sheet(isPresented: $showContacts) {
+            ContactPicker(
+                onPick: { model.apply(contact: $0); showContacts = false },
+                onCancel: { showContacts = false }
+            )
+            .ignoresSafeArea()
         }
     }
 }
