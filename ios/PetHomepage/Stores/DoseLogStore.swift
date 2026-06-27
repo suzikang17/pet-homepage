@@ -33,4 +33,17 @@ final class DoseLogStore {
         request.predicate = NSPredicate(format: "medication == %@", medication)
         return try context.count(for: request)
     }
+
+    /// All logged doses for a medication, most-recent first.
+    func logs(for medication: Medication) throws -> [DoseLog] {
+        let request = DoseLog.fetchRequest()
+        request.predicate = NSPredicate(format: "medication == %@", medication)
+        request.sortDescriptors = [NSSortDescriptor(key: "givenAt", ascending: false)]
+        return try context.fetch(request)
+    }
+
+    func delete(_ log: DoseLog) throws {
+        context.delete(log)
+        try context.save()
+    }
 }

@@ -1,0 +1,75 @@
+// ios/PetHomepage/Features/Medications/MedicationDetailView.swift
+import SwiftUI
+
+/// A medication's own page: its details + every logged dose, with one-tap dose logging.
+/// "Edit" opens the MedicationEditView bottom sheet.
+struct MedicationDetailView: View {
+    @State private var model: MedicationDetailViewModel
+    @State private var showEdit = false
+    private let services: TimelineServices
+
+    init(medication: Medication, services: TimelineServices) {
+        _model = State(initialValue: MedicationDetailViewModel(
+            medication: medication,
+            doseLogStore: services.doseLogStore
+        ))
+        self.services = services
+    }
+
+    private var med: Medication { model.medication }
+
+    var body: some View {
+        Form {
+            Section("Details") {
+                LabeledContent("Dosage", value: med.dosage.isEmpty ? "—" : med.dosage)
+                LabeledContent("Frequency", value: MedFrequency(parsing: med.frequency).label)
+                LabeledContent("Next reminder") {
+                    Text(med.startedAt, format: .dateTime.month().day().year())
+                }
+                if let refill = med.refillDueAt {
+                    LabeledContent("Refill due") { Text(refill, format: .dateTime.month().day().year()) }
+                }
+                if let ended = med.endedAt {
+                    LabeledContent("Ended") { Text(ended, format: .dateTime.month().day().year()) }
+                }
+            }
+
+            Section("Doses (\(model.doseCount))") {
+                Button {
+                    model.logDose()
+                } label: {
+                    Label("Log a dose now", systemImage: "checkmark.circle.fill").fontWeight(.semibold)
+                }
+                if model.doses.isEmpty {
+                    Text("No doses logged yet.").foregroundStyle(Theme.inkSoft)
+                } else {
+                    ForEach(model.doses, id: \.id) { dose in
+                        Text(dose.givenAt.formatted(date: .abbreviated, time: .shortened))
+                            .foregroundStyle(Theme.ink)
+                            .swipeActions(edge: .trailing) {
+                                Button(role: .destructive) { model.deleteDose(dose) } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                    }
+                }
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(Theme.bg)
+        .tint(Theme.primary)
+        .headerProminence(.increased)
+        .navigationTitle(med.drugName.isEmpty ? "Medication" : med.drugName)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Edit") { showEdit = true }
+            }
+        }
+        .sheet(isPresented: $showEdit, onDismiss: { model.load() }) {
+            MedicationEditView(store: services.medicationStore,
+                               reminderScheduler: services.reminderScheduler,
+                               editing: med)
+        }
+    }
+}

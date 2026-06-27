@@ -23,6 +23,7 @@ struct TimelineView: View {
     @State private var model: TimelineViewModel
     @State private var editTarget: TimelineItem?
     @State private var addKind: TimelineKind?
+    @State private var medDetail: Medication?
     private let services: TimelineServices
 
     init(services: TimelineServices) {
@@ -56,6 +57,10 @@ struct TimelineView: View {
             .onAppear { model.load() }
             .sheet(item: $editTarget, onDismiss: { model.load() }) { editor(for: $0) }
             .sheet(item: $addKind, onDismiss: { model.load() }) { addEditor(for: $0) }
+            .navigationDestination(item: $medDetail) { med in
+                MedicationDetailView(medication: med, services: services)
+            }
+            .onChange(of: medDetail) { _, new in if new == nil { model.load() } }
         }
     }
 
@@ -97,7 +102,11 @@ struct TimelineView: View {
             List {
                 ForEach(model.filtered) { item in
                     Button {
-                        if hasEditor(item) { editTarget = item }
+                        switch item.reference {
+                        case .medication(let m): medDetail = m   // medications get a detail page
+                        case .marker: break                       // markers have no detail/editor
+                        default: editTarget = item                // others open their editor sheet
+                        }
                     } label: {
                         row(item)
                     }
@@ -164,10 +173,6 @@ struct TimelineView: View {
         .padding(.bottom, 24)
     }
 
-    private func hasEditor(_ item: TimelineItem) -> Bool {
-        if case .marker = item.reference { return false } // markers have no individual editor
-        return true
-    }
 
 
     @ViewBuilder
