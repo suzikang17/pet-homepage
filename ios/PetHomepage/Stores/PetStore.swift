@@ -41,4 +41,13 @@ final class PetStore {
         try context.save()
         return pet
     }
+
+    /// Set the current pet's species. Creates a pet if none exists yet.
+    @discardableResult
+    func setSpecies(_ species: String, defaultName: String = "Your pet") throws -> Pet {
+        let pet = try currentPet() ?? createPet(name: defaultName, species: species)
+        pet.species = species
+        try context.save()
+        return pet
+    }
 }

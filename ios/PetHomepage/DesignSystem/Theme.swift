@@ -50,6 +50,8 @@ struct HeroHeader: View {
     var systemImage: String = "pawprint.fill"
     var avatar: Image? = nil
     var onTapAvatar: (() -> Void)? = nil
+    /// When provided, the subtitle becomes an inline editable field (placeholder = `subtitle`).
+    var editableSubtitle: Binding<String>? = nil
     var onAdd: (() -> Void)? = nil
     var onSettings: (() -> Void)? = nil
 
@@ -59,7 +61,19 @@ struct HeroHeader: View {
             VStack(alignment: .leading, spacing: 12) {
                 avatarView
                 VStack(alignment: .leading, spacing: 2) {
-                    if let subtitle {
+                    if let editableSubtitle {
+                        ZStack(alignment: .leading) {
+                            if editableSubtitle.wrappedValue.isEmpty {
+                                Text(subtitle ?? "").foregroundStyle(.white.opacity(0.55))
+                            }
+                            TextField("", text: editableSubtitle)
+                        }
+                        .font(.system(.subheadline, design: .rounded).weight(.bold))
+                        .foregroundStyle(.white)
+                        .tint(.white)
+                        .lineLimit(1)
+                        .submitLabel(.done)
+                    } else if let subtitle {
                         Text(subtitle.uppercased())
                             .font(.system(.caption, design: .rounded).weight(.heavy))
                             .tracking(1.6)

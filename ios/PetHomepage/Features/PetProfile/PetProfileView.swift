@@ -42,15 +42,14 @@ struct PetProfileView: View {
         NavigationStack {
             BrandScreen {
                 HeroHeader(
-                    title: model.name.isEmpty ? "Your pet" : model.name,
-                    subtitle: "Home",
+                    title: "Home",
+                    subtitle: "Your pet",
                     systemImage: speciesIcon,
                     avatar: avatarImage,
                     onTapAvatar: { showPhotoPicker = true },
+                    editableSubtitle: $model.name,
                     onSettings: settings != nil ? { showSettings = true } : nil
                 )
-
-                petCard.padding(.horizontal, 18)
 
                 if timelineServices != nil {
                     atAGlance
@@ -71,7 +70,6 @@ struct PetProfileView: View {
                 }
             }
             .onChange(of: model.name) { _, _ in autosave() }
-            .onChange(of: model.species) { _, _ in autosave() }
             .sheet(isPresented: $showSettings) {
                 if let settings { SettingsView(model: settings) }
             }
@@ -88,7 +86,7 @@ struct PetProfileView: View {
             }
             .photosPicker(isPresented: $showPhotoPicker, selection: $photoItem, matching: .images)
             .onChange(of: photoItem) { _, item in if let item { loadPhoto(item) } }
-            .onAppear(perform: refresh)
+            .onAppear { model.reload(); refresh() }
         }
     }
 
@@ -107,30 +105,6 @@ struct PetProfileView: View {
         }
     }
 
-    // MARK: - Pet identity (auto-saving)
-
-    private var petCard: some View {
-        BrandCard {
-            VStack(spacing: 0) {
-                FieldRow(label: "Name") {
-                    TextField("e.g. Sandy", text: $model.name)
-                        .font(Theme.body())
-                        .multilineTextAlignment(.trailing)
-                        .foregroundStyle(Theme.ink)
-                }
-                Divider().overlay(Theme.bg)
-                FieldRow(label: "Species") {
-                    Picker("", selection: $model.species) {
-                        Text("🐶  Dog").tag("dog")
-                        Text("🐱  Cat").tag("cat")
-                        Text("🐾  Other").tag("other")
-                    }
-                    .labelsHidden()
-                    .tint(Theme.primary)
-                }
-            }
-        }
-    }
 
     // MARK: - At a glance
 

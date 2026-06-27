@@ -21,6 +21,14 @@ final class PetProfileViewModel {
         }
     }
 
+    /// Re-read name/species/photo from the store (e.g. species edited on the Health tab).
+    func reload() {
+        guard let pet = try? store.currentPet() else { return }
+        name = pet.name
+        species = pet.species
+        photoData = pet.photoData
+    }
+
     /// Persist a new pet photo (or nil to clear). Creates the pet if needed.
     func setPhoto(_ data: Data?) {
         try? store.setPhoto(data, defaultName: name.isEmpty ? "Your pet" : name, defaultSpecies: species)

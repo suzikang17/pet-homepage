@@ -46,6 +46,16 @@ final class PetStoreTests: XCTestCase {
         XCTAssertNil(try store.currentPet()?.photoData)
     }
 
+    func testSetSpeciesPersistsAndCreatesPetIfNeeded() throws {
+        let store = PetStore(context: context)
+        try store.setSpecies("cat", defaultName: "Whiskers")
+        XCTAssertEqual(try store.currentPet()?.species, "cat")
+        XCTAssertEqual(try store.currentPet()?.name, "Whiskers")
+
+        try store.setSpecies("other")
+        XCTAssertEqual(try store.currentPet()?.species, "other")
+    }
+
     func testSetPhotoCreatesPetWhenNoneExists() throws {
         let store = PetStore(context: context)
         XCTAssertNil(try store.currentPet())
