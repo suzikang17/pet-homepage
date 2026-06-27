@@ -59,8 +59,6 @@ struct EpisodeDetailView: View {
             }
         }
         .navigationTitle(model.episode.title ?? model.episode.category.displayName)
-        .scrollContentBackground(.hidden)
-        .background(Theme.bg)
-        .tint(Theme.primary)
+        .brandSheet()
     }
 }

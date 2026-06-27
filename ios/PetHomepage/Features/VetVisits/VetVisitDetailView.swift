@@ -34,8 +34,6 @@ struct VetVisitDetailView: View {
             }
         }
         .navigationTitle("Visit detail")
-        .scrollContentBackground(.hidden)
-        .background(Theme.bg)
-        .tint(Theme.primary)
+        .brandSheet()
     }
 }

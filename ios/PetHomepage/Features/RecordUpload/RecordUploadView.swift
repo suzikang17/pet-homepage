@@ -38,10 +38,7 @@ struct RecordUploadView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
             }
-            .scrollContentBackground(.hidden)
-            .background(Theme.bg)
-            .tint(Theme.primary)
-            .presentationDragIndicator(.visible)
+            .brandSheet()
             .fileImporter(isPresented: $showPDFImporter, allowedContentTypes: [.pdf]) { handlePDF($0) }
             .onChange(of: photoItem) { _, item in if let item { loadPhoto(item) } }
         }

@@ -34,10 +34,7 @@ struct EpisodeStartView: View {
                     .disabled(!model.isValid)
                 }
             }
-            .scrollContentBackground(.hidden)
-            .background(Theme.bg)
-            .tint(Theme.primary)
-            .presentationDragIndicator(.visible)
+            .brandSheet()
         }
     }
 }

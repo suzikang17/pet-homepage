@@ -165,6 +165,19 @@ struct BrandCard<Content: View>: View {
     }
 }
 
+extension View {
+    /// Consistent light brand treatment for the Form-based add/edit sheets:
+    /// cream background, violet accent, prominent (non-stock) section headers, and a drag handle.
+    func brandSheet() -> some View {
+        self
+            .scrollContentBackground(.hidden)
+            .background(Theme.bg)
+            .tint(Theme.primary)
+            .headerProminence(.increased)
+            .presentationDragIndicator(.visible)
+    }
+}
+
 /// A label + trailing control row, used inside cards.
 struct FieldRow<Trailing: View>: View {
     let label: String

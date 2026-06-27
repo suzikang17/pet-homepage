@@ -143,10 +143,7 @@ struct PairDeviceView: View {
             .navigationTitle("Pair a device")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
-            .scrollContentBackground(.hidden)
-            .background(Theme.bg)
-            .tint(Theme.primary)
-            .presentationDragIndicator(.visible)
+            .brandSheet()
         }
     }
 }
