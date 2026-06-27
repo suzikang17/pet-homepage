@@ -27,12 +27,13 @@ targets:
           - CloudKit
         com.apple.developer.ubiquity-container-identifiers:
           - iCloud.pet.homepage
-        aps-environment: development
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: pet.homepage.PetHomepage
         DEVELOPMENT_TEAM: X5C7XC8SAV
         CODE_SIGN_STYLE: Automatic
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
         # Without a launch screen, iOS renders the app letterboxed (black bars,
         # scaled into a smaller box). This synthesizes an empty UILaunchScreen so
         # the app draws full-screen at native resolution on every device.
