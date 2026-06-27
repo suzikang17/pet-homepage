@@ -45,7 +45,8 @@ struct ContentView: View {
             recommendationStore: recommendationStore,
             healthMarkerStore: healthMarkerStore,
             symptomEpisodeStore: symptomEpisodeStore,
-            symptomEntryStore: symptomEntryStore
+            symptomEntryStore: symptomEntryStore,
+            veterinarianStore: veterinarianStore
         )
         let mirrorCoordinator = MirrorCoordinator(
             builder: snapshotBuilder,

@@ -28,6 +28,7 @@ type Snapshot = {
     ended_at?: string
     refill_due_at?: string
     dose_logs: Array<{ id: string; given_at: string }>
+    veterinarian?: string
   }>
   vaccinations: Array<{
     id: string
@@ -36,6 +37,7 @@ type Snapshot = {
     next_due_at?: string
     lot_number?: string
     administered_by?: string
+    veterinarian?: string
   }>
   vet_visits: Array<{
     id: string
@@ -47,6 +49,7 @@ type Snapshot = {
     treatment_notes?: string
     next_visit_date?: string
     recommendations: Array<{ id: string; date: string; text: string }>
+    veterinarian?: string
   }>
   unlinked_recommendations: Array<{ id: string; date: string; text: string }>
   health_markers: Array<{
@@ -70,6 +73,16 @@ type Snapshot = {
       note?: string
       suspected_cause?: string
     }>
+  }>
+  care_team?: Array<{
+    id: string
+    name: string
+    clinic?: string
+    phone?: string
+    email?: string
+    address?: string
+    website?: string
+    notes?: string
   }>
 }
 
@@ -170,6 +183,20 @@ export function MirrorDashboard() {
         </p>
       </header>
 
+      <Section title="Care team" count={snap.care_team?.length ?? 0}>
+        {(snap.care_team ?? []).map((vet) => (
+          <div key={vet.id} style={card()}>
+            <strong>{vet.name}</strong>
+            {vet.clinic && <span style={{ color: '#6b7280' }}> · {vet.clinic}</span>}
+            <div style={meta}>
+              {[vet.phone, vet.email, vet.website].filter(Boolean).join(' · ') || '—'}
+              {vet.address ? ` · ${vet.address}` : ''}
+            </div>
+            {vet.notes && <div style={meta}>{vet.notes}</div>}
+          </div>
+        ))}
+      </Section>
+
       <Section title="Medications" count={snap.medications.length}>
         {snap.medications.map((m) => {
           const last = m.dose_logs
@@ -182,6 +209,7 @@ export function MirrorDashboard() {
               {m.dosage && <span style={{ color: '#6b7280' }}>· {m.dosage}</span>}
               <div style={meta}>
                 {m.frequency} · last given {fmt(last)} · {m.dose_logs.length} dose(s)
+                {m.veterinarian ? ` · ${m.veterinarian}` : ''}
                 {m.refill_due_at ? ` · refill ${fmt(m.refill_due_at)}` : ''}
                 {m.ended_at ? ' · ended' : ''}
               </div>
@@ -197,6 +225,7 @@ export function MirrorDashboard() {
             <div style={meta}>
               given {fmt(v.administered_at)} · next due {fmt(v.next_due_at)}
               {v.administered_by ? ` · by ${v.administered_by}` : ''}
+              {v.veterinarian ? ` · ${v.veterinarian}` : ''}
             </div>
           </div>
         ))}
@@ -209,6 +238,7 @@ export function MirrorDashboard() {
             {vv.clinic_name && <span style={{ color: '#6b7280' }}> · {vv.clinic_name}</span>}
             <div style={meta}>
               {[vv.reason, vv.diagnosis].filter(Boolean).join(' · ') || 'Visit'}
+              {vv.veterinarian ? ` · ${vv.veterinarian}` : ''}
               {vv.next_visit_date ? ` · next ${fmt(vv.next_visit_date)}` : ''}
             </div>
             {vv.recommendations.length > 0 && (

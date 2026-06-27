@@ -50,6 +50,25 @@ final class SnapshotBuilderTests: XCTestCase {
         }
     }
 
+    func testBuildIncludesCareTeamAndPerRecordVet() throws {
+        let date = Date(timeIntervalSince1970: 1_700_000_000)
+        try petStore.createPet(name: "Sandy", species: "dog")
+        let vetStore = VeterinarianStore(context: context, petStore: petStore)
+        let vet = try vetStore.create(name: "Dr. Ruth", clinic: "Maple Vet")
+        let med = try medicationStore.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily",
+                                             scheduleTime: date, startedAt: date, refillDueAt: nil)
+        med.veterinarian = vet
+        try context.save()
+
+        let snapshot = try makeBuilder().build()
+
+        XCTAssertEqual(snapshot.careTeam.count, 1)
+        XCTAssertEqual(snapshot.careTeam.first?.name, "Dr. Ruth")
+        XCTAssertEqual(snapshot.careTeam.first?.clinic, "Maple Vet")
+        XCTAssertEqual(snapshot.medications.first?.veterinarian, "Dr. Ruth")
+        XCTAssertEqual(snapshot.schemaVersion, 2)
+    }
+
     func testBuildCapturesFullRecordWithCorrectCounts() throws {
         let date = Date(timeIntervalSince1970: 1_700_000_000)
         try petStore.createPet(name: "Sandy", species: "dog")

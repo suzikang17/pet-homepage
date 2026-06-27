@@ -20,6 +20,7 @@ final class SnapshotBuilder {
     private let healthMarkerStore: HealthMarkerStore
     private let symptomEpisodeStore: SymptomEpisodeStore
     private let symptomEntryStore: SymptomEntryStore
+    private let veterinarianStore: VeterinarianStore
     private let context: NSManagedObjectContext
     private let now: () -> Date
 
@@ -32,6 +33,7 @@ final class SnapshotBuilder {
          healthMarkerStore: HealthMarkerStore,
          symptomEpisodeStore: SymptomEpisodeStore,
          symptomEntryStore: SymptomEntryStore,
+         veterinarianStore: VeterinarianStore? = nil,
          now: @escaping () -> Date = { Date() }) {
         self.petStore = petStore
         self.medicationStore = medicationStore
@@ -42,6 +44,7 @@ final class SnapshotBuilder {
         self.healthMarkerStore = healthMarkerStore
         self.symptomEpisodeStore = symptomEpisodeStore
         self.symptomEntryStore = symptomEntryStore
+        self.veterinarianStore = veterinarianStore ?? VeterinarianStore(context: petStore.context, petStore: petStore)
         // The pet's managedObjectContext is the shared context every store was built with.
         self.context = petStore.context
         self.now = now
@@ -69,7 +72,8 @@ final class SnapshotBuilder {
                 startedAt: med.startedAt,
                 endedAt: med.endedAt,
                 refillDueAt: med.refillDueAt,
-                doseLogs: try doseLogs(for: med).map { DoseLogSnapshot(id: $0.id, givenAt: $0.givenAt) }
+                doseLogs: try doseLogs(for: med).map { DoseLogSnapshot(id: $0.id, givenAt: $0.givenAt) },
+                veterinarian: med.veterinarian?.name
             )
         }
 
@@ -80,7 +84,8 @@ final class SnapshotBuilder {
                 administeredAt: vax.administeredAt,
                 nextDueAt: vax.nextDueAt,
                 lotNumber: vax.lotNumber,
-                administeredBy: vax.administeredBy
+                administeredBy: vax.administeredBy,
+                veterinarian: vax.veterinarian?.name
             )
         }
 
@@ -96,7 +101,8 @@ final class SnapshotBuilder {
                 nextVisitDate: visit.nextVisitDate,
                 recommendations: try recommendationStore.recommendations(for: visit).map {
                     RecommendationSnapshot(id: $0.id, date: $0.date, text: $0.text)
-                }
+                },
+                veterinarian: visit.veterinarian?.name
             )
         }
 
@@ -134,6 +140,11 @@ final class SnapshotBuilder {
             )
         }
 
+        let careTeam = try veterinarianStore.veterinarians().map {
+            VeterinarianSnapshot(id: $0.id, name: $0.name, clinic: $0.clinic, phone: $0.phone,
+                                 email: $0.email, address: $0.address, website: $0.website, notes: $0.notes)
+        }
+
         return MirrorSnapshot(
             schemaVersion: MirrorSnapshot.currentSchemaVersion,
             generatedAt: now(),
@@ -143,7 +154,8 @@ final class SnapshotBuilder {
             vetVisits: vetVisits,
             unlinkedRecommendations: unlinkedRecommendations,
             healthMarkers: healthMarkers,
-            symptomEpisodes: symptomEpisodes
+            symptomEpisodes: symptomEpisodes,
+            careTeam: careTeam
         )
     }
 

@@ -15,6 +15,7 @@ struct MirrorSnapshot: Codable, Equatable {
     var unlinkedRecommendations: [RecommendationSnapshot]
     var healthMarkers: [HealthMarkerSnapshot]
     var symptomEpisodes: [SymptomEpisodeSnapshot]
+    var careTeam: [VeterinarianSnapshot] = []
 
     enum CodingKeys: String, CodingKey {
         case schemaVersion = "schema_version"
@@ -26,10 +27,12 @@ struct MirrorSnapshot: Codable, Equatable {
         case unlinkedRecommendations = "unlinked_recommendations"
         case healthMarkers = "health_markers"
         case symptomEpisodes = "symptom_episodes"
+        case careTeam = "care_team"
     }
 
     /// The current wire-format version. Bump when the shape changes so the web side can branch.
-    static let currentSchemaVersion = 1
+    /// v2 added `care_team` + a `veterinarian` (name) on medications/vaccinations/vet_visits.
+    static let currentSchemaVersion = 2
 
     /// Shared encoder: ISO-8601 dates, snake_case already handled by explicit CodingKeys.
     static let encoder: JSONEncoder = {
@@ -71,6 +74,7 @@ struct MedicationSnapshot: Codable, Equatable {
     var endedAt: Date?
     var refillDueAt: Date?
     var doseLogs: [DoseLogSnapshot]
+    var veterinarian: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -82,6 +86,7 @@ struct MedicationSnapshot: Codable, Equatable {
         case endedAt = "ended_at"
         case refillDueAt = "refill_due_at"
         case doseLogs = "dose_logs"
+        case veterinarian
     }
 }
 
@@ -102,6 +107,7 @@ struct VaccinationSnapshot: Codable, Equatable {
     var nextDueAt: Date?
     var lotNumber: String?
     var administeredBy: String?
+    var veterinarian: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -110,6 +116,7 @@ struct VaccinationSnapshot: Codable, Equatable {
         case nextDueAt = "next_due_at"
         case lotNumber = "lot_number"
         case administeredBy = "administered_by"
+        case veterinarian
     }
 }
 
@@ -123,6 +130,7 @@ struct VetVisitSnapshot: Codable, Equatable {
     var treatmentNotes: String?
     var nextVisitDate: Date?
     var recommendations: [RecommendationSnapshot]
+    var veterinarian: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -134,6 +142,7 @@ struct VetVisitSnapshot: Codable, Equatable {
         case treatmentNotes = "treatment_notes"
         case nextVisitDate = "next_visit_date"
         case recommendations
+        case veterinarian
     }
 }
 
@@ -141,6 +150,17 @@ struct RecommendationSnapshot: Codable, Equatable {
     var id: UUID
     var date: Date
     var text: String
+}
+
+struct VeterinarianSnapshot: Codable, Equatable {
+    var id: UUID
+    var name: String
+    var clinic: String?
+    var phone: String?
+    var email: String?
+    var address: String?
+    var website: String?
+    var notes: String?
 }
 
 struct HealthMarkerSnapshot: Codable, Equatable {
