@@ -24,6 +24,9 @@ struct MedicationDetailView: View {
             Section("Details") {
                 LabeledContent("Dosage", value: med.dosage.isEmpty ? "—" : med.dosage)
                 LabeledContent("Frequency", value: MedFrequency(parsing: med.frequency).label)
+                if let vet = med.veterinarian {
+                    LabeledContent("Veterinarian", value: vet.name)
+                }
                 LabeledContent("Next reminder") {
                     Text(med.startedAt, format: .dateTime.month().day().year())
                 }

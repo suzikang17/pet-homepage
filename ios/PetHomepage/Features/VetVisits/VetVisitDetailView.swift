@@ -13,6 +13,7 @@ struct VetVisitDetailView: View {
             Section("Visit") {
                 LabeledContent("Date", value: model.visit.occurredAt.formatted(date: .abbreviated, time: .omitted))
                 if let clinic = model.visit.clinicName { LabeledContent("Clinic", value: clinic) }
+                if let careVet = model.visit.veterinarian { LabeledContent("Veterinarian", value: careVet.name) }
                 if let vet = model.visit.vetName { LabeledContent("Vet", value: vet) }
                 if let reason = model.visit.reason { LabeledContent("Reason", value: reason) }
                 if let diagnosis = model.visit.diagnosis { LabeledContent("Diagnosis", value: diagnosis) }
