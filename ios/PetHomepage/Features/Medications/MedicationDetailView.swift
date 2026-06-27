@@ -6,6 +6,7 @@ import SwiftUI
 struct MedicationDetailView: View {
     @State private var model: MedicationDetailViewModel
     @State private var showEdit = false
+    @State private var showLog = false
     private let services: TimelineServices
 
     init(medication: Medication, services: TimelineServices) {
@@ -36,21 +37,26 @@ struct MedicationDetailView: View {
 
             Section("Doses (\(model.doseCount))") {
                 Button {
-                    model.logDose()
+                    showLog = true
                 } label: {
-                    Label("Log a dose now", systemImage: "checkmark.circle.fill").fontWeight(.semibold)
+                    Label("Log a dose", systemImage: "checkmark.circle.fill").fontWeight(.semibold)
                 }
                 if model.doses.isEmpty {
                     Text("No doses logged yet.").foregroundStyle(Theme.inkSoft)
                 } else {
                     ForEach(model.doses, id: \.id) { dose in
-                        Text(dose.givenAt.formatted(date: .abbreviated, time: .shortened))
-                            .foregroundStyle(Theme.ink)
-                            .swipeActions(edge: .trailing) {
-                                Button(role: .destructive) { model.deleteDose(dose) } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(dose.givenAt.formatted(date: .abbreviated, time: .shortened))
+                                .foregroundStyle(Theme.ink)
+                            if let note = dose.note, !note.isEmpty {
+                                Text(note).font(.caption).foregroundStyle(Theme.inkSoft)
                             }
+                        }
+                        .swipeActions(edge: .trailing) {
+                            Button(role: .destructive) { model.deleteDose(dose) } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
                     }
                 }
             }
@@ -70,6 +76,11 @@ struct MedicationDetailView: View {
             MedicationEditView(store: services.medicationStore,
                                reminderScheduler: services.reminderScheduler,
                                editing: med)
+        }
+        .sheet(isPresented: $showLog, onDismiss: { model.load() }) {
+            LogDoseView(medication: med,
+                        doseLogStore: services.doseLogStore,
+                        reminderScheduler: services.reminderScheduler)
         }
     }
 }

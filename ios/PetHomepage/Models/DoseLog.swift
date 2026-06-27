@@ -5,6 +5,7 @@ import CoreData
 public class DoseLog: NSManagedObject {
     @NSManaged public var id: UUID
     @NSManaged public var givenAt: Date
+    @NSManaged public var note: String?
     @NSManaged public var medication: Medication?
 }
 

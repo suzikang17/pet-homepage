@@ -10,10 +10,12 @@ final class DoseLogStore {
     }
 
     @discardableResult
-    func logDose(for medication: Medication, at date: Date = Date()) throws -> DoseLog {
+    func logDose(for medication: Medication, at date: Date = Date(), note: String? = nil) throws -> DoseLog {
         let log = DoseLog(context: context)
         log.id = UUID()
         log.givenAt = date
+        let trimmed = note?.trimmingCharacters(in: .whitespacesAndNewlines)
+        log.note = (trimmed?.isEmpty == false) ? trimmed : nil
         log.medication = medication
         try context.save()
         return log
