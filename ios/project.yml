@@ -34,6 +34,9 @@ targets:
         CODE_SIGN_STYLE: Automatic
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
+        # App uses only standard HTTPS/TLS (export-exempt) — declare it so TestFlight
+        # doesn't ask the export-compliance question on every build.
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: "NO"
         # Without a launch screen, iOS renders the app letterboxed (black bars,
         # scaled into a smaller box). This synthesizes an empty UILaunchScreen so
         # the app draws full-screen at native resolution on every device.
