@@ -9,6 +9,7 @@ public class Photo: NSManagedObject {
     @NSManaged public var createdAt: Date
     @NSManaged public var pet: Pet?
     @NSManaged public var diaryEntry: DiaryEntry?
+    @NSManaged public var vetVisit: VetVisit?
 }
 
 extension Photo {

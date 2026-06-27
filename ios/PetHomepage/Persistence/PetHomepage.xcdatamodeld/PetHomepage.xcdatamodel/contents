@@ -58,6 +58,7 @@
         <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="vetVisits" inverseEntity="Pet"/>
         <relationship name="recommendations" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="VetRecommendation" inverseName="vetVisit" inverseEntity="VetRecommendation"/>
         <relationship name="veterinarian" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Veterinarian" inverseName="vetVisits" inverseEntity="Veterinarian"/>
+        <relationship name="photos" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Photo" inverseName="vetVisit" inverseEntity="Photo"/>
     </entity>
     <entity name="VetRecommendation" representedClassName="VetRecommendation" syncable="YES" codeGenerationType="none">
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
@@ -119,5 +120,6 @@
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="photos" inverseEntity="Pet"/>
         <relationship name="diaryEntry" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="DiaryEntry" inverseName="photos" inverseEntity="DiaryEntry"/>
+        <relationship name="vetVisit" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="VetVisit" inverseName="photos" inverseEntity="VetVisit"/>
     </entity>
 </model>

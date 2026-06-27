@@ -33,6 +33,17 @@ final class DiaryStoreTests: XCTestCase {
         XCTAssertEqual(try store.allPhotos().first?.diaryEntry, entry)
     }
 
+    func testVetVisitPhotoAppearsInAllPhotos() throws {
+        let vetVisitStore = VetVisitStore(context: context, petStore: petStore)
+        let visit = try vetVisitStore.create(occurredAt: Date(), clinicName: "Bayside", vetName: nil,
+                                             reason: "checkup", diagnosis: nil, treatmentNotes: nil, nextVisitDate: nil)
+        try store.addPhoto(toVetVisit: visit, imageData: Data([0x9]))
+
+        XCTAssertEqual(visit.photoArray.count, 1)
+        XCTAssertEqual(try store.allPhotos().count, 1, "record photos join the pet-wide grid")
+        XCTAssertEqual(try store.allPhotos().first?.vetVisit, visit)
+    }
+
     func testDeleteEntryCascadesItsPhotos() throws {
         let entry = try store.createEntry(date: Date(), note: "Walk")
         try store.addPhoto(to: entry, imageData: Data([0x1]))

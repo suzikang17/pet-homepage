@@ -9,6 +9,7 @@ struct TimelineServices {
     let medicationStore: MedicationStore
     let doseLogStore: DoseLogStore
     let veterinarianStore: VeterinarianStore
+    let diaryStore: DiaryStore
     let healthMarkerStore: HealthMarkerStore
     let symptomEpisodeStore: SymptomEpisodeStore
     let symptomEntryStore: SymptomEntryStore
@@ -183,7 +184,8 @@ struct TimelineView: View {
             VaccinationEditView(store: services.vaccinationStore, dueScheduler: services.dueScheduler,
                                 veterinarianStore: services.veterinarianStore, editing: v)
         case .vet(let v):
-            VetVisitDetailView(visit: v, recommendationStore: services.recommendationStore)
+            VetVisitDetailView(visit: v, recommendationStore: services.recommendationStore,
+                               diaryStore: services.diaryStore)
         case .medication(let m):
             MedicationEditView(store: services.medicationStore, reminderScheduler: services.reminderScheduler,
                                veterinarianStore: services.veterinarianStore, editing: m)

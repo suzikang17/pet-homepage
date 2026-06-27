@@ -18,10 +18,16 @@ public class VetVisit: NSManagedObject {
     @NSManaged public var pet: Pet?
     @NSManaged public var recommendations: NSSet?
     @NSManaged public var veterinarian: Veterinarian?
+    @NSManaged public var photos: NSSet?
 }
 
 extension VetVisit {
     @nonobjc public static func fetchRequest() -> NSFetchRequest<VetVisit> {
         NSFetchRequest<VetVisit>(entityName: "VetVisit")
+    }
+
+    /// This visit's photos, oldest-first.
+    var photoArray: [Photo] {
+        (photos as? Set<Photo> ?? []).sorted { $0.createdAt < $1.createdAt }
     }
 }

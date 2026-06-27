@@ -60,6 +60,19 @@ final class DiaryStore {
         return photo
     }
 
+    @discardableResult
+    func addPhoto(toVetVisit visit: VetVisit, imageData: Data, caption: String? = nil, createdAt: Date = Date()) throws -> Photo {
+        let photo = Photo(context: context)
+        photo.id = UUID()
+        photo.imageData = imageData
+        photo.caption = caption
+        photo.createdAt = createdAt
+        photo.pet = try petStore.ensurePet()
+        photo.vetVisit = visit
+        try context.save()
+        return photo
+    }
+
     /// Every photo for the current pet (diary + record photos), newest first.
     func allPhotos() throws -> [Photo] {
         guard let pet = try petStore.currentPet() else { return [] }
