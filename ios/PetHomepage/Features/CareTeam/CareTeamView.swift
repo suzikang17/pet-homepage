@@ -16,14 +16,16 @@ struct CareTeamView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 12) {
-                HeroHeader(
-                    title: "Care Team",
-                    subtitle: model.vets.isEmpty ? "Your vets" : "\(model.vets.count) vet\(model.vets.count == 1 ? "" : "s")",
-                    systemImage: "stethoscope",
-                    onAdd: { addVet = true }
-                )
-                content
+            ZStack(alignment: .bottomTrailing) {
+                VStack(spacing: 12) {
+                    HeroHeader(
+                        title: "Care Team",
+                        subtitle: model.vets.isEmpty ? "Your vets" : "\(model.vets.count) vet\(model.vets.count == 1 ? "" : "s")",
+                        systemImage: "stethoscope"
+                    )
+                    content
+                }
+                addButton
             }
             .background(Theme.bg)
             .ignoresSafeArea(edges: .top)
@@ -36,6 +38,20 @@ struct CareTeamView: View {
                 VetEditView(store: store, editing: vet)
             }
         }
+    }
+
+    /// Floating add button — bottom-trailing, matching the Timeline + Diary.
+    private var addButton: some View {
+        Button { addVet = true } label: {
+            Image(systemName: "plus")
+                .font(.system(size: 24, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 60, height: 60)
+                .background(Theme.primary, in: Circle())
+                .shadow(color: Theme.primary.opacity(0.35), radius: 12, y: 5)
+        }
+        .padding(.trailing, 22)
+        .padding(.bottom, 24)
     }
 
     @ViewBuilder
