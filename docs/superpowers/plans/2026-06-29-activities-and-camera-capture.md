@@ -17,7 +17,7 @@
 - **Stores are built in `ContentView.body`** and threaded through views / the `TimelineServices` struct. Schedulers wrap a fresh `UNNotificationScheduler()`.
 - **Regenerate the project after adding files:** any task that creates a new `.swift` file must run `xcodegen generate` from `ios/` before building/testing (the Xcode project globs source dirs from `project.yml`).
 - **Test command template** (adjust simulator name to one installed locally; discover with `xcrun simctl list devices available`):
-  `cd ios && xcodegen generate && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:PetHomepageTests/<TestClass>`
+  `cd ios && xcodegen generate && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:PetHomepageTests/<TestClass>`
 - **Commit after every task** with a `feat:`/`test:`/`refactor:` message. Work on branch `feat/care-activities` (already created).
 - **SF Symbol names are provisional.** Before committing any task that hardcodes a symbol, verify it renders (SF Symbols app or a quick simulator run); substitute the closest existing symbol if missing.
 
@@ -88,7 +88,7 @@ final class ActivityCategoryTests: XCTestCase {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cd ios && xcodegen generate && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:PetHomepageTests/ActivityCategoryTests`
+Run: `cd ios && xcodegen generate && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:PetHomepageTests/ActivityCategoryTests`
 Expected: FAIL — `cannot find 'ActivityCategory' in scope`.
 
 - [ ] **Step 3: Write minimal implementation**
@@ -220,7 +220,7 @@ final class ActivityModelTests: XCTestCase {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cd ios && xcodegen generate && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:PetHomepageTests/ActivityModelTests`
+Run: `cd ios && xcodegen generate && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:PetHomepageTests/ActivityModelTests`
 Expected: FAIL — `cannot find 'ActivityType' in scope`.
 
 - [ ] **Step 3: Add the two entities to the Core Data model**
@@ -458,7 +458,7 @@ final class ActivityStoreTests: XCTestCase {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cd ios && xcodegen generate && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:PetHomepageTests/ActivityStoreTests`
+Run: `cd ios && xcodegen generate && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:PetHomepageTests/ActivityStoreTests`
 Expected: FAIL — `cannot find 'ActivityStore' in scope`.
 
 - [ ] **Step 3: Write the implementation**
@@ -660,7 +660,7 @@ final class ActivityStoreSeedingTests: XCTestCase {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cd ios && xcodegen generate && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:PetHomepageTests/ActivityStoreSeedingTests`
+Run: `cd ios && xcodegen generate && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:PetHomepageTests/ActivityStoreSeedingTests`
 Expected: FAIL — `value of type 'ActivityStore' has no member 'seedDefaultsIfNeeded'`.
 
 - [ ] **Step 3: Add seeding to `ActivityStore`**
@@ -792,7 +792,7 @@ Then add:
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `cd ios && xcodegen generate && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:PetHomepageTests/DueReminderSchedulerTests`
+Run: `cd ios && xcodegen generate && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:PetHomepageTests/DueReminderSchedulerTests`
 Expected: FAIL — `type 'ReminderKind' has no member 'activity'`.
 
 - [ ] **Step 3: Add the `.activity` reminder kind**
@@ -912,7 +912,7 @@ final class ImageDownscalerTests: XCTestCase {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cd ios && xcodegen generate && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:PetHomepageTests/ImageDownscalerTests`
+Run: `cd ios && xcodegen generate && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:PetHomepageTests/ImageDownscalerTests`
 Expected: FAIL — `cannot find 'ImageDownscaler' in scope`.
 
 - [ ] **Step 3: Create `ImageDownscaler`** (the existing inline logic, extracted)
@@ -1058,9 +1058,9 @@ to:
 
 - [ ] **Step 9: Build to verify the app compiles, then run the downscaler test**
 
-Run: `cd ios && xcodegen generate && xcodebuild build -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16'`
+Run: `cd ios && xcodegen generate && xcodebuild build -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 17 Pro'`
 Expected: BUILD SUCCEEDED.
-Then: `xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:PetHomepageTests/ImageDownscalerTests`
+Then: `xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:PetHomepageTests/ImageDownscalerTests`
 Expected: PASS.
 
 - [ ] **Step 10: Commit**
@@ -1116,7 +1116,7 @@ First inspect the existing `TimelineViewModelTests.swift` setUp to match how it 
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `cd ios && xcodegen generate && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:PetHomepageTests/TimelineViewModelTests`
+Run: `cd ios && xcodegen generate && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:PetHomepageTests/TimelineViewModelTests`
 Expected: FAIL — `extra argument 'activityStore' in call` / `type 'TimelineKind' has no member 'activity'`.
 
 - [ ] **Step 3: Extend `TimelineViewModel`**
@@ -1205,7 +1205,7 @@ In `ios/PetHomepage/Features/Timeline/TimelineView.swift` `init(services:)`, add
 - [ ] **Step 5: Run tests to verify they pass**
 
 Run: same as Step 2, then also build:
-`xcodebuild build -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16'`
+`xcodebuild build -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 17 Pro'`
 Expected: tests PASS and BUILD SUCCEEDED.
 
 - [ ] **Step 6: Commit**
@@ -1321,7 +1321,7 @@ final class ActivityLogEditViewModelTests: XCTestCase {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cd ios && xcodegen generate && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:PetHomepageTests/ActivityLogEditViewModelTests`
+Run: `cd ios && xcodegen generate && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:PetHomepageTests/ActivityLogEditViewModelTests`
 Expected: FAIL — `cannot find 'ActivityLogEditViewModel' in scope`.
 
 - [ ] **Step 3: Write the ViewModel**
@@ -1670,13 +1670,13 @@ If threading `activityStore` into `SettingsView` is invasive, the acceptable alt
 
 - [ ] **Step 7: Build and smoke-test**
 
-Run: `cd ios && xcodegen generate && xcodebuild build -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16'`
+Run: `cd ios && xcodegen generate && xcodebuild build -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 17 Pro'`
 Expected: BUILD SUCCEEDED.
 Then launch in the simulator and verify: Timeline "+" → Activity → the type picker shows seeded types grouped by category → log a Bath with a photo (library; camera is simulator-unavailable) → it appears in the Timeline and (with cadence on) under Home "Due soon" → Settings shows "Manage activity types" and archive works.
 
 - [ ] **Step 8: Run the full test suite**
 
-Run: `cd ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 16'`
+Run: `cd ios && xcodebuild test -scheme PetHomepage -destination 'platform=iOS Simulator,name=iPhone 17 Pro'`
 Expected: all tests PASS (existing + new).
 
 - [ ] **Step 9: Commit**
