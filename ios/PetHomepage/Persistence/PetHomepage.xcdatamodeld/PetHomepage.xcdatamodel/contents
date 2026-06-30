@@ -16,6 +16,8 @@
         <relationship name="veterinarians" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Veterinarian" inverseName="pet" inverseEntity="Veterinarian"/>
         <relationship name="diaryEntries" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="DiaryEntry" inverseName="pet" inverseEntity="DiaryEntry"/>
         <relationship name="photos" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Photo" inverseName="pet" inverseEntity="Photo"/>
+        <relationship name="activityTypes" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ActivityType" inverseName="pet" inverseEntity="ActivityType"/>
+        <relationship name="activityLogs" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ActivityLog" inverseName="pet" inverseEntity="ActivityLog"/>
     </entity>
     <entity name="Medication" representedClassName="Medication" syncable="YES" codeGenerationType="none">
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
@@ -125,5 +127,27 @@
         <relationship name="vetVisit" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="VetVisit" inverseName="photos" inverseEntity="VetVisit"/>
         <relationship name="medication" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Medication" inverseName="photos" inverseEntity="Medication"/>
         <relationship name="vaccination" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Vaccination" inverseName="photos" inverseEntity="Vaccination"/>
+        <relationship name="activityLog" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ActivityLog" inverseName="photos" inverseEntity="ActivityLog"/>
+    </entity>
+    <entity name="ActivityType" representedClassName="ActivityType" syncable="YES" codeGenerationType="none">
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="name" optional="NO" attributeType="String" defaultValueString=""/>
+        <attribute name="categoryRaw" optional="NO" attributeType="String" defaultValueString="other"/>
+        <attribute name="iconName" optional="NO" attributeType="String" defaultValueString="pawprint"/>
+        <attribute name="defaultIntervalDays" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="sortOrder" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="isArchived" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="activityTypes" inverseEntity="Pet"/>
+        <relationship name="logs" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ActivityLog" inverseName="activityType" inverseEntity="ActivityLog"/>
+    </entity>
+    <entity name="ActivityLog" representedClassName="ActivityLog" syncable="YES" codeGenerationType="none">
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="performedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="note" optional="YES" attributeType="String"/>
+        <attribute name="intervalDays" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="nextDueAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="activityType" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ActivityType" inverseName="logs" inverseEntity="ActivityType"/>
+        <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="activityLogs" inverseEntity="Pet"/>
+        <relationship name="photos" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Photo" inverseName="activityLog" inverseEntity="Photo"/>
     </entity>
 </model>
