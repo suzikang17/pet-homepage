@@ -19,32 +19,17 @@ struct ActivityLogEditView: View {
             onCancel: { dismiss() },
             onConfirm: { Task { try? await model.save(); dismiss() } }
         ) {
-            Section("Activity") {
-                Picker("Type", selection: Binding(
-                    get: { model.selectedType },
-                    set: { if let t = $0 { model.selectType(t) } }
-                )) {
-                    ForEach(ActivityCategory.allCases) { category in
-                        let typesInCategory = model.availableTypes.filter { $0.category == category }
-                        if !typesInCategory.isEmpty {
-                            Section(category.displayName) {
-                                ForEach(typesInCategory) { type in
-                                    Label(type.name, systemImage: type.iconName)
-                                        .tag(ActivityType?.some(type))
-                                }
-                            }
-                        }
-                    }
-                }
+            Section {
+                typePicker
                 Button { addingNewType = true } label: {
                     Label("New activity", systemImage: "plus.circle")
                 }
             }
-            Section("When") {
+            Section {
                 DatePicker("Performed", selection: $model.performedAt, displayedComponents: .date)
                 TextField("Note", text: $model.note)
             }
-            Section("Repeat") {
+            Section {
                 Toggle("Remind me again", isOn: $model.hasCadence)
                 if model.hasCadence {
                     Stepper("Every \(model.intervalDays) days", value: $model.intervalDays, in: 1...365)
@@ -63,6 +48,28 @@ struct ActivityLogEditView: View {
         }
     }
 
+    /// Type selector grouped into category sections. Extracted into its own builder so the
+    /// nested ForEach/Section/Binding expression stays within the type-checker's budget.
+    @ViewBuilder
+    private var typePicker: some View {
+        Picker("Type", selection: Binding(
+            get: { model.selectedType },
+            set: { if let t = $0 { model.selectType(t) } }
+        )) {
+            ForEach(ActivityCategory.allCases) { category in
+                let typesInCategory = model.availableTypes.filter { $0.category == category }
+                if !typesInCategory.isEmpty {
+                    Section(category.displayName) {
+                        ForEach(typesInCategory) { type in
+                            Label(type.name, systemImage: type.iconName)
+                                .tag(ActivityType?.some(type))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private var newTypeSheet: some View {
         BrandFormSheet(
             title: "New activity",
@@ -71,7 +78,7 @@ struct ActivityLogEditView: View {
             onCancel: { addingNewType = false },
             onConfirm: { try? model.createAndSelectNewType(); addingNewType = false }
         ) {
-            Section("Details") {
+            Section {
                 TextField("Name", text: $model.newTypeName)
                 Picker("Category", selection: $model.newTypeCategory) {
                     ForEach(ActivityCategory.allCases) { Text($0.displayName).tag($0) }

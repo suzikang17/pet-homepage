@@ -50,7 +50,8 @@ struct TimelineView: View {
                         title: "Timeline",
                         subtitle: model.filter?.label ?? "Everything",
                         systemImage: "calendar",
-                        onSettings: { showActivityTypes = true }
+                        onSettings: { showActivityTypes = true },
+                        settingsSymbol: "slider.horizontal.3"
                     )
                     chips
                     content

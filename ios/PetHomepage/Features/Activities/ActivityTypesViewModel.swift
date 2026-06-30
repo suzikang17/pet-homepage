@@ -19,8 +19,12 @@ final class ActivityTypesViewModel {
         reload()
     }
 
-    func updateInterval(_ type: ActivityType, days: Int) {
-        try? store.updateType(type, name: type.name, category: type.category, iconName: type.iconName, defaultIntervalDays: days)
+    func update(_ type: ActivityType,
+                name: String,
+                category: ActivityCategory,
+                iconName: String,
+                defaultIntervalDays: Int) {
+        try? store.updateType(type, name: name, category: category, iconName: iconName, defaultIntervalDays: defaultIntervalDays)
         reload()
     }
 }

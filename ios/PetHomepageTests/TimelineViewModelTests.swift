@@ -138,6 +138,27 @@ final class TimelineViewModelTests: XCTestCase {
         XCTAssertTrue(after.isEmpty, "due reminder should be cancelled on delete")
     }
 
+    func testDeleteLatestActivityReArmsPriorLogReminder() async throws {
+        let fake = FakeNotificationScheduler()
+        let dueScheduler = DueReminderScheduler(scheduler: fake)
+        let type = try activityStore.createType(name: "Bath", category: .care, iconName: "shower", defaultIntervalDays: 30)
+        let older = try activityStore.log(type: type, performedAt: day(10), note: nil, intervalDays: 30)
+        let newer = try activityStore.log(type: type, performedAt: day(40), note: nil, intervalDays: 30)
+        // Only the newest log holds a pending reminder (the edit VM enforces this when logging;
+        // set that state up directly here to mirror it).
+        await dueScheduler.syncActivity(newer)
+
+        let vm = makeVM()
+        vm.load()
+        let item = try XCTUnwrap(vm.items.first { $0.id == "activity:\(newer.id.uuidString)" })
+        await vm.delete(item, using: makeServices(
+            reminderScheduler: MedicationReminderScheduler(scheduler: FakeNotificationScheduler()),
+            dueScheduler: dueScheduler))
+
+        let pending = await fake.pendingIDs(kind: .activity)
+        XCTAssertEqual(pending, [older.id], "deleting the latest log should re-arm the prior log's reminder")
+    }
+
     func testActivityLogsAppearInStreamAndDueSoon() throws {
         // Uses the same in-memory context + petStore the other tests build.
         let context = PersistenceController(inMemory: true).container.viewContext

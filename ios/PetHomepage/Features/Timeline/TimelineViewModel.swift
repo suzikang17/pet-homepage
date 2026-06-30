@@ -136,8 +136,14 @@ final class TimelineViewModel {
         case .symptom(let ep):
             try? services.symptomEpisodeStore.delete(ep)
         case .activity(let log):
+            let type = log.activityType
             await services.dueScheduler.cancelActivity(log)
             try? services.activityStore.delete(log)
+            // Re-arm the now-newest log of this type, so deleting the latest occurrence
+            // doesn't silently drop the type's pending reminder.
+            if let type, let newLatest = try? services.activityStore.latestLog(of: type) {
+                await services.dueScheduler.syncActivity(newLatest)
+            }
         }
         load()
     }

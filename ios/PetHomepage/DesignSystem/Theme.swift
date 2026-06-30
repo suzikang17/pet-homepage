@@ -56,6 +56,9 @@ struct HeroHeader: View {
     var editableSubtitle: Binding<String>? = nil
     var onAdd: (() -> Void)? = nil
     var onSettings: (() -> Void)? = nil
+    /// SF Symbol for the settings/manage button (defaults to the gear). Override to disambiguate
+    /// when a screen's "settings" action isn't app Settings (e.g. Timeline → manage activity types).
+    var settingsSymbol: String = "gearshape.fill"
 
     private var hasPhotoBackground: Bool { backgroundImage != nil }
 
@@ -117,7 +120,7 @@ struct HeroHeader: View {
         .overlay(alignment: .topTrailing) {
             HStack(spacing: 12) {
                 if let onSettings {
-                    heroIconButton("gearshape.fill", action: onSettings)
+                    heroIconButton(settingsSymbol, action: onSettings)
                 }
                 if let onAdd {
                     heroIconButton("plus", action: onAdd)
