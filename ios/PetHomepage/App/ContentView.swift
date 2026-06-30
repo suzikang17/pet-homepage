@@ -98,12 +98,13 @@ struct ContentView: View {
             activityStore: activityStore,
             reminderScheduler: reminderScheduler,
             dueScheduler: dueScheduler,
-            cadenceMonths: vetCadenceMonths
+            cadenceMonths: vetCadenceMonths,
+            extractionService: extractionService,
+            ingestionService: ingestionService
         )
 
         return TabView {
             PetProfileView(store: petStore, settings: settingsViewModel,
-                           extractionService: extractionService, ingestionService: ingestionService,
                            timelineServices: timelineServices)
                 .tabItem { Label("Home", systemImage: "house") }
             TimelineView(services: timelineServices)

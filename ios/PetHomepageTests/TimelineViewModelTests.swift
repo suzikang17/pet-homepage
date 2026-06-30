@@ -92,7 +92,9 @@ final class TimelineViewModelTests: XCTestCase {
             activityStore: activityStore,
             reminderScheduler: reminderScheduler,
             dueScheduler: dueScheduler,
-            cadenceMonths: 6
+            cadenceMonths: 6,
+            extractionService: nil,
+            ingestionService: nil
         )
     }
 

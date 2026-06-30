@@ -18,6 +18,10 @@ struct TimelineServices {
     let reminderScheduler: MedicationReminderScheduler
     let dueScheduler: DueReminderScheduler
     let cadenceMonths: Int
+    /// AI record scanning (PDF/photo → extraction → ingestion). Optional: nil disables the
+    /// "Scan a record" menu entry (e.g. when the extract endpoint isn't configured).
+    let extractionService: ExtractionService?
+    let ingestionService: RecordIngestionService?
 }
 
 /// One date-sorted stream of every record, with type filters. Tapping a row opens that record's
@@ -28,6 +32,7 @@ struct TimelineView: View {
     @State private var addKind: TimelineKind?
     @State private var medDetail: Medication?
     @State private var showActivityTypes = false
+    @State private var showScan = false
     private let services: TimelineServices
 
     init(services: TimelineServices) {
@@ -71,6 +76,11 @@ struct TimelineView: View {
             .sheet(isPresented: $showActivityTypes) {
                 NavigationStack {
                     ActivityTypesView(store: services.activityStore)
+                }
+            }
+            .sheet(isPresented: $showScan, onDismiss: { model.load() }) {
+                if let ex = services.extractionService, let ing = services.ingestionService {
+                    RecordUploadView(extractionService: ex, ingestionService: ing)
                 }
             }
         }
@@ -168,6 +178,10 @@ struct TimelineView: View {
     /// Floating add button — bottom-trailing so it's in easy thumb reach.
     private var addButton: some View {
         Menu {
+            if services.extractionService != nil && services.ingestionService != nil {
+                Button { showScan = true } label: { Label("Scan a record", systemImage: "sparkles") }
+                Divider()
+            }
             Button { addKind = .activity } label: { Label("Activity", systemImage: "shower") }
             Button { addKind = .medication } label: { Label("Medication", systemImage: "pills") }
             Button { addKind = .symptom } label: { Label("Symptom", systemImage: "waveform.path.ecg") }

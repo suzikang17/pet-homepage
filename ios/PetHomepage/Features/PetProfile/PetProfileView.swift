@@ -6,7 +6,6 @@ import UIKit
 struct PetProfileView: View {
     @State private var model: PetProfileViewModel
     @State private var showSettings = false
-    @State private var showUpload = false
     @State private var showAddWeight = false
     @State private var showAddSymptom = false
     @State private var photoItem: PhotosPickerItem?
@@ -22,24 +21,16 @@ struct PetProfileView: View {
 
     private let petStore: PetStore
     private let settings: SettingsViewModel?
-    private let extractionService: ExtractionService?
-    private let ingestionService: RecordIngestionService?
     private let timelineServices: TimelineServices?
 
     init(store: PetStore,
          settings: SettingsViewModel? = nil,
-         extractionService: ExtractionService? = nil,
-         ingestionService: RecordIngestionService? = nil,
          timelineServices: TimelineServices? = nil) {
         _model = State(initialValue: PetProfileViewModel(store: store))
         self.petStore = store
         self.settings = settings
-        self.extractionService = extractionService
-        self.ingestionService = ingestionService
         self.timelineServices = timelineServices
     }
-
-    private var canScan: Bool { extractionService != nil && ingestionService != nil }
 
     var body: some View {
         NavigationStack {
@@ -65,19 +56,9 @@ struct PetProfileView: View {
                     recentCard.padding(.horizontal, 18)
                 }
 
-                if canScan {
-                    Button { showUpload = true } label: { scanCard }
-                        .buttonStyle(.plain)
-                        .padding(.horizontal, 18)
-                }
             }
             .sheet(isPresented: $showSettings) {
                 if let settings { SettingsView(model: settings, petStore: petStore) }
-            }
-            .sheet(isPresented: $showUpload, onDismiss: refresh) {
-                if let extractionService, let ingestionService {
-                    RecordUploadView(extractionService: extractionService, ingestionService: ingestionService)
-                }
             }
             .sheet(isPresented: $showAddWeight, onDismiss: refresh) {
                 if let s = timelineServices { MarkerEditView(store: s.healthMarkerStore) }
@@ -209,24 +190,6 @@ struct PetProfileView: View {
         }
     }
 
-    private var scanCard: some View {
-        BrandCard {
-            HStack(spacing: 14) {
-                Image(systemName: "doc.viewfinder")
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(Theme.primary)
-                    .frame(width: 46, height: 46)
-                    .background(Theme.primary.opacity(0.12), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Scan a record").font(Theme.headline()).foregroundStyle(Theme.ink)
-                    Text("Upload a vet bill or vaccine record — AI files it")
-                        .font(.caption).foregroundStyle(Theme.inkSoft)
-                }
-                Spacer(minLength: 8)
-                Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(Theme.inkSoft)
-            }
-        }
-    }
 
     // MARK: - Data + helpers
 
