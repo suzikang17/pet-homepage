@@ -117,7 +117,7 @@ Manages both `ActivityType` and `ActivityLog` (they're tightly coupled — you c
 - **ActivityType CRUD:** list (non-archived, by category then `sortOrder`), create (name required; category defaults to `.other`, icon defaults to a generic paw e.g. `pawprint`, interval defaults to 0/no-repeat), update, archive. A type with logged occurrences cannot be hard-deleted — only archived.
 - **Log:** `log(type:performedAt:note:intervalDays:)` — copies `intervalDays` from the type unless overridden, stamps `nextDueAt`, sets `pet` via `petStore.ensurePet()`, saves.
 - **Queries:** `logs()` (all, newest first), `logs(of type:)`, `latestLog(of type:)`.
-- **Reminder sync on log:** schedule the new log's reminder and **cancel the prior latest-of-type reminder** so a type never has two pending reminders. `delete(_:)` cancels the log's reminder.
+- **Reminder sync is ViewModel-driven** (matching the codebase convention — stores never touch the scheduler). After the store saves a new log, the edit ViewModel schedules the new log's reminder and **cancels the prior latest-of-type reminder** (captured before logging) so a type never has two pending reminders. Timeline delete cancels the deleted log's reminder.
 - **Seeding:** `seedDefaultsIfNeeded()` per the CloudKit-safe rules above.
 
 ---
