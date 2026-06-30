@@ -47,7 +47,7 @@ targets:
         # the app draws full-screen at native resolution on every device.
         INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
         # Required for the "Pair a device" QR scanner (VisionKit DataScannerViewController).
-        INFOPLIST_KEY_NSCameraUsageDescription: "Scan the pairing QR code shown on your dashboard."
+        INFOPLIST_KEY_NSCameraUsageDescription: "Take photos to attach to your pet's records and scan the pairing QR code shown on your dashboard."
   PetHomepageTests:
     type: bundle.unit-test
     platform: iOS

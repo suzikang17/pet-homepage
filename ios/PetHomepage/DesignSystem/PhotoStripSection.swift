@@ -15,11 +15,17 @@ struct PhotoStripSection: View {
     let onReload: () -> Void
 
     @State private var pickerItems: [PhotosPickerItem] = []
+    @State private var showingCamera = false
 
     var body: some View {
         Section("Photos") {
             PhotosPicker(selection: $pickerItems, maxSelectionCount: 10, matching: .images) {
                 Label("Add photos", systemImage: "photo.on.rectangle")
+            }
+            if CameraPicker.isAvailable {
+                Button { showingCamera = true } label: {
+                    Label("Take photo", systemImage: "camera")
+                }
             }
             if !photos.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -45,6 +51,15 @@ struct PhotoStripSection: View {
             }
         }
         .onChange(of: pickerItems) { _, items in load(items) }
+        .sheet(isPresented: $showingCamera) {
+            CameraPicker { image in
+                if let jpeg = ImageDownscaler.scaledJPEG(from: image) {
+                    onAdd(jpeg)
+                    onReload()
+                }
+            }
+            .ignoresSafeArea()
+        }
     }
 
     private func load(_ items: [PhotosPickerItem]) {
@@ -53,8 +68,7 @@ struct PhotoStripSection: View {
             for item in items {
                 guard let data = try? await item.loadTransferable(type: Data.self),
                       let ui = UIImage(data: data) else { continue }
-                let scaled = ui.preparingThumbnail(of: CGSize(width: 1600, height: 1600)) ?? ui
-                if let jpeg = scaled.jpegData(compressionQuality: 0.8) {
+                if let jpeg = ImageDownscaler.scaledJPEG(from: ui) {
                     await MainActor.run { onAdd(jpeg) }
                 }
             }
