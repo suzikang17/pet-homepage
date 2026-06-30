@@ -168,12 +168,17 @@ struct TimelineView: View {
     /// Floating add button — bottom-trailing so it's in easy thumb reach.
     private var addButton: some View {
         Menu {
-            Button { addKind = .vaccine } label: { Label("Vaccine", systemImage: "syringe") }
-            Button { addKind = .vet } label: { Label("Vet visit", systemImage: "stethoscope") }
-            Button { addKind = .medication } label: { Label("Medication", systemImage: "pills") }
-            Button { addKind = .marker } label: { Label("Health marker", systemImage: "chart.xyaxis.line") }
-            Button { addKind = .symptom } label: { Label("Symptom", systemImage: "waveform.path.ecg") }
             Button { addKind = .activity } label: { Label("Activity", systemImage: "shower") }
+            Button { addKind = .medication } label: { Label("Medication", systemImage: "pills") }
+            Button { addKind = .symptom } label: { Label("Symptom", systemImage: "waveform.path.ecg") }
+            // Low-frequency record types grouped under a submenu to keep the menu short.
+            Menu {
+                Button { addKind = .vaccine } label: { Label("Vaccine", systemImage: "syringe") }
+                Button { addKind = .vet } label: { Label("Vet visit", systemImage: "stethoscope") }
+                Button { addKind = .marker } label: { Label("Health marker", systemImage: "chart.xyaxis.line") }
+            } label: {
+                Label("Health record", systemImage: "cross.case")
+            }
         } label: {
             Image(systemName: "plus")
                 .font(.system(size: 24, weight: .bold))
