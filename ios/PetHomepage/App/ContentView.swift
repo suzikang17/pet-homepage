@@ -114,5 +114,6 @@ struct ContentView: View {
                 .tabItem { Label("Care Team", systemImage: "stethoscope") }
         }
         .tint(Theme.primary)
+        .task { try? activityStore.seedDefaultsIfNeeded() }
     }
 }

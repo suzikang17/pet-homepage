@@ -27,6 +27,7 @@ struct TimelineView: View {
     @State private var editTarget: TimelineItem?
     @State private var addKind: TimelineKind?
     @State private var medDetail: Medication?
+    @State private var showActivityTypes = false
     private let services: TimelineServices
 
     init(services: TimelineServices) {
@@ -48,7 +49,8 @@ struct TimelineView: View {
                     HeroHeader(
                         title: "Timeline",
                         subtitle: model.filter?.label ?? "Everything",
-                        systemImage: "calendar"
+                        systemImage: "calendar",
+                        onSettings: { showActivityTypes = true }
                     )
                     chips
                     content
@@ -65,6 +67,11 @@ struct TimelineView: View {
                 MedicationDetailView(medication: med, services: services)
             }
             .onChange(of: medDetail) { _, new in if new == nil { model.load() } }
+            .sheet(isPresented: $showActivityTypes) {
+                NavigationStack {
+                    ActivityTypesView(store: services.activityStore)
+                }
+            }
         }
     }
 
@@ -165,6 +172,7 @@ struct TimelineView: View {
             Button { addKind = .medication } label: { Label("Medication", systemImage: "pills") }
             Button { addKind = .marker } label: { Label("Health marker", systemImage: "chart.xyaxis.line") }
             Button { addKind = .symptom } label: { Label("Symptom", systemImage: "waveform.path.ecg") }
+            Button { addKind = .activity } label: { Label("Activity", systemImage: "shower") }
         } label: {
             Image(systemName: "plus")
                 .font(.system(size: 24, weight: .bold))
@@ -196,8 +204,9 @@ struct TimelineView: View {
             EpisodeDetailView(episode: ep, episodeStore: services.symptomEpisodeStore, entryStore: services.symptomEntryStore)
         case .marker:
             EmptyView()
-        case .activity:
-            EmptyView()
+        case .activity(let log):
+            ActivityLogEditView(store: services.activityStore, dueScheduler: services.dueScheduler,
+                                diaryStore: services.diaryStore, editing: log)
         }
     }
 
@@ -220,7 +229,8 @@ struct TimelineView: View {
         case .symptom:
             EpisodeStartView(store: services.symptomEpisodeStore)
         case .activity:
-            EmptyView()
+            ActivityLogEditView(store: services.activityStore, dueScheduler: services.dueScheduler,
+                                diaryStore: services.diaryStore, editing: nil)
         }
     }
 
@@ -231,7 +241,7 @@ struct TimelineView: View {
         case .medication: Theme.primary
         case .marker: .pink
         case .symptom: .orange
-        case .activity: .green
+        case .activity: .cyan
         }
     }
 }
