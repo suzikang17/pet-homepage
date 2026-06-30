@@ -118,4 +118,32 @@ final class ActivityStore {
         context.delete(log)
         try context.save()
     }
+
+    // MARK: - Seeding
+
+    /// The starter set of editable activity types, pre-seeded so logging works with zero setup.
+    static let defaultSeeds: [(name: String, category: ActivityCategory, iconName: String, intervalDays: Int)] = [
+        ("Bath", .care, "shower", 30),
+        ("Nail trim", .care, "scissors", 21),
+        ("Teeth brushing", .care, "mouth", 1),
+        ("Brushing", .care, "comb", 7),
+        ("Grooming", .care, "dog", 42),
+        ("Flea & tick", .health, "ladybug", 30),
+        ("Deworming", .health, "pills", 90),
+    ]
+
+    /// Seeds any default types that don't already exist (by case-insensitive name). Idempotent,
+    /// and a no-op when there is no current pet. Safe to call every time the Activities UI appears:
+    /// because it de-dupes by name against ALL existing types (including ones synced in from another
+    /// device via CloudKit), it won't double-seed once the cloud import has settled.
+    func seedDefaultsIfNeeded() throws {
+        guard (try petStore.currentPet()) != nil else { return }
+        let existingNames = Set(try types(includeArchived: true).map { $0.name.lowercased() })
+        for seed in Self.defaultSeeds where !existingNames.contains(seed.name.lowercased()) {
+            try createType(name: seed.name,
+                           category: seed.category,
+                           iconName: seed.iconName,
+                           defaultIntervalDays: seed.intervalDays)
+        }
+    }
 }
