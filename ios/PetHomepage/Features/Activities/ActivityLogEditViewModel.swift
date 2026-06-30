@@ -86,7 +86,7 @@ final class ActivityLogEditViewModel {
             existing.intervalDays = Int64(interval)
             existing.nextDueAt = interval > 0 ? Calendar.current.date(byAdding: .day, value: interval, to: performedAt) : nil
             existing.activityType = type
-            try? existing.managedObjectContext?.save()
+            try existing.managedObjectContext?.save()
             log = existing
         } else {
             log = try store.log(type: type, performedAt: performedAt, note: noteOrNil, intervalDays: interval)
