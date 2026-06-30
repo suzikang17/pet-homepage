@@ -7,6 +7,7 @@ enum ReminderKind: String {
     case medication
     case vaccination
     case vetCadence
+    case activity
 }
 
 /// A single pending reminder, expressed independently of UserNotifications so
@@ -117,7 +118,7 @@ enum ReminderIdentifier {
     }
 
     static func parse(_ requestID: String) -> (ReminderKind, UUID)? {
-        for kind in [ReminderKind.medication, .vaccination, .vetCadence] {
+        for kind in [ReminderKind.medication, .vaccination, .vetCadence, .activity] {
             let prefix = prefix(for: kind)
             if requestID.hasPrefix(prefix),
                let id = UUID(uuidString: String(requestID.dropFirst(prefix.count))) {

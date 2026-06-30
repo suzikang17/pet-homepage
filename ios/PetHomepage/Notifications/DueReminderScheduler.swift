@@ -93,4 +93,35 @@ final class DueReminderScheduler {
     func cancelVetCadence() async {
         await scheduler.cancel(kind: .vetCadence, entityID: Self.vetCadenceEntityID)
     }
+
+    // MARK: - Activities
+
+    /// A one-shot reminder on the log's nextDueAt date, or nil if it has no due date.
+    func activityReminder(for log: ActivityLog) -> PendingReminder? {
+        guard let due = log.nextDueAt else { return nil }
+        let name = log.activityType?.name ?? "Activity"
+        let dateComponents = calendar.dateComponents([.year, .month, .day], from: due)
+        return PendingReminder(
+            kind: .activity,
+            entityID: log.id,
+            title: "\(name) due",
+            body: "Time for \(name)",
+            hour: hour,
+            minute: minute,
+            dateComponents: dateComponents
+        )
+    }
+
+    /// Schedules the activity reminder if it has a due date, otherwise cancels it.
+    func syncActivity(_ log: ActivityLog) async {
+        if let reminder = activityReminder(for: log) {
+            await scheduler.schedule(reminder)
+        } else {
+            await scheduler.cancel(kind: .activity, entityID: log.id)
+        }
+    }
+
+    func cancelActivity(_ log: ActivityLog) async {
+        await scheduler.cancel(kind: .activity, entityID: log.id)
+    }
 }

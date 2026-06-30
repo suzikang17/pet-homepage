@@ -6,6 +6,7 @@ import CoreData
 final class DueReminderSchedulerTests: XCTestCase {
     private var context: NSManagedObjectContext!
     private var vaxStore: VaccinationStore!
+    private var activityStore: ActivityStore!
     private var calendar: Calendar!
 
     override func setUpWithError() throws {
@@ -13,6 +14,7 @@ final class DueReminderSchedulerTests: XCTestCase {
         let petStore = PetStore(context: context)
         try petStore.createPet(name: "Sandy", species: "dog")
         vaxStore = VaccinationStore(context: context, petStore: petStore)
+        activityStore = ActivityStore(context: context, petStore: petStore)
         calendar = Calendar(identifier: .gregorian)
     }
 
@@ -94,6 +96,44 @@ final class DueReminderSchedulerTests: XCTestCase {
         await sched.syncVetCadence(lastVisit: nil, cadence: VetCadence(months: 6, hour: 8, minute: 30))
 
         let pending = await fake.pendingIDs(kind: .vetCadence)
+        XCTAssertTrue(pending.isEmpty)
+    }
+
+    func testActivityReminderUsesNextDueAt() throws {
+        let type = try activityStore.createType(name: "Bath", category: .care, iconName: "shower", defaultIntervalDays: 30)
+        let performed = calendar.date(from: DateComponents(year: 2026, month: 6, day: 1))!
+        let log = try activityStore.log(type: type, performedAt: performed, note: nil, intervalDays: 30)
+        let sched = DueReminderScheduler(scheduler: FakeNotificationScheduler(), calendar: calendar, hour: 9, minute: 0)
+
+        let reminder = sched.activityReminder(for: log)
+
+        XCTAssertNotNil(reminder)
+        XCTAssertEqual(reminder?.kind, .activity)
+        XCTAssertEqual(reminder?.entityID, log.id)
+        XCTAssertEqual(reminder?.dateComponents?.month, 7)
+        XCTAssertEqual(reminder?.dateComponents?.day, 1)
+        XCTAssertTrue(reminder?.body.contains("Bath") ?? false)
+    }
+
+    func testActivityWithoutNextDueHasNoReminder() throws {
+        let type = try activityStore.createType(name: "Bath", category: .care, iconName: "shower", defaultIntervalDays: 0)
+        let log = try activityStore.log(type: type, performedAt: Date(), note: nil, intervalDays: 0)
+        let sched = DueReminderScheduler(scheduler: FakeNotificationScheduler(), calendar: calendar, hour: 9, minute: 0)
+        XCTAssertNil(sched.activityReminder(for: log))
+    }
+
+    func testSyncActivitySchedulesThenCancelOnRemoval() async throws {
+        let fake = FakeNotificationScheduler()
+        let sched = DueReminderScheduler(scheduler: fake, calendar: calendar, hour: 9, minute: 0)
+        let type = try activityStore.createType(name: "Bath", category: .care, iconName: "shower", defaultIntervalDays: 30)
+        let log = try activityStore.log(type: type, performedAt: Date(timeIntervalSince1970: 0), note: nil, intervalDays: 30)
+
+        await sched.syncActivity(log)
+        var pending = await fake.pendingIDs(kind: .activity)
+        XCTAssertEqual(pending, [log.id])
+
+        await sched.cancelActivity(log)
+        pending = await fake.pendingIDs(kind: .activity)
         XCTAssertTrue(pending.isEmpty)
     }
 }
