@@ -237,7 +237,8 @@ struct PetProfileView: View {
             vetVisitStore: s.vetVisitStore,
             medicationStore: s.medicationStore,
             healthMarkerStore: s.healthMarkerStore,
-            symptomEpisodeStore: s.symptomEpisodeStore
+            symptomEpisodeStore: s.symptomEpisodeStore,
+            activityStore: s.activityStore
         )
         vm.load()
         upcoming = vm.dueSoon(within: 60)

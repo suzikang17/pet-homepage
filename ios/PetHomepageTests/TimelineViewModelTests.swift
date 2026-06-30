@@ -10,6 +10,7 @@ final class TimelineViewModelTests: XCTestCase {
     private var medicationStore: MedicationStore!
     private var healthMarkerStore: HealthMarkerStore!
     private var symptomEpisodeStore: SymptomEpisodeStore!
+    private var activityStore: ActivityStore!
 
     override func setUpWithError() throws {
         context = PersistenceController(inMemory: true).container.viewContext
@@ -20,6 +21,7 @@ final class TimelineViewModelTests: XCTestCase {
         medicationStore = MedicationStore(context: context, petStore: petStore)
         healthMarkerStore = HealthMarkerStore(context: context, petStore: petStore)
         symptomEpisodeStore = SymptomEpisodeStore(context: context, petStore: petStore)
+        activityStore = ActivityStore(context: context, petStore: petStore)
     }
 
     private func makeVM() -> TimelineViewModel {
@@ -28,7 +30,8 @@ final class TimelineViewModelTests: XCTestCase {
             vetVisitStore: vetVisitStore,
             medicationStore: medicationStore,
             healthMarkerStore: healthMarkerStore,
-            symptomEpisodeStore: symptomEpisodeStore
+            symptomEpisodeStore: symptomEpisodeStore,
+            activityStore: activityStore
         )
     }
 
@@ -86,6 +89,7 @@ final class TimelineViewModelTests: XCTestCase {
             symptomEpisodeStore: symptomEpisodeStore,
             symptomEntryStore: SymptomEntryStore(context: context),
             recommendationStore: VetRecommendationStore(context: context),
+            activityStore: activityStore,
             reminderScheduler: reminderScheduler,
             dueScheduler: dueScheduler,
             cadenceMonths: 6
@@ -132,5 +136,28 @@ final class TimelineViewModelTests: XCTestCase {
         XCTAssertTrue(vm.items.isEmpty)
         let after = await fake.pendingIDs(kind: .vaccination)
         XCTAssertTrue(after.isEmpty, "due reminder should be cancelled on delete")
+    }
+
+    func testActivityLogsAppearInStreamAndDueSoon() throws {
+        // Uses the same in-memory context + petStore the other tests build.
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let petStore = PetStore(context: context)
+        try petStore.createPet(name: "Sandy", species: "dog")
+        let activityStore = ActivityStore(context: context, petStore: petStore)
+        let type = try activityStore.createType(name: "Bath", category: .care, iconName: "shower", defaultIntervalDays: 7)
+        _ = try activityStore.log(type: type, performedAt: Date(), note: nil, intervalDays: 7)
+
+        let vm = TimelineViewModel(
+            vaccinationStore: VaccinationStore(context: context, petStore: petStore),
+            vetVisitStore: VetVisitStore(context: context, petStore: petStore),
+            medicationStore: MedicationStore(context: context, petStore: petStore),
+            healthMarkerStore: HealthMarkerStore(context: context, petStore: petStore),
+            symptomEpisodeStore: SymptomEpisodeStore(context: context, petStore: petStore),
+            activityStore: activityStore
+        )
+        vm.load()
+
+        XCTAssertTrue(vm.items.contains { $0.kind == .activity && $0.title == "Bath" })
+        XCTAssertTrue(vm.dueSoon(within: 30).contains { $0.kind == .activity })
     }
 }

@@ -6,7 +6,7 @@ import Observation
 /// date, maybe with a next-one-due." This is the read-side projection over the existing stores
 /// (the data model itself stays five entities for now — see the planned HealthEvent unification).
 enum TimelineKind: String, CaseIterable, Identifiable {
-    case vaccine, vet, medication, marker, symptom
+    case vaccine, vet, medication, marker, symptom, activity
     var id: String { rawValue }
 
     var label: String {
@@ -16,6 +16,7 @@ enum TimelineKind: String, CaseIterable, Identifiable {
         case .medication: "Meds"
         case .marker: "Health"
         case .symptom: "Symptoms"
+        case .activity: "Activities"
         }
     }
 
@@ -26,6 +27,7 @@ enum TimelineKind: String, CaseIterable, Identifiable {
         case .medication: "pills"
         case .marker: "chart.xyaxis.line"
         case .symptom: "waveform.path.ecg"
+        case .activity: "shower"
         }
     }
 }
@@ -37,6 +39,7 @@ enum TimelineReference {
     case medication(Medication)
     case marker(HealthMarker)
     case symptom(SymptomEpisode)
+    case activity(ActivityLog)
 }
 
 /// One row in the unified timeline.
@@ -63,17 +66,20 @@ final class TimelineViewModel {
     private let medicationStore: MedicationStore
     private let healthMarkerStore: HealthMarkerStore
     private let symptomEpisodeStore: SymptomEpisodeStore
+    private let activityStore: ActivityStore
 
     init(vaccinationStore: VaccinationStore,
          vetVisitStore: VetVisitStore,
          medicationStore: MedicationStore,
          healthMarkerStore: HealthMarkerStore,
-         symptomEpisodeStore: SymptomEpisodeStore) {
+         symptomEpisodeStore: SymptomEpisodeStore,
+         activityStore: ActivityStore) {
         self.vaccinationStore = vaccinationStore
         self.vetVisitStore = vetVisitStore
         self.medicationStore = medicationStore
         self.healthMarkerStore = healthMarkerStore
         self.symptomEpisodeStore = symptomEpisodeStore
+        self.activityStore = activityStore
     }
 
     func load() {
@@ -84,6 +90,7 @@ final class TimelineViewModel {
             out += try medicationStore.medications().map(TimelineItem.init(medication:))
             out += try healthMarkerStore.markers().map(TimelineItem.init(marker:))
             out += try symptomEpisodeStore.episodes().map(TimelineItem.init(symptom:))
+            out += try activityStore.logs().map(TimelineItem.init(activity:))
             items = out.sorted { $0.date > $1.date }
             errorMessage = nil
         } catch {
@@ -128,6 +135,9 @@ final class TimelineViewModel {
             try? services.healthMarkerStore.delete(mk)
         case .symptom(let ep):
             try? services.symptomEpisodeStore.delete(ep)
+        case .activity(let log):
+            await services.dueScheduler.cancelActivity(log)
+            try? services.activityStore.delete(log)
         }
         load()
     }
@@ -196,6 +206,18 @@ extension TimelineItem {
             subtitle: ep.statusRaw == EpisodeStatus.active.rawValue ? "Active" : "Resolved",
             nextDue: nil,
             reference: .symptom(ep)
+        )
+    }
+
+    init(activity log: ActivityLog) {
+        self.init(
+            id: "activity:\(log.id.uuidString)",
+            kind: .activity,
+            date: log.performedAt,
+            title: log.activityType?.name ?? "Activity",
+            subtitle: (log.note?.isEmpty == false) ? log.note : log.activityType?.category.displayName,
+            nextDue: log.nextDueAt,
+            reference: .activity(log)
         )
     }
 }

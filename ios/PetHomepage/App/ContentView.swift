@@ -19,6 +19,7 @@ struct ContentView: View {
         let healthMarkerStore = HealthMarkerStore(context: context, petStore: petStore)
         let symptomEpisodeStore = SymptomEpisodeStore(context: context, petStore: petStore)
         let symptomEntryStore = SymptomEntryStore(context: context)
+        let activityStore = ActivityStore(context: context, petStore: petStore)
         let veterinarianStore = VeterinarianStore(context: context, petStore: petStore)
         let diaryStore = DiaryStore(context: context, petStore: petStore)
 
@@ -94,6 +95,7 @@ struct ContentView: View {
             symptomEpisodeStore: symptomEpisodeStore,
             symptomEntryStore: symptomEntryStore,
             recommendationStore: recommendationStore,
+            activityStore: activityStore,
             reminderScheduler: reminderScheduler,
             dueScheduler: dueScheduler,
             cadenceMonths: vetCadenceMonths
