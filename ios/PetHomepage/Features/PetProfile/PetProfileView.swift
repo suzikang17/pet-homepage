@@ -11,6 +11,7 @@ struct PetProfileView: View {
     @State private var photoItem: PhotosPickerItem?
     @State private var showPhotoPicker = false
     @State private var cropTarget: PickedImage?
+    @State private var captureTarget: CaptureTarget?
 
     // Dashboard data, refreshed on appear + after any add.
     @State private var upcoming: [TimelineItem] = []
@@ -71,7 +72,82 @@ struct PetProfileView: View {
             .sheet(item: $cropTarget) { picked in
                 PhotoCropView(image: picked.image) { model.setPhoto($0) }
             }
+            .sheet(item: $captureTarget, onDismiss: { model.reload(); refresh() }) { target in
+                if let s = timelineServices {
+                    captureEditor(for: target, services: s)
+                }
+            }
+            .safeAreaInset(edge: .bottom) {
+                // Only pinned when the dashboard has capture-capable services wired up.
+                if let s = timelineServices {
+                    captureBar(s)
+                        .padding(.horizontal, 18)
+                        .padding(.top, 10)
+                        .padding(.bottom, 6)
+                        .background(.ultraThinMaterial)
+                }
+            }
             .onAppear { model.reload(); refresh() }
+        }
+    }
+
+    // MARK: - Capture hub
+
+    private enum CaptureTarget: Identifiable {
+        case diary, activity, medication, symptom, vaccine, vet, marker, scan
+        var id: Self { self }
+    }
+
+    /// Bottom-pinned "Capture" menu — a fast route to every editor, no one-tap logging.
+    private func captureBar(_ s: TimelineServices) -> some View {
+        Menu {
+            Button { captureTarget = .diary } label: { Label("Photo / note", systemImage: "photo.badge.plus") }
+            Button { captureTarget = .activity } label: { Label("Activity", systemImage: "shower") }
+            Button { captureTarget = .medication } label: { Label("Medication", systemImage: "pills") }
+            Button { captureTarget = .symptom } label: { Label("Symptom", systemImage: "waveform.path.ecg") }
+            Menu {
+                Button { captureTarget = .vaccine } label: { Label("Vaccine", systemImage: "syringe") }
+                Button { captureTarget = .vet } label: { Label("Vet visit", systemImage: "stethoscope") }
+                Button { captureTarget = .marker } label: { Label("Health marker", systemImage: "chart.xyaxis.line") }
+            } label: {
+                Label("Health record", systemImage: "cross.case")
+            }
+            if s.extractionService != nil && s.ingestionService != nil {
+                Button { captureTarget = .scan } label: { Label("Scan a record", systemImage: "sparkles") }
+            }
+        } label: {
+            Label("Capture", systemImage: "plus.circle.fill")
+        }
+        .buttonStyle(PrimaryButtonStyle())
+    }
+
+    @ViewBuilder
+    private func captureEditor(for target: CaptureTarget, services s: TimelineServices) -> some View {
+        switch target {
+        case .diary:
+            DiaryEntryEditView(logStore: s.logStore, editing: nil)
+        case .activity:
+            ActivityLogEditView(logStore: s.logStore, store: s.activityStore,
+                                dueScheduler: s.dueScheduler, editing: nil)
+        case .medication:
+            MedicationEditView(store: s.medicationStore, reminderScheduler: s.reminderScheduler,
+                               veterinarianStore: s.veterinarianStore, editing: nil)
+        case .symptom:
+            EpisodeStartView(store: s.symptomEpisodeStore)
+        case .vaccine:
+            VaccinationEditView(store: s.vaccinationStore, dueScheduler: s.dueScheduler,
+                                veterinarianStore: s.veterinarianStore,
+                                diaryStore: s.diaryStore, editing: nil)
+        case .vet:
+            VetVisitEditView(store: s.vetVisitStore, dueScheduler: s.dueScheduler,
+                             cadenceMonths: s.cadenceMonths,
+                             veterinarianStore: s.veterinarianStore, editing: nil)
+        case .marker:
+            MarkerEditView(store: s.healthMarkerStore)
+        case .scan:
+            if let ex = s.extractionService, let ing = s.ingestionService {
+                RecordUploadView(extractionService: ex, ingestionService: ing)
+            }
         }
     }
 
