@@ -6,7 +6,7 @@ import XCTest
 final class LogDoseViewModelTests: XCTestCase {
     private var context: NSManagedObjectContext!
     private var store: MedicationStore!
-    private var doseLogStore: DoseLogStore!
+    private var logStore: LogStore!
     private var reminderScheduler: MedicationReminderScheduler!
 
     override func setUpWithError() throws {
@@ -14,7 +14,7 @@ final class LogDoseViewModelTests: XCTestCase {
         let petStore = PetStore(context: context)
         try petStore.createPet(name: "Sandy", species: "dog")
         store = MedicationStore(context: context, petStore: petStore)
-        doseLogStore = DoseLogStore(context: context)
+        logStore = LogStore(context: context, petStore: petStore)
         reminderScheduler = MedicationReminderScheduler(
             scheduler: FakeNotificationScheduler(),
             calendar: Calendar(identifier: .gregorian)
@@ -30,7 +30,7 @@ final class LogDoseViewModelTests: XCTestCase {
 
     func testNextReminderIsOneIntervalAfterDoseAtScheduleTime() throws {
         let vm = LogDoseViewModel(medication: try makeMed(frequency: "Every 3 days"),
-                                  doseLogStore: doseLogStore, reminderScheduler: reminderScheduler)
+                                  logStore: logStore, reminderScheduler: reminderScheduler)
         let cal = Calendar(identifier: .gregorian)
         vm.givenAt = cal.date(from: DateComponents(year: 2026, month: 6, day: 10, hour: 14))! // Jun 10, 2pm
 
@@ -43,7 +43,7 @@ final class LogDoseViewModelTests: XCTestCase {
     @MainActor
     func testConfirmRecordsDoseWithNoteAndReschedules() async throws {
         let med = try makeMed(frequency: "Every 3 days")
-        let vm = LogDoseViewModel(medication: med, doseLogStore: doseLogStore, reminderScheduler: reminderScheduler)
+        let vm = LogDoseViewModel(medication: med, logStore: logStore, reminderScheduler: reminderScheduler)
         vm.givenAt = Date(timeIntervalSince1970: 1_000_000)
         vm.note = "with food"
 
@@ -53,8 +53,8 @@ final class LogDoseViewModelTests: XCTestCase {
         XCTAssertEqual(vm.doseCount, 1)
         XCTAssertNotNil(vm.confirmedNextReminder)
         XCTAssertEqual(med.startedAt, vm.confirmedNextReminder, "logging a dose reschedules the next reminder")
-        let logs = try doseLogStore.logs(for: med)
+        let logs = try logStore.doses(for: med)
         XCTAssertEqual(logs.first?.note, "with food")
-        XCTAssertEqual(logs.first?.givenAt, Date(timeIntervalSince1970: 1_000_000))
+        XCTAssertEqual(logs.first?.performedAt, Date(timeIntervalSince1970: 1_000_000))
     }
 }

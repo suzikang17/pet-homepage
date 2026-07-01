@@ -7,31 +7,31 @@ import Observation
 @Observable
 final class MedicationDetailViewModel {
     let medication: Medication
-    var doses: [DoseLog] = []
+    var doses: [LogEntry] = []
 
-    private let doseLogStore: DoseLogStore
+    private let logStore: LogStore
 
-    init(medication: Medication, doseLogStore: DoseLogStore) {
+    init(medication: Medication, logStore: LogStore) {
         self.medication = medication
-        self.doseLogStore = doseLogStore
+        self.logStore = logStore
         load()
     }
 
-    var lastGiven: Date? { doses.first?.givenAt }
+    var lastGiven: Date? { doses.first?.performedAt }
     var doseCount: Int { doses.count }
 
     /// Reload the dose history (also picks up field edits made in the edit sheet).
     func load() {
-        doses = (try? doseLogStore.logs(for: medication)) ?? []
+        doses = (try? logStore.doses(for: medication)) ?? []
     }
 
     func logDose(at date: Date = Date()) {
-        try? doseLogStore.logDose(for: medication, at: date)
+        try? logStore.logDose(for: medication, at: date)
         load()
     }
 
-    func deleteDose(_ log: DoseLog) {
-        try? doseLogStore.delete(log)
+    func deleteDose(_ log: LogEntry) {
+        try? logStore.delete(log)
         load()
     }
 }

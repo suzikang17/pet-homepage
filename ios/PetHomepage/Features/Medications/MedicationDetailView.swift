@@ -13,7 +13,7 @@ struct MedicationDetailView: View {
     init(medication: Medication, services: TimelineServices) {
         _model = State(initialValue: MedicationDetailViewModel(
             medication: medication,
-            doseLogStore: services.doseLogStore
+            logStore: services.logStore
         ))
         self.services = services
     }
@@ -57,7 +57,7 @@ struct MedicationDetailView: View {
                 } else {
                     ForEach(model.doses, id: \.id) { dose in
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(dose.givenAt.formatted(date: .abbreviated, time: .shortened))
+                            Text(dose.performedAt.formatted(date: .abbreviated, time: .shortened))
                                 .foregroundStyle(Theme.ink)
                             if let note = dose.note, !note.isEmpty {
                                 Text(note).font(.caption).foregroundStyle(Theme.inkSoft)
@@ -89,7 +89,7 @@ struct MedicationDetailView: View {
         }
         .sheet(isPresented: $showLog, onDismiss: { model.load() }) {
             LogDoseView(medication: med,
-                        doseLogStore: services.doseLogStore,
+                        logStore: services.logStore,
                         reminderScheduler: services.reminderScheduler)
         }
     }

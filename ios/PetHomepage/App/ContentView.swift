@@ -10,7 +10,6 @@ struct ContentView: View {
     var body: some View {
         let petStore = PetStore(context: context)
         let medicationStore = MedicationStore(context: context, petStore: petStore)
-        let doseLogStore = DoseLogStore(context: context)
         let vaccinationStore = VaccinationStore(context: context, petStore: petStore)
         let vetVisitStore = VetVisitStore(context: context, petStore: petStore)
         let recommendationStore = VetRecommendationStore(context: context)
@@ -42,7 +41,6 @@ struct ContentView: View {
         let snapshotBuilder = SnapshotBuilder(
             petStore: petStore,
             medicationStore: medicationStore,
-            doseLogStore: doseLogStore,
             vaccinationStore: vaccinationStore,
             vetVisitStore: vetVisitStore,
             recommendationStore: recommendationStore,
@@ -89,7 +87,6 @@ struct ContentView: View {
             vaccinationStore: vaccinationStore,
             vetVisitStore: vetVisitStore,
             medicationStore: medicationStore,
-            doseLogStore: doseLogStore,
             veterinarianStore: veterinarianStore,
             diaryStore: diaryStore,
             healthMarkerStore: healthMarkerStore,

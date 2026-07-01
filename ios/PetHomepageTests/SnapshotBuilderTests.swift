@@ -7,7 +7,7 @@ final class SnapshotBuilderTests: XCTestCase {
     private var context: NSManagedObjectContext!
     private var petStore: PetStore!
     private var medicationStore: MedicationStore!
-    private var doseLogStore: DoseLogStore!
+    private var logStore: LogStore!
     private var vaccinationStore: VaccinationStore!
     private var vetVisitStore: VetVisitStore!
     private var recommendationStore: VetRecommendationStore!
@@ -19,7 +19,7 @@ final class SnapshotBuilderTests: XCTestCase {
         context = PersistenceController(inMemory: true).container.viewContext
         petStore = PetStore(context: context)
         medicationStore = MedicationStore(context: context, petStore: petStore)
-        doseLogStore = DoseLogStore(context: context)
+        logStore = LogStore(context: context, petStore: petStore)
         vaccinationStore = VaccinationStore(context: context, petStore: petStore)
         vetVisitStore = VetVisitStore(context: context, petStore: petStore)
         recommendationStore = VetRecommendationStore(context: context)
@@ -32,13 +32,13 @@ final class SnapshotBuilderTests: XCTestCase {
         SnapshotBuilder(
             petStore: petStore,
             medicationStore: medicationStore,
-            doseLogStore: doseLogStore,
             vaccinationStore: vaccinationStore,
             vetVisitStore: vetVisitStore,
             recommendationStore: recommendationStore,
             healthMarkerStore: healthMarkerStore,
             symptomEpisodeStore: symptomEpisodeStore,
             symptomEntryStore: symptomEntryStore,
+            logStore: logStore,
             now: { Date(timeIntervalSince1970: 1_700_000_000) }
         )
     }
@@ -71,7 +71,6 @@ final class SnapshotBuilderTests: XCTestCase {
 
     func testBuildIncludesDiaryWithPhotoCounts() throws {
         try petStore.createPet(name: "Sandy", species: "dog")
-        let logStore = LogStore(context: context, petStore: petStore)
         let entry = try logStore.createDiary(performedAt: Date(timeIntervalSince1970: 1_700_000_000), note: "Beach day")
         try logStore.addPhoto(to: entry, imageData: Data([0x1]))
 
@@ -90,8 +89,8 @@ final class SnapshotBuilderTests: XCTestCase {
         let med = try medicationStore.create(drugName: "Apoquel", dosage: "16mg",
                                              frequency: "daily", scheduleTime: date,
                                              startedAt: date, refillDueAt: date)
-        try doseLogStore.logDose(for: med, at: date)
-        try doseLogStore.logDose(for: med, at: date.addingTimeInterval(86_400))
+        try logStore.logDose(for: med, at: date)
+        try logStore.logDose(for: med, at: date.addingTimeInterval(86_400))
 
         try vaccinationStore.create(vaccineName: "Rabies", administeredAt: date,
                                     nextDueAt: date, lotNumber: "L1", administeredBy: "Dr. Vet")

@@ -216,7 +216,7 @@ struct PetProfileView: View {
 
     private func logDose(_ med: Medication) {
         guard let s = timelineServices else { return }
-        _ = try? s.doseLogStore.logDose(for: med, at: Date())
+        _ = try? s.logStore.logDose(for: med, at: Date())
         refresh()
     }
 

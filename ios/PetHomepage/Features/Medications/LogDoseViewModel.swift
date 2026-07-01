@@ -13,12 +13,12 @@ final class LogDoseViewModel {
     private(set) var confirmedNextReminder: Date?
     private(set) var doseCount: Int = 0
 
-    private let doseLogStore: DoseLogStore
+    private let logStore: LogStore
     private let reminderScheduler: MedicationReminderScheduler
 
-    init(medication: Medication, doseLogStore: DoseLogStore, reminderScheduler: MedicationReminderScheduler) {
+    init(medication: Medication, logStore: LogStore, reminderScheduler: MedicationReminderScheduler) {
         self.medication = medication
-        self.doseLogStore = doseLogStore
+        self.logStore = logStore
         self.reminderScheduler = reminderScheduler
     }
 
@@ -37,12 +37,12 @@ final class LogDoseViewModel {
     @MainActor
     func confirm() async {
         let next = nextReminder()
-        try? doseLogStore.logDose(for: medication, at: givenAt, note: note)
+        try? logStore.logDose(for: medication, at: givenAt, note: note)
         // Reschedule the next reminder to follow this dose.
         medication.startedAt = next
         try? medication.managedObjectContext?.save()
         await reminderScheduler.sync(medication)
-        doseCount = (try? doseLogStore.doseCount(for: medication)) ?? 0
+        doseCount = (try? logStore.doseCount(for: medication)) ?? 0
         confirmedNextReminder = next
         isConfirmed = true
     }

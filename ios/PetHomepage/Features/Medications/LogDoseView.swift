@@ -7,10 +7,10 @@ struct LogDoseView: View {
     @State private var model: LogDoseViewModel
     @Environment(\.dismiss) private var dismiss
 
-    init(medication: Medication, doseLogStore: DoseLogStore, reminderScheduler: MedicationReminderScheduler) {
+    init(medication: Medication, logStore: LogStore, reminderScheduler: MedicationReminderScheduler) {
         _model = State(initialValue: LogDoseViewModel(
             medication: medication,
-            doseLogStore: doseLogStore,
+            logStore: logStore,
             reminderScheduler: reminderScheduler
         ))
     }

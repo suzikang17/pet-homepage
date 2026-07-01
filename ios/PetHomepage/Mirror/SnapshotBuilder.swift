@@ -8,12 +8,10 @@ enum SnapshotBuilderError: Error, Equatable {
 }
 
 /// Reads the existing stores and assembles a `MirrorSnapshot`. Reads only — it never
-/// writes Core Data. The same `NSManagedObjectContext` the stores share is used for the
-/// one fetch the stores don't expose (a medication's full dose-log list).
+/// writes Core Data.
 final class SnapshotBuilder {
     private let petStore: PetStore
     private let medicationStore: MedicationStore
-    private let doseLogStore: DoseLogStore
     private let vaccinationStore: VaccinationStore
     private let vetVisitStore: VetVisitStore
     private let recommendationStore: VetRecommendationStore
@@ -22,12 +20,10 @@ final class SnapshotBuilder {
     private let symptomEntryStore: SymptomEntryStore
     private let veterinarianStore: VeterinarianStore
     private let logStore: LogStore
-    private let context: NSManagedObjectContext
     private let now: () -> Date
 
     init(petStore: PetStore,
          medicationStore: MedicationStore,
-         doseLogStore: DoseLogStore,
          vaccinationStore: VaccinationStore,
          vetVisitStore: VetVisitStore,
          recommendationStore: VetRecommendationStore,
@@ -39,7 +35,6 @@ final class SnapshotBuilder {
          now: @escaping () -> Date = { Date() }) {
         self.petStore = petStore
         self.medicationStore = medicationStore
-        self.doseLogStore = doseLogStore
         self.vaccinationStore = vaccinationStore
         self.vetVisitStore = vetVisitStore
         self.recommendationStore = recommendationStore
@@ -48,8 +43,6 @@ final class SnapshotBuilder {
         self.symptomEntryStore = symptomEntryStore
         self.veterinarianStore = veterinarianStore ?? VeterinarianStore(context: petStore.context, petStore: petStore)
         self.logStore = logStore ?? LogStore(context: petStore.context, petStore: petStore)
-        // The pet's managedObjectContext is the shared context every store was built with.
-        self.context = petStore.context
         self.now = now
     }
 
@@ -75,7 +68,7 @@ final class SnapshotBuilder {
                 startedAt: med.startedAt,
                 endedAt: med.endedAt,
                 refillDueAt: med.refillDueAt,
-                doseLogs: try doseLogs(for: med).map { DoseLogSnapshot(id: $0.id, givenAt: $0.givenAt) },
+                doseLogs: try doseLogs(for: med).map { DoseLogSnapshot(id: $0.id, givenAt: $0.performedAt) },
                 veterinarian: med.veterinarian?.name
             )
         }
@@ -167,12 +160,8 @@ final class SnapshotBuilder {
         )
     }
 
-    /// A medication's dose logs (oldest-first) — fetched directly because DoseLogStore
-    /// exposes `lastGiven`/`doseCount` but not the full list.
-    private func doseLogs(for medication: Medication) throws -> [DoseLog] {
-        let request = DoseLog.fetchRequest()
-        request.predicate = NSPredicate(format: "medication == %@", medication)
-        request.sortDescriptors = [NSSortDescriptor(key: "givenAt", ascending: true)]
-        return try context.fetch(request)
+    /// A medication's dose logs, oldest-first (LogStore.doses returns newest-first).
+    private func doseLogs(for medication: Medication) throws -> [LogEntry] {
+        Array(try logStore.doses(for: medication).reversed())
     }
 }

@@ -6,14 +6,14 @@ import XCTest
 final class MedicationDetailViewModelTests: XCTestCase {
     private var context: NSManagedObjectContext!
     private var store: MedicationStore!
-    private var doseLogStore: DoseLogStore!
+    private var logStore: LogStore!
 
     override func setUpWithError() throws {
         context = PersistenceController(inMemory: true).container.viewContext
         let petStore = PetStore(context: context)
         try petStore.createPet(name: "Sandy", species: "dog")
         store = MedicationStore(context: context, petStore: petStore)
-        doseLogStore = DoseLogStore(context: context)
+        logStore = LogStore(context: context, petStore: petStore)
     }
 
     private func makeMed() throws -> Medication {
@@ -22,7 +22,7 @@ final class MedicationDetailViewModelTests: XCTestCase {
     }
 
     func testLogDoseAppendsAndOrdersNewestFirst() throws {
-        let vm = MedicationDetailViewModel(medication: try makeMed(), doseLogStore: doseLogStore)
+        let vm = MedicationDetailViewModel(medication: try makeMed(), logStore: logStore)
         XCTAssertEqual(vm.doseCount, 0)
         XCTAssertNil(vm.lastGiven)
 
@@ -31,11 +31,11 @@ final class MedicationDetailViewModelTests: XCTestCase {
 
         XCTAssertEqual(vm.doseCount, 2)
         XCTAssertEqual(vm.lastGiven, Date(timeIntervalSince1970: 500))
-        XCTAssertEqual(vm.doses.first?.givenAt, Date(timeIntervalSince1970: 500))
+        XCTAssertEqual(vm.doses.first?.performedAt, Date(timeIntervalSince1970: 500))
     }
 
     func testDeleteDoseRemovesIt() throws {
-        let vm = MedicationDetailViewModel(medication: try makeMed(), doseLogStore: doseLogStore)
+        let vm = MedicationDetailViewModel(medication: try makeMed(), logStore: logStore)
         vm.logDose(at: Date(timeIntervalSince1970: 100))
         let dose = try XCTUnwrap(vm.doses.first)
 
