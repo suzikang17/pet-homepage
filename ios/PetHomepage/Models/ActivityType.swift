@@ -11,7 +11,6 @@ public class ActivityType: NSManagedObject {
     @NSManaged public var sortOrder: Int64
     @NSManaged public var isArchived: Bool
     @NSManaged public var pet: Pet?
-    @NSManaged public var logs: NSSet?
 }
 
 extension ActivityType {

@@ -12,7 +12,6 @@ public class Pet: NSManagedObject {
     @NSManaged public var photoData: Data?
     @NSManaged public var medications: NSSet?
     @NSManaged public var veterinarians: NSSet?
-    @NSManaged public var diaryEntries: NSSet?
     @NSManaged public var photos: NSSet?
 }
 

@@ -8,11 +8,9 @@ public class Photo: NSManagedObject {
     @NSManaged public var caption: String?
     @NSManaged public var createdAt: Date
     @NSManaged public var pet: Pet?
-    @NSManaged public var diaryEntry: DiaryEntry?
     @NSManaged public var vetVisit: VetVisit?
     @NSManaged public var medication: Medication?
     @NSManaged public var vaccination: Vaccination?
-    @NSManaged public var activityLog: ActivityLog?
     @NSManaged public var logEntry: LogEntry?
 }
 
