@@ -24,6 +24,17 @@ final class LogStoreTests: XCTestCase {
         XCTAssertEqual(try store.activityLogs().count, 0)
     }
 
+    func testAllPhotosReturnsAttachedDiaryPhotosNewestFirst() throws {
+        let entry = try store.createDiary(performedAt: Date(timeIntervalSince1970: 0), note: "walk")
+        let older = try store.addPhoto(to: entry, imageData: Data([0x1]), createdAt: Date(timeIntervalSince1970: 100))
+        let newer = try store.addPhoto(to: entry, imageData: Data([0x2]), createdAt: Date(timeIntervalSince1970: 200))
+
+        let photos = try store.allPhotos()
+        XCTAssertEqual(photos.count, 2)
+        XCTAssertEqual(photos.first, newer)
+        XCTAssertEqual(photos.last, older)
+    }
+
     func testLogActivityStampsNextDueAndIsActivityKind() throws {
         let type = ActivityType(context: context)
         type.id = UUID(); type.name = "Bath"; type.category = .care; type.iconName = "shower"

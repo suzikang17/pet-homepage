@@ -4,28 +4,28 @@ import Observation
 
 @Observable
 final class DiaryViewModel {
-    var entries: [DiaryEntry] = []
+    var entries: [LogEntry] = []
     var photos: [Photo] = []
 
-    private let store: DiaryStore
+    private let logStore: LogStore
 
-    init(store: DiaryStore) {
-        self.store = store
+    init(logStore: LogStore) {
+        self.logStore = logStore
         load()
     }
 
     func load() {
-        entries = (try? store.entries()) ?? []
-        photos = (try? store.allPhotos()) ?? []
+        entries = (try? logStore.diaryEntries()) ?? []
+        photos = (try? logStore.allPhotos()) ?? []
     }
 
-    func deleteEntry(_ entry: DiaryEntry) {
-        try? store.deleteEntry(entry)
+    func deleteEntry(_ entry: LogEntry) {
+        try? logStore.delete(entry)
         load()
     }
 
     func deletePhoto(_ photo: Photo) {
-        try? store.deletePhoto(photo)
+        try? logStore.deletePhoto(photo)
         load()
     }
 }

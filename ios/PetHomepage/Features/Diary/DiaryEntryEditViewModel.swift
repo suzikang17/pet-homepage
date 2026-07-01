@@ -9,13 +9,13 @@ final class DiaryEntryEditViewModel {
     var pendingPhotos: [Data] = []   // newly picked, saved on confirm
     var existingPhotos: [Photo] = [] // already attached (edit mode)
 
-    private let store: DiaryStore
-    private let editing: DiaryEntry?
+    private let logStore: LogStore
+    private let editing: LogEntry?
 
-    init(store: DiaryStore, editing: DiaryEntry?) {
-        self.store = store
+    init(logStore: LogStore, editing: LogEntry?) {
+        self.logStore = logStore
         self.editing = editing
-        date = editing?.date ?? Date()
+        date = editing?.performedAt ?? Date()
         note = editing?.note ?? ""
         existingPhotos = editing?.photoArray ?? []
     }
@@ -32,21 +32,21 @@ final class DiaryEntryEditViewModel {
     }
 
     func deleteExisting(_ photo: Photo) {
-        try? store.deletePhoto(photo)
+        try? logStore.deletePhoto(photo)
         existingPhotos.removeAll { $0 == photo }
     }
 
     func save() throws {
         let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
-        let entry: DiaryEntry
+        let entry: LogEntry
         if let editing {
-            try store.updateEntry(editing, date: date, note: trimmed.isEmpty ? nil : trimmed)
+            try logStore.updateDiary(editing, performedAt: date, note: trimmed.isEmpty ? nil : trimmed)
             entry = editing
         } else {
-            entry = try store.createEntry(date: date, note: trimmed.isEmpty ? nil : trimmed)
+            entry = try logStore.createDiary(performedAt: date, note: trimmed.isEmpty ? nil : trimmed)
         }
         for data in pendingPhotos {
-            try store.addPhoto(to: entry, imageData: data)
+            try logStore.addPhoto(to: entry, imageData: data)
         }
     }
 }

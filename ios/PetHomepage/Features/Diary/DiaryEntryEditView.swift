@@ -5,8 +5,8 @@ struct DiaryEntryEditView: View {
     @State private var model: DiaryEntryEditViewModel
     @Environment(\.dismiss) private var dismiss
 
-    init(store: DiaryStore, editing: DiaryEntry?) {
-        _model = State(initialValue: DiaryEntryEditViewModel(store: store, editing: editing))
+    init(logStore: LogStore, editing: LogEntry?) {
+        _model = State(initialValue: DiaryEntryEditViewModel(logStore: logStore, editing: editing))
     }
 
     var body: some View {

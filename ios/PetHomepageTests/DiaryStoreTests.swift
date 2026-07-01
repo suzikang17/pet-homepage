@@ -14,37 +14,24 @@ final class DiaryStoreTests: XCTestCase {
         store = DiaryStore(context: context, petStore: petStore)
     }
 
-    func testCreateEntryListsNewestFirstAndScopesToPet() throws {
-        try store.createEntry(date: Date(timeIntervalSince1970: 100), note: "Older")
-        try store.createEntry(date: Date(timeIntervalSince1970: 500), note: "Newer")
-
-        let entries = try store.entries()
-        XCTAssertEqual(entries.count, 2)
-        XCTAssertEqual(entries.first?.note, "Newer")
-        XCTAssertEqual(entries.first?.pet?.name, "Your pet")
+    private func allPhotos() throws -> [Photo] {
+        let request = Photo.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
+        return try context.fetch(request)
     }
 
-    func testAddPhotoLinksToEntryAndAppearsInAllPhotos() throws {
-        let entry = try store.createEntry(date: Date(), note: "Walk")
-        try store.addPhoto(to: entry, imageData: Data([0x1, 0x2, 0x3]))
-
-        XCTAssertEqual(entry.photoArray.count, 1)
-        XCTAssertEqual(try store.allPhotos().count, 1)
-        XCTAssertEqual(try store.allPhotos().first?.diaryEntry, entry)
-    }
-
-    func testVetVisitPhotoAppearsInAllPhotos() throws {
+    func testVetVisitPhotoAppearsAsPetPhoto() throws {
         let vetVisitStore = VetVisitStore(context: context, petStore: petStore)
         let visit = try vetVisitStore.create(occurredAt: Date(), clinicName: "Bayside", vetName: nil,
                                              reason: "checkup", diagnosis: nil, treatmentNotes: nil, nextVisitDate: nil)
         try store.addPhoto(toVetVisit: visit, imageData: Data([0x9]))
 
         XCTAssertEqual(visit.photoArray.count, 1)
-        XCTAssertEqual(try store.allPhotos().count, 1, "record photos join the pet-wide grid")
-        XCTAssertEqual(try store.allPhotos().first?.vetVisit, visit)
+        XCTAssertEqual(try allPhotos().count, 1, "record photos are attached to the pet")
+        XCTAssertEqual(try allPhotos().first?.vetVisit, visit)
     }
 
-    func testMedicationAndVaccinePhotosJoinAllPhotos() throws {
+    func testMedicationAndVaccinePhotosAreAttached() throws {
         let medStore = MedicationStore(context: context, petStore: petStore)
         let med = try medStore.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily",
                                       scheduleTime: Date(), startedAt: Date(), endedAt: nil, refillDueAt: nil)
@@ -57,17 +44,18 @@ final class DiaryStoreTests: XCTestCase {
 
         XCTAssertEqual(med.photoArray.count, 1)
         XCTAssertEqual(vax.photoArray.count, 1)
-        XCTAssertEqual(try store.allPhotos().count, 2, "med + vaccine photos join the pet-wide grid")
+        XCTAssertEqual(try allPhotos().count, 2, "med + vaccine photos are attached")
     }
 
-    func testDeleteEntryCascadesItsPhotos() throws {
-        let entry = try store.createEntry(date: Date(), note: "Walk")
-        try store.addPhoto(to: entry, imageData: Data([0x1]))
-        XCTAssertEqual(try store.allPhotos().count, 1)
+    func testDeletePhotoRemovesIt() throws {
+        let vetVisitStore = VetVisitStore(context: context, petStore: petStore)
+        let visit = try vetVisitStore.create(occurredAt: Date(), clinicName: "Bayside", vetName: nil,
+                                             reason: "checkup", diagnosis: nil, treatmentNotes: nil, nextVisitDate: nil)
+        let photo = try store.addPhoto(toVetVisit: visit, imageData: Data([0x9]))
+        XCTAssertEqual(try allPhotos().count, 1)
 
-        try store.deleteEntry(entry)
+        try store.deletePhoto(photo)
 
-        XCTAssertTrue(try store.entries().isEmpty)
-        XCTAssertTrue(try store.allPhotos().isEmpty)
+        XCTAssertTrue(try allPhotos().isEmpty)
     }
 }

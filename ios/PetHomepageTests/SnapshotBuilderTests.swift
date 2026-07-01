@@ -71,9 +71,9 @@ final class SnapshotBuilderTests: XCTestCase {
 
     func testBuildIncludesDiaryWithPhotoCounts() throws {
         try petStore.createPet(name: "Sandy", species: "dog")
-        let diaryStore = DiaryStore(context: context, petStore: petStore)
-        let entry = try diaryStore.createEntry(date: Date(timeIntervalSince1970: 1_700_000_000), note: "Beach day")
-        try diaryStore.addPhoto(to: entry, imageData: Data([0x1]))
+        let logStore = LogStore(context: context, petStore: petStore)
+        let entry = try logStore.createDiary(performedAt: Date(timeIntervalSince1970: 1_700_000_000), note: "Beach day")
+        try logStore.addPhoto(to: entry, imageData: Data([0x1]))
 
         let snapshot = try makeBuilder().build()
 

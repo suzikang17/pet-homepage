@@ -7,9 +7,9 @@ import UIKit
 struct DiaryView: View {
     @State private var model: DiaryViewModel
     @State private var section: DiarySection = .entries
-    @State private var editTarget: DiaryEntry?
+    @State private var editTarget: LogEntry?
     @State private var addEntry = false
-    private let store: DiaryStore
+    private let logStore: LogStore
 
     enum DiarySection: String, CaseIterable, Identifiable {
         case entries = "Entries"
@@ -17,9 +17,9 @@ struct DiaryView: View {
         var id: String { rawValue }
     }
 
-    init(store: DiaryStore) {
-        self.store = store
-        _model = State(initialValue: DiaryViewModel(store: store))
+    init(logStore: LogStore) {
+        self.logStore = logStore
+        _model = State(initialValue: DiaryViewModel(logStore: logStore))
     }
 
     var body: some View {
@@ -46,10 +46,10 @@ struct DiaryView: View {
             .toolbar(.hidden, for: .navigationBar)
             .onAppear { model.load() }
             .sheet(isPresented: $addEntry, onDismiss: { model.load() }) {
-                DiaryEntryEditView(store: store, editing: nil)
+                DiaryEntryEditView(logStore: logStore, editing: nil)
             }
             .sheet(item: $editTarget, onDismiss: { model.load() }) { entry in
-                DiaryEntryEditView(store: store, editing: entry)
+                DiaryEntryEditView(logStore: logStore, editing: entry)
             }
         }
     }
@@ -94,9 +94,9 @@ struct DiaryView: View {
         }
     }
 
-    private func entryRow(_ entry: DiaryEntry) -> some View {
+    private func entryRow(_ entry: LogEntry) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(entry.date, format: .dateTime.weekday().month().day().year())
+            Text(entry.performedAt, format: .dateTime.weekday().month().day().year())
                 .font(.caption.weight(.bold))
                 .foregroundStyle(Theme.primary)
             if let note = entry.note, !note.isEmpty {

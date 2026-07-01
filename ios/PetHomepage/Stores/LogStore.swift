@@ -145,4 +145,13 @@ final class LogStore {
         context.delete(photo)
         try context.save()
     }
+
+    /// Every photo for the current pet, newest first.
+    func allPhotos() throws -> [Photo] {
+        guard let pet = try petStore.currentPet() else { return [] }
+        let request = Photo.fetchRequest()
+        request.predicate = NSPredicate(format: "pet == %@", pet)
+        request.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
+        return try context.fetch(request)
+    }
 }

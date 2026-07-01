@@ -50,7 +50,7 @@ struct ContentView: View {
             symptomEpisodeStore: symptomEpisodeStore,
             symptomEntryStore: symptomEntryStore,
             veterinarianStore: veterinarianStore,
-            diaryStore: diaryStore
+            logStore: logStore
         )
         let mirrorCoordinator = MirrorCoordinator(
             builder: snapshotBuilder,
@@ -111,7 +111,7 @@ struct ContentView: View {
                 .tabItem { Label("Home", systemImage: "house") }
             TimelineView(services: timelineServices)
                 .tabItem { Label("Timeline", systemImage: "calendar") }
-            DiaryView(store: diaryStore)
+            DiaryView(logStore: logStore)
                 .tabItem { Label("Diary", systemImage: "book") }
             CareTeamView(store: veterinarianStore)
                 .tabItem { Label("Care Team", systemImage: "stethoscope") }
