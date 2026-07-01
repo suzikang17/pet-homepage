@@ -13,6 +13,7 @@ public class Photo: NSManagedObject {
     @NSManaged public var medication: Medication?
     @NSManaged public var vaccination: Vaccination?
     @NSManaged public var activityLog: ActivityLog?
+    @NSManaged public var logEntry: LogEntry?
 }
 
 extension Photo {
