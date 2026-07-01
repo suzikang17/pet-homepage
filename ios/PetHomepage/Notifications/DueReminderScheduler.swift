@@ -97,7 +97,7 @@ final class DueReminderScheduler {
     // MARK: - Activities
 
     /// A one-shot reminder on the log's nextDueAt date, or nil if it has no due date.
-    func activityReminder(for log: ActivityLog) -> PendingReminder? {
+    func activityReminder(for log: LogEntry) -> PendingReminder? {
         guard let due = log.nextDueAt else { return nil }
         let name = log.activityType?.name ?? "Activity"
         let dateComponents = calendar.dateComponents([.year, .month, .day], from: due)
@@ -113,7 +113,7 @@ final class DueReminderScheduler {
     }
 
     /// Schedules the activity reminder if it has a due date, otherwise cancels it.
-    func syncActivity(_ log: ActivityLog) async {
+    func syncActivity(_ log: LogEntry) async {
         if let reminder = activityReminder(for: log) {
             await scheduler.schedule(reminder)
         } else {
@@ -121,7 +121,7 @@ final class DueReminderScheduler {
         }
     }
 
-    func cancelActivity(_ log: ActivityLog) async {
+    func cancelActivity(_ log: LogEntry) async {
         await scheduler.cancel(kind: .activity, entityID: log.id)
     }
 }

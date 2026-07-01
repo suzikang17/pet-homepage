@@ -22,6 +22,7 @@ struct ContentView: View {
         let activityStore = ActivityStore(context: context, petStore: petStore)
         let veterinarianStore = VeterinarianStore(context: context, petStore: petStore)
         let diaryStore = DiaryStore(context: context, petStore: petStore)
+        let logStore = LogStore(context: context, petStore: petStore)
 
         // Web integration bridge: build the mirror push client from the user-entered endpoint
         // + token (Settings). Blank endpoint falls back to the build-time Convex .site default.
@@ -96,6 +97,7 @@ struct ContentView: View {
             symptomEntryStore: symptomEntryStore,
             recommendationStore: recommendationStore,
             activityStore: activityStore,
+            logStore: logStore,
             reminderScheduler: reminderScheduler,
             dueScheduler: dueScheduler,
             cadenceMonths: vetCadenceMonths,

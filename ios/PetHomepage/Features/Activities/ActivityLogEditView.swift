@@ -6,9 +6,9 @@ struct ActivityLogEditView: View {
     @State private var addingNewType = false
     @Environment(\.dismiss) private var dismiss
 
-    init(store: ActivityStore, dueScheduler: DueReminderScheduler, diaryStore: DiaryStore, editing: ActivityLog?) {
-        _model = State(initialValue: ActivityLogEditViewModel(store: store, dueScheduler: dueScheduler,
-                                                              diaryStore: diaryStore, editing: editing))
+    init(logStore: LogStore, store: ActivityStore, dueScheduler: DueReminderScheduler, editing: LogEntry?) {
+        _model = State(initialValue: ActivityLogEditViewModel(logStore: logStore, store: store,
+                                                              dueScheduler: dueScheduler, editing: editing))
     }
 
     var body: some View {

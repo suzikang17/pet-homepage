@@ -11,6 +11,7 @@ final class TimelineViewModelTests: XCTestCase {
     private var healthMarkerStore: HealthMarkerStore!
     private var symptomEpisodeStore: SymptomEpisodeStore!
     private var activityStore: ActivityStore!
+    private var logStore: LogStore!
 
     override func setUpWithError() throws {
         context = PersistenceController(inMemory: true).container.viewContext
@@ -22,6 +23,7 @@ final class TimelineViewModelTests: XCTestCase {
         healthMarkerStore = HealthMarkerStore(context: context, petStore: petStore)
         symptomEpisodeStore = SymptomEpisodeStore(context: context, petStore: petStore)
         activityStore = ActivityStore(context: context, petStore: petStore)
+        logStore = LogStore(context: context, petStore: petStore)
     }
 
     private func makeVM() -> TimelineViewModel {
@@ -31,7 +33,7 @@ final class TimelineViewModelTests: XCTestCase {
             medicationStore: medicationStore,
             healthMarkerStore: healthMarkerStore,
             symptomEpisodeStore: symptomEpisodeStore,
-            activityStore: activityStore
+            logStore: logStore
         )
     }
 
@@ -90,6 +92,7 @@ final class TimelineViewModelTests: XCTestCase {
             symptomEntryStore: SymptomEntryStore(context: context),
             recommendationStore: VetRecommendationStore(context: context),
             activityStore: activityStore,
+            logStore: logStore,
             reminderScheduler: reminderScheduler,
             dueScheduler: dueScheduler,
             cadenceMonths: 6,
@@ -144,8 +147,8 @@ final class TimelineViewModelTests: XCTestCase {
         let fake = FakeNotificationScheduler()
         let dueScheduler = DueReminderScheduler(scheduler: fake)
         let type = try activityStore.createType(name: "Bath", category: .care, iconName: "shower", defaultIntervalDays: 30)
-        let older = try activityStore.log(type: type, performedAt: day(10), note: nil, intervalDays: 30)
-        let newer = try activityStore.log(type: type, performedAt: day(40), note: nil, intervalDays: 30)
+        let older = try logStore.logActivity(type: type, performedAt: day(10), note: nil, intervalDays: 30)
+        let newer = try logStore.logActivity(type: type, performedAt: day(40), note: nil, intervalDays: 30)
         // Only the newest log holds a pending reminder (the edit VM enforces this when logging;
         // set that state up directly here to mirror it).
         await dueScheduler.syncActivity(newer)
@@ -167,8 +170,9 @@ final class TimelineViewModelTests: XCTestCase {
         let petStore = PetStore(context: context)
         try petStore.createPet(name: "Sandy", species: "dog")
         let activityStore = ActivityStore(context: context, petStore: petStore)
+        let logStore = LogStore(context: context, petStore: petStore)
         let type = try activityStore.createType(name: "Bath", category: .care, iconName: "shower", defaultIntervalDays: 7)
-        _ = try activityStore.log(type: type, performedAt: Date(), note: nil, intervalDays: 7)
+        _ = try logStore.logActivity(type: type, performedAt: Date(), note: nil, intervalDays: 7)
 
         let vm = TimelineViewModel(
             vaccinationStore: VaccinationStore(context: context, petStore: petStore),
@@ -176,7 +180,7 @@ final class TimelineViewModelTests: XCTestCase {
             medicationStore: MedicationStore(context: context, petStore: petStore),
             healthMarkerStore: HealthMarkerStore(context: context, petStore: petStore),
             symptomEpisodeStore: SymptomEpisodeStore(context: context, petStore: petStore),
-            activityStore: activityStore
+            logStore: logStore
         )
         vm.load()
 

@@ -39,7 +39,7 @@ enum TimelineReference {
     case medication(Medication)
     case marker(HealthMarker)
     case symptom(SymptomEpisode)
-    case activity(ActivityLog)
+    case activity(LogEntry)
 }
 
 /// One row in the unified timeline.
@@ -66,20 +66,20 @@ final class TimelineViewModel {
     private let medicationStore: MedicationStore
     private let healthMarkerStore: HealthMarkerStore
     private let symptomEpisodeStore: SymptomEpisodeStore
-    private let activityStore: ActivityStore
+    private let logStore: LogStore
 
     init(vaccinationStore: VaccinationStore,
          vetVisitStore: VetVisitStore,
          medicationStore: MedicationStore,
          healthMarkerStore: HealthMarkerStore,
          symptomEpisodeStore: SymptomEpisodeStore,
-         activityStore: ActivityStore) {
+         logStore: LogStore) {
         self.vaccinationStore = vaccinationStore
         self.vetVisitStore = vetVisitStore
         self.medicationStore = medicationStore
         self.healthMarkerStore = healthMarkerStore
         self.symptomEpisodeStore = symptomEpisodeStore
-        self.activityStore = activityStore
+        self.logStore = logStore
     }
 
     func load() {
@@ -90,7 +90,7 @@ final class TimelineViewModel {
             out += try medicationStore.medications().map(TimelineItem.init(medication:))
             out += try healthMarkerStore.markers().map(TimelineItem.init(marker:))
             out += try symptomEpisodeStore.episodes().map(TimelineItem.init(symptom:))
-            out += try activityStore.logs().map(TimelineItem.init(activity:))
+            out += try logStore.activityLogs().map(TimelineItem.init(activity:))
             items = out.sorted { $0.date > $1.date }
             errorMessage = nil
         } catch {
@@ -138,10 +138,10 @@ final class TimelineViewModel {
         case .activity(let log):
             let type = log.activityType
             await services.dueScheduler.cancelActivity(log)
-            try? services.activityStore.delete(log)
+            try? services.logStore.delete(log)
             // Re-arm the now-newest log of this type, so deleting the latest occurrence
             // doesn't silently drop the type's pending reminder.
-            if let type, let newLatest = try? services.activityStore.latestLog(of: type) {
+            if let type, let newLatest = try? services.logStore.latestLog(of: type) {
                 await services.dueScheduler.syncActivity(newLatest)
             }
         }
@@ -215,7 +215,7 @@ extension TimelineItem {
         )
     }
 
-    init(activity log: ActivityLog) {
+    init(activity log: LogEntry) {
         self.init(
             id: "activity:\(log.id.uuidString)",
             kind: .activity,

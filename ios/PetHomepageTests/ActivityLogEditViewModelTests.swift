@@ -8,7 +8,7 @@ final class ActivityLogEditViewModelTests: XCTestCase {
     private var context: NSManagedObjectContext!
     private var petStore: PetStore!
     private var store: ActivityStore!
-    private var diaryStore: DiaryStore!
+    private var logStore: LogStore!
     private var fake: FakeNotificationScheduler!
     private var sched: DueReminderScheduler!
 
@@ -17,14 +17,14 @@ final class ActivityLogEditViewModelTests: XCTestCase {
         petStore = PetStore(context: context)
         try petStore.createPet(name: "Sandy", species: "dog")
         store = ActivityStore(context: context, petStore: petStore)
-        diaryStore = DiaryStore(context: context, petStore: petStore)
+        logStore = LogStore(context: context, petStore: petStore)
         fake = FakeNotificationScheduler()
         sched = DueReminderScheduler(scheduler: fake, calendar: Calendar(identifier: .gregorian), hour: 9, minute: 0)
     }
 
     func testSelectingTypeAdoptsItsDefaultCadence() throws {
         let type = try store.createType(name: "Bath", category: .care, iconName: "shower", defaultIntervalDays: 30)
-        let vm = ActivityLogEditViewModel(store: store, dueScheduler: sched, diaryStore: diaryStore, editing: nil)
+        let vm = ActivityLogEditViewModel(logStore: logStore, store: store, dueScheduler: sched, editing: nil)
         vm.selectType(type)
         XCTAssertTrue(vm.hasCadence)
         XCTAssertEqual(vm.intervalDays, 30)
@@ -32,7 +32,7 @@ final class ActivityLogEditViewModelTests: XCTestCase {
     }
 
     func testCreateNewTypeFromInlineFields() throws {
-        let vm = ActivityLogEditViewModel(store: store, dueScheduler: sched, diaryStore: diaryStore, editing: nil)
+        let vm = ActivityLogEditViewModel(logStore: logStore, store: store, dueScheduler: sched, editing: nil)
         vm.newTypeName = "Ear cleaning"
         vm.newTypeCategory = .care
         try vm.createAndSelectNewType()
@@ -42,12 +42,12 @@ final class ActivityLogEditViewModelTests: XCTestCase {
 
     func testSaveLogsAndSchedulesReminder() async throws {
         let type = try store.createType(name: "Bath", category: .care, iconName: "shower", defaultIntervalDays: 30)
-        let vm = ActivityLogEditViewModel(store: store, dueScheduler: sched, diaryStore: diaryStore, editing: nil)
+        let vm = ActivityLogEditViewModel(logStore: logStore, store: store, dueScheduler: sched, editing: nil)
         vm.selectType(type)
         vm.performedAt = Date(timeIntervalSince1970: 0)
         try await vm.save()
 
-        XCTAssertEqual(try store.logs().count, 1)
+        XCTAssertEqual(try logStore.activityLogs().count, 1)
         let pending = await fake.pendingIDs(kind: .activity)
         XCTAssertEqual(pending.count, 1)
     }
@@ -55,14 +55,14 @@ final class ActivityLogEditViewModelTests: XCTestCase {
     func testSaveCancelsPriorLatestReminderOfSameType() async throws {
         let type = try store.createType(name: "Bath", category: .care, iconName: "shower", defaultIntervalDays: 30)
         // First log + its reminder.
-        let vm1 = ActivityLogEditViewModel(store: store, dueScheduler: sched, diaryStore: diaryStore, editing: nil)
+        let vm1 = ActivityLogEditViewModel(logStore: logStore, store: store, dueScheduler: sched, editing: nil)
         vm1.selectType(type)
         vm1.performedAt = Date(timeIntervalSince1970: 0)
         try await vm1.save()
-        let firstID = try store.latestLog(of: type)!.id
+        let firstID = try logStore.latestLog(of: type)!.id
 
         // Second log should cancel the first's reminder and schedule its own.
-        let vm2 = ActivityLogEditViewModel(store: store, dueScheduler: sched, diaryStore: diaryStore, editing: nil)
+        let vm2 = ActivityLogEditViewModel(logStore: logStore, store: store, dueScheduler: sched, editing: nil)
         vm2.selectType(type)
         vm2.performedAt = Date(timeIntervalSince1970: 10_000)
         try await vm2.save()

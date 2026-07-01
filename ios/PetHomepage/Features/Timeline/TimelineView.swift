@@ -15,6 +15,7 @@ struct TimelineServices {
     let symptomEntryStore: SymptomEntryStore
     let recommendationStore: VetRecommendationStore
     let activityStore: ActivityStore
+    let logStore: LogStore
     let reminderScheduler: MedicationReminderScheduler
     let dueScheduler: DueReminderScheduler
     let cadenceMonths: Int
@@ -43,7 +44,7 @@ struct TimelineView: View {
             medicationStore: services.medicationStore,
             healthMarkerStore: services.healthMarkerStore,
             symptomEpisodeStore: services.symptomEpisodeStore,
-            activityStore: services.activityStore
+            logStore: services.logStore
         ))
     }
 
@@ -225,8 +226,8 @@ struct TimelineView: View {
         case .marker:
             EmptyView()
         case .activity(let log):
-            ActivityLogEditView(store: services.activityStore, dueScheduler: services.dueScheduler,
-                                diaryStore: services.diaryStore, editing: log)
+            ActivityLogEditView(logStore: services.logStore, store: services.activityStore,
+                                dueScheduler: services.dueScheduler, editing: log)
         }
     }
 
@@ -249,8 +250,8 @@ struct TimelineView: View {
         case .symptom:
             EpisodeStartView(store: services.symptomEpisodeStore)
         case .activity:
-            ActivityLogEditView(store: services.activityStore, dueScheduler: services.dueScheduler,
-                                diaryStore: services.diaryStore, editing: nil)
+            ActivityLogEditView(logStore: services.logStore, store: services.activityStore,
+                                dueScheduler: services.dueScheduler, editing: nil)
         }
     }
 

@@ -140,4 +140,9 @@ final class LogStore {
         try context.save()
         return photo
     }
+
+    func deletePhoto(_ photo: Photo) throws {
+        context.delete(photo)
+        try context.save()
+    }
 }

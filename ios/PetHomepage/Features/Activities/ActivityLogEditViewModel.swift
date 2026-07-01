@@ -18,14 +18,14 @@ final class ActivityLogEditViewModel {
     var newTypeCategory: ActivityCategory = .other
 
     private let store: ActivityStore
+    private let logStore: LogStore
     private let dueScheduler: DueReminderScheduler
-    private let diaryStore: DiaryStore
-    private let editing: ActivityLog?
+    private let editing: LogEntry?
 
-    init(store: ActivityStore, dueScheduler: DueReminderScheduler, diaryStore: DiaryStore, editing: ActivityLog?) {
+    init(logStore: LogStore, store: ActivityStore, dueScheduler: DueReminderScheduler, editing: LogEntry?) {
+        self.logStore = logStore
         self.store = store
         self.dueScheduler = dueScheduler
-        self.diaryStore = diaryStore
         self.editing = editing
         availableTypes = (try? store.types()) ?? []
         if let log = editing {
@@ -65,7 +65,7 @@ final class ActivityLogEditViewModel {
         if pendingPhotos.indices.contains(index) { pendingPhotos.remove(at: index) }
     }
     func deleteExisting(_ photo: Photo) {
-        try? diaryStore.deletePhoto(photo)
+        try? logStore.deletePhoto(photo)
         existingPhotos.removeAll { $0 == photo }
     }
 
@@ -77,23 +77,18 @@ final class ActivityLogEditViewModel {
 
         // Capture the prior latest-of-type BEFORE logging, so we can cancel its reminder
         // (only the newest log of a type should hold a pending reminder).
-        let priorLatest = editing == nil ? (try? store.latestLog(of: type)) : nil
+        let priorLatest = editing == nil ? (try? logStore.latestLog(of: type)) : nil
 
-        let log: ActivityLog
+        let log: LogEntry
         if let existing = editing {
-            existing.performedAt = performedAt
-            existing.note = noteOrNil
-            existing.intervalDays = Int64(interval)
-            existing.nextDueAt = interval > 0 ? Calendar.current.date(byAdding: .day, value: interval, to: performedAt) : nil
-            existing.activityType = type
-            try existing.managedObjectContext?.save()
+            try logStore.updateActivity(existing, type: type, performedAt: performedAt, note: noteOrNil, intervalDays: interval)
             log = existing
         } else {
-            log = try store.log(type: type, performedAt: performedAt, note: noteOrNil, intervalDays: interval)
+            log = try logStore.logActivity(type: type, performedAt: performedAt, note: noteOrNil, intervalDays: interval)
         }
 
         for data in pendingPhotos {
-            try? diaryStore.addPhoto(toActivityLog: log, imageData: data)
+            try? logStore.addPhoto(to: log, imageData: data)
         }
 
         if let prior = priorLatest, prior.id != log.id {
