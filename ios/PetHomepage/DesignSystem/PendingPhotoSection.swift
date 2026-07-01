@@ -41,10 +41,10 @@ struct PendingPhotoSection: View {
             }
         }
         .onChange(of: pickerItems) { _, items in load(items) }
-        .sheet(isPresented: $showingCamera) {
-            CameraPicker { image in
+        .fullScreenCover(isPresented: $showingCamera) {
+            CameraPicker(onCapture: { image in
                 if let jpeg = ImageDownscaler.scaledJPEG(from: image) { onPick(jpeg) }
-            }
+            }, onFinish: { showingCamera = false })
             .ignoresSafeArea()
         }
     }

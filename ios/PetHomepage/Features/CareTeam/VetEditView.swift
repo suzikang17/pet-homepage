@@ -46,12 +46,11 @@ struct VetEditView: View {
                 TextField("Notes", text: $model.notes, axis: .vertical)
             }
         }
-        .sheet(isPresented: $showContacts) {
+        .background(
             ContactPicker(
-                onPick: { model.apply(contact: $0); showContacts = false },
-                onCancel: { showContacts = false }
+                isPresented: $showContacts,
+                onPick: { model.apply(contact: $0) }
             )
-            .ignoresSafeArea()
-        }
+        )
     }
 }
