@@ -8,11 +8,12 @@ final class TimelineViewModelTests: XCTestCase {
     private var medicationStore: MedicationStore!
     private var activityStore: ActivityStore!
     private var logStore: LogStore!
+    private var pet: Pet!
 
     override func setUpWithError() throws {
         context = PersistenceController(inMemory: true).container.viewContext
         let petStore = PetStore(context: context)
-        try petStore.createPet(name: "Sandy", species: "dog")
+        pet = try petStore.createPet(name: "Sandy", species: "dog")
         medicationStore = MedicationStore(context: context, petStore: petStore)
         activityStore = ActivityStore(context: context, petStore: petStore)
         logStore = LogStore(context: context, petStore: petStore)
@@ -147,7 +148,8 @@ final class TimelineViewModelTests: XCTestCase {
                                      reason: nil, diagnosis: nil, treatmentNotes: nil, nextVisitDate: nil)
         _ = try logStore.logVetVisit(occurredAt: day(30), clinicName: "B", vetName: nil,
                                      reason: nil, diagnosis: nil, treatmentNotes: nil, nextVisitDate: nil)
-        await dueScheduler.syncVetCadence(lastVisit: day(30), cadence: VetCadence(months: 6, hour: 9, minute: 0))
+        await dueScheduler.syncVetCadence(petID: pet.id, petName: pet.name, lastVisit: day(30),
+                                          cadence: VetCadence(months: 6, hour: 9, minute: 0))
         let before = await fake.pendingIDs(kind: .vetCadence)
         XCTAssertEqual(before.count, 1)
 

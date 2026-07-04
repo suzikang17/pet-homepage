@@ -5,14 +5,16 @@ import CoreData
 
 final class DueReminderSchedulerTests: XCTestCase {
     private var context: NSManagedObjectContext!
+    private var petStore: PetStore!
+    private var pet: Pet!
     private var activityStore: ActivityStore!
     private var logStore: LogStore!
     private var calendar: Calendar!
 
     override func setUpWithError() throws {
         context = PersistenceController(inMemory: true).container.viewContext
-        let petStore = PetStore(context: context)
-        try petStore.createPet(name: "Sandy", species: "dog")
+        petStore = PetStore(context: context)
+        pet = try petStore.createPet(name: "Sandy", species: "dog")
         activityStore = ActivityStore(context: context, petStore: petStore)
         logStore = LogStore(context: context, petStore: petStore)
         calendar = Calendar(identifier: .gregorian)
@@ -33,6 +35,7 @@ final class DueReminderSchedulerTests: XCTestCase {
         XCTAssertEqual(reminder?.dateComponents?.month, 3)
         XCTAssertEqual(reminder?.dateComponents?.day, 15)
         XCTAssertTrue(reminder?.body.contains("Rabies") ?? false)
+        XCTAssertTrue(reminder?.body.contains("Sandy") ?? false, "body should name the pet: \(reminder?.body ?? "")")
     }
 
     func testVaccinationWithoutNextDueHasNoReminder() throws {
@@ -64,15 +67,18 @@ final class DueReminderSchedulerTests: XCTestCase {
         let sched = DueReminderScheduler(scheduler: FakeNotificationScheduler(), calendar: calendar, hour: 8, minute: 30)
         let lastVisit = calendar.date(from: DateComponents(year: 2026, month: 1, day: 10))!
 
-        let reminder = sched.vetCadenceReminder(lastVisit: lastVisit, cadence: VetCadence(months: 6, hour: 8, minute: 30))
+        let reminder = sched.vetCadenceReminder(petID: pet.id, petName: pet.name, lastVisit: lastVisit,
+                                                cadence: VetCadence(months: 6, hour: 8, minute: 30))
 
         XCTAssertNotNil(reminder)
         XCTAssertEqual(reminder?.kind, .vetCadence)
+        XCTAssertEqual(reminder?.entityID, pet.id)
         XCTAssertEqual(reminder?.dateComponents?.year, 2026)
         XCTAssertEqual(reminder?.dateComponents?.month, 7)
         XCTAssertEqual(reminder?.dateComponents?.day, 10)
         XCTAssertEqual(reminder?.hour, 8)
         XCTAssertEqual(reminder?.minute, 30)
+        XCTAssertTrue(reminder?.body.contains("Sandy") ?? false, "body should name the pet: \(reminder?.body ?? "")")
     }
 
     func testSyncVetCadenceSchedulesThenCancels() async throws {
@@ -80,11 +86,12 @@ final class DueReminderSchedulerTests: XCTestCase {
         let sched = DueReminderScheduler(scheduler: fake, calendar: calendar, hour: 8, minute: 30)
         let lastVisit = calendar.date(from: DateComponents(year: 2026, month: 1, day: 10))!
 
-        await sched.syncVetCadence(lastVisit: lastVisit, cadence: VetCadence(months: 6, hour: 8, minute: 30))
+        await sched.syncVetCadence(petID: pet.id, petName: pet.name, lastVisit: lastVisit,
+                                   cadence: VetCadence(months: 6, hour: 8, minute: 30))
         var pending = await fake.pendingIDs(kind: .vetCadence)
-        XCTAssertEqual(pending.count, 1)
+        XCTAssertEqual(pending, [pet.id])
 
-        await sched.cancelVetCadence()
+        await sched.cancelVetCadence(petID: pet.id)
         pending = await fake.pendingIDs(kind: .vetCadence)
         XCTAssertTrue(pending.isEmpty)
     }
@@ -93,10 +100,26 @@ final class DueReminderSchedulerTests: XCTestCase {
         let fake = FakeNotificationScheduler()
         let sched = DueReminderScheduler(scheduler: fake, calendar: calendar, hour: 8, minute: 30)
 
-        await sched.syncVetCadence(lastVisit: nil, cadence: VetCadence(months: 6, hour: 8, minute: 30))
+        await sched.syncVetCadence(petID: pet.id, petName: pet.name, lastVisit: nil,
+                                   cadence: VetCadence(months: 6, hour: 8, minute: 30))
 
         let pending = await fake.pendingIDs(kind: .vetCadence)
         XCTAssertTrue(pending.isEmpty)
+    }
+
+    func testSyncVetCadenceForTwoPetsYieldsTwoDistinctPendingReminders() async throws {
+        let fake = FakeNotificationScheduler()
+        let sched = DueReminderScheduler(scheduler: fake, calendar: calendar, hour: 8, minute: 30)
+        let otherPet = try petStore.createPet(name: "Bella", species: "cat")
+        let lastVisit = calendar.date(from: DateComponents(year: 2026, month: 1, day: 10))!
+        let cadence = VetCadence(months: 6, hour: 8, minute: 30)
+
+        await sched.syncVetCadence(petID: pet.id, petName: pet.name, lastVisit: lastVisit, cadence: cadence)
+        await sched.syncVetCadence(petID: otherPet.id, petName: otherPet.name, lastVisit: lastVisit, cadence: cadence)
+
+        let pending = await fake.pendingIDs(kind: .vetCadence)
+        XCTAssertEqual(Set(pending), Set([pet.id, otherPet.id]))
+        XCTAssertEqual(pending.count, 2, "each pet's cadence reminder must coexist, not overwrite the other")
     }
 
     func testActivityReminderUsesNextDueAt() throws {
@@ -113,6 +136,7 @@ final class DueReminderSchedulerTests: XCTestCase {
         XCTAssertEqual(reminder?.dateComponents?.month, 7)
         XCTAssertEqual(reminder?.dateComponents?.day, 1)
         XCTAssertTrue(reminder?.body.contains("Bath") ?? false)
+        XCTAssertTrue(reminder?.body.contains("Sandy") ?? false, "body should name the pet: \(reminder?.body ?? "")")
     }
 
     func testActivityReminderUsesTypeReminderTime() throws {

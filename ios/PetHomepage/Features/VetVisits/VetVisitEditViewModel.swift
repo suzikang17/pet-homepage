@@ -83,11 +83,18 @@ final class VetVisitEditViewModel {
         for data in pendingPhotos {
             try? logStore.addPhoto(to: visit, imageData: data)
         }
-        // Saving a visit changes "most recent visit" → re-sync the cadence reminder.
-        let lastVisit = try? logStore.mostRecentVisitDate()
-        await dueScheduler.syncVetCadence(
-            lastVisit: lastVisit,
-            cadence: VetCadence(months: cadenceMonths, hour: 9, minute: 0)
-        )
+        // Saving a visit changes "most recent visit" → re-sync the cadence reminder, keyed by
+        // this visit's pet so it doesn't collide with another pet's cadence reminder.
+        if let petID = visit.pet?.id {
+            let lastVisit = try? logStore.mostRecentVisitDate()
+            await dueScheduler.syncVetCadence(
+                petID: petID,
+                petName: visit.pet?.name,
+                lastVisit: lastVisit,
+                cadence: VetCadence(months: cadenceMonths, hour: 9, minute: 0)
+            )
+        }
+        // else: no pet on the entry (shouldn't happen — LogStore always attaches one via
+        // ensurePet()) — skip the sync rather than colliding with a shared sentinel.
     }
 }

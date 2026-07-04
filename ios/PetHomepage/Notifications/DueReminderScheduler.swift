@@ -17,9 +17,6 @@ final class DueReminderScheduler {
     private let hour: Int
     private let minute: Int
 
-    /// Single sentinel ID for the one-per-pet vet cadence reminder (idempotent replace).
-    static let vetCadenceEntityID = UUID(uuidString: "00000000-0000-0000-0000-0000000C0DEC")!
-
     init(scheduler: NotificationScheduling, calendar: Calendar = .current, hour: Int = 9, minute: Int = 0) {
         self.scheduler = scheduler
         self.calendar = calendar
@@ -30,14 +27,23 @@ final class DueReminderScheduler {
     // MARK: - Vaccinations
 
     /// A one-shot reminder on the vaccine log's nextDueAt date, or nil if it has no due date.
+    /// Body names the pet when the entry has one ("Rabies is due for Milo"), else falls back
+    /// to the pet-agnostic copy ("Rabies is due").
     func vaccinationReminder(for vaccine: LogEntry) -> PendingReminder? {
         guard let due = vaccine.nextDueAt else { return nil }
         let dateComponents = calendar.dateComponents([.year, .month, .day], from: due)
+        let title = vaccine.title ?? "Vaccine"
+        let body: String
+        if let petName = vaccine.pet?.name, !petName.isEmpty {
+            body = "\(title) is due for \(petName)"
+        } else {
+            body = "\(title) is due"
+        }
         return PendingReminder(
             kind: .vaccination,
             entityID: vaccine.id,
             title: "Vaccination due",
-            body: "\(vaccine.title ?? "Vaccine") is due",
+            body: body,
             hour: hour,
             minute: minute,
             dateComponents: dateComponents
@@ -66,36 +72,46 @@ final class DueReminderScheduler {
     // MARK: - Vet cadence
 
     /// A one-shot reminder on (lastVisit + cadence.months), or nil if there is no last visit.
-    func vetCadenceReminder(lastVisit: Date?, cadence: VetCadence) -> PendingReminder? {
+    /// Keyed by `petID` (not a shared sentinel) so each pet's cadence reminder coexists with
+    /// every other pet's — with two pets, syncing both must not overwrite one another.
+    func vetCadenceReminder(petID: UUID, petName: String?, lastVisit: Date?, cadence: VetCadence) -> PendingReminder? {
         guard let lastVisit else { return nil }
         guard let dueDate = calendar.date(byAdding: .month, value: cadence.months, to: lastVisit) else { return nil }
         let dateComponents = calendar.dateComponents([.year, .month, .day], from: dueDate)
+        let body: String
+        if let petName, !petName.isEmpty {
+            body = "It's been \(cadence.months) months — time for \(petName)'s vet visit"
+        } else {
+            body = "It's been \(cadence.months) months — time to see the vet"
+        }
         return PendingReminder(
             kind: .vetCadence,
-            entityID: Self.vetCadenceEntityID,
+            entityID: petID,
             title: "Vet visit due",
-            body: "It's been \(cadence.months) months — time to see the vet",
+            body: body,
             hour: cadence.hour,
             minute: cadence.minute,
             dateComponents: dateComponents
         )
     }
 
-    func syncVetCadence(lastVisit: Date?, cadence: VetCadence) async {
-        if let reminder = vetCadenceReminder(lastVisit: lastVisit, cadence: cadence) {
+    func syncVetCadence(petID: UUID, petName: String? = nil, lastVisit: Date?, cadence: VetCadence) async {
+        if let reminder = vetCadenceReminder(petID: petID, petName: petName, lastVisit: lastVisit, cadence: cadence) {
             await scheduler.schedule(reminder)
         } else {
-            await cancelVetCadence()
+            await cancelVetCadence(petID: petID)
         }
     }
 
-    func cancelVetCadence() async {
-        await scheduler.cancel(kind: .vetCadence, entityID: Self.vetCadenceEntityID)
+    func cancelVetCadence(petID: UUID) async {
+        await scheduler.cancel(kind: .vetCadence, entityID: petID)
     }
 
     // MARK: - Activities
 
-    /// A one-shot reminder on the log's nextDueAt date, or nil if it has no due date.
+    /// A one-shot reminder on the log's nextDueAt date, or nil if it has no due date. Body names
+    /// the pet when the entry has one ("Time for Bella's bath"), else falls back to the
+    /// pet-agnostic copy ("Time for Bath").
     func activityReminder(for log: LogEntry) -> PendingReminder? {
         guard let due = log.nextDueAt else { return nil }
         let name = log.activityType?.name ?? "Activity"
@@ -103,11 +119,17 @@ final class DueReminderScheduler {
         // Use the activity type's own reminder time when available; otherwise the scheduler default.
         let reminderHour = log.activityType.map { Int($0.reminderHour) } ?? hour
         let reminderMinute = log.activityType.map { Int($0.reminderMinute) } ?? minute
+        let body: String
+        if let petName = log.pet?.name, !petName.isEmpty {
+            body = "Time for \(petName)'s \(name)"
+        } else {
+            body = "Time for \(name)"
+        }
         return PendingReminder(
             kind: .activity,
             entityID: log.id,
             title: "\(name) due",
-            body: "Time for \(name)",
+            body: body,
             hour: reminderHour,
             minute: reminderMinute,
             dateComponents: dateComponents

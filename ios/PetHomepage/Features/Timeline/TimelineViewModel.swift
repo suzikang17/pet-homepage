@@ -110,12 +110,21 @@ final class TimelineViewModel {
             await services.dueScheduler.cancelVaccination(v)
             try? services.logStore.delete(v)
         case .vet(let v):
+            // Capture pet identity before delete — the LogEntry is a fault after being
+            // removed from the context, so its relationships aren't safe to read afterward.
+            let petID = v.pet?.id
+            let petName = v.pet?.name
             try? services.logStore.delete(v)
-            let last = (try? services.logStore.mostRecentVisitDate()) ?? nil
-            await services.dueScheduler.syncVetCadence(
-                lastVisit: last,
-                cadence: VetCadence(months: services.cadenceMonths, hour: 9, minute: 0)
-            )
+            if let petID {
+                let last = (try? services.logStore.mostRecentVisitDate()) ?? nil
+                await services.dueScheduler.syncVetCadence(
+                    petID: petID,
+                    petName: petName,
+                    lastVisit: last,
+                    cadence: VetCadence(months: services.cadenceMonths, hour: 9, minute: 0)
+                )
+            }
+            // else: entry had no pet — skip rather than collide with a shared sentinel.
         case .medication(let m):
             await services.reminderScheduler.cancel(m)
             try? services.medicationStore.delete(m)
