@@ -16,7 +16,7 @@ struct PetProfileView: View {
     @State private var upcoming: [TimelineItem] = []
     @State private var recent: [TimelineItem] = []
     @State private var activeMeds: [Medication] = []
-    @State private var latestWeight: HealthMarker?
+    @State private var latestWeight: LogEntry?
     @State private var nextVetVisit: Date?
 
     private let petStore: PetStore
@@ -61,7 +61,7 @@ struct PetProfileView: View {
                 if let settings { SettingsView(model: settings, petStore: petStore) }
             }
             .sheet(isPresented: $showAddWeight, onDismiss: refresh) {
-                if let s = timelineServices { MarkerEditView(store: s.healthMarkerStore) }
+                if let s = timelineServices { MarkerEditView(logStore: s.logStore) }
             }
             .sheet(isPresented: $showAddSymptom, onDismiss: refresh) {
                 if let s = timelineServices { EpisodeStartView(store: s.symptomEpisodeStore) }
@@ -197,7 +197,6 @@ struct PetProfileView: View {
         guard let s = timelineServices else { return }
         let vm = TimelineViewModel(
             medicationStore: s.medicationStore,
-            healthMarkerStore: s.healthMarkerStore,
             symptomEpisodeStore: s.symptomEpisodeStore,
             logStore: s.logStore
         )
@@ -207,7 +206,7 @@ struct PetProfileView: View {
 
         let meds = (try? s.medicationStore.medications()) ?? []
         activeMeds = meds.filter { $0.endedAt == nil || ($0.endedAt.map { $0 > Date() } ?? true) }
-        latestWeight = (try? s.healthMarkerStore.series(of: .weight))?.last
+        latestWeight = (try? s.logStore.series(of: .weight))?.last
         let visits = (try? s.logStore.vetVisits()) ?? []
         nextVetVisit = visits.compactMap(\.nextDueAt).filter { $0 >= Date() }.min()
     }

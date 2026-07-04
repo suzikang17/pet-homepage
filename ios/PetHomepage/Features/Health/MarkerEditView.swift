@@ -5,8 +5,8 @@ struct MarkerEditView: View {
     @State private var model: MarkerEditViewModel
     @Environment(\.dismiss) private var dismiss
 
-    init(store: HealthMarkerStore) {
-        _model = State(initialValue: MarkerEditViewModel(store: store))
+    init(logStore: LogStore) {
+        _model = State(initialValue: MarkerEditViewModel(logStore: logStore))
     }
 
     var body: some View {

@@ -16,7 +16,6 @@ final class MirrorCoordinatorTests: XCTestCase {
             petStore: petStore,
             medicationStore: MedicationStore(context: context, petStore: petStore),
             recommendationStore: VetRecommendationStore(context: context),
-            healthMarkerStore: HealthMarkerStore(context: context, petStore: petStore),
             symptomEpisodeStore: SymptomEpisodeStore(context: context, petStore: petStore),
             symptomEntryStore: SymptomEntryStore(context: context),
             now: { Date(timeIntervalSince1970: 1_700_000_000) }

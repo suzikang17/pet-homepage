@@ -37,7 +37,7 @@ enum TimelineReference {
     case vaccine(LogEntry)
     case vet(LogEntry)
     case medication(Medication)
-    case marker(HealthMarker)
+    case marker(LogEntry)
     case symptom(SymptomEpisode)
     case activity(LogEntry)
 }
@@ -62,16 +62,13 @@ final class TimelineViewModel {
     var errorMessage: String?
 
     private let medicationStore: MedicationStore
-    private let healthMarkerStore: HealthMarkerStore
     private let symptomEpisodeStore: SymptomEpisodeStore
     private let logStore: LogStore
 
     init(medicationStore: MedicationStore,
-         healthMarkerStore: HealthMarkerStore,
          symptomEpisodeStore: SymptomEpisodeStore,
          logStore: LogStore) {
         self.medicationStore = medicationStore
-        self.healthMarkerStore = healthMarkerStore
         self.symptomEpisodeStore = symptomEpisodeStore
         self.logStore = logStore
     }
@@ -82,7 +79,7 @@ final class TimelineViewModel {
             out += try logStore.vaccines().map(TimelineItem.init(vaccine:))
             out += try logStore.vetVisits().map(TimelineItem.init(vet:))
             out += try medicationStore.medications().map(TimelineItem.init(medication:))
-            out += try healthMarkerStore.markers().map(TimelineItem.init(marker:))
+            out += try logStore.markers().map(TimelineItem.init(marker:))
             out += try symptomEpisodeStore.episodes().map(TimelineItem.init(symptom:))
             out += try logStore.activityLogs().map(TimelineItem.init(activity:))
             items = out.sorted { $0.date > $1.date }
@@ -126,7 +123,7 @@ final class TimelineViewModel {
             await services.reminderScheduler.cancel(m)
             try? services.medicationStore.delete(m)
         case .marker(let mk):
-            try? services.healthMarkerStore.delete(mk)
+            try? services.logStore.delete(mk)
         case .symptom(let ep):
             try? services.symptomEpisodeStore.delete(ep)
         case .activity(let log):
@@ -184,12 +181,12 @@ extension TimelineItem {
         )
     }
 
-    init(marker mk: HealthMarker) {
+    init(marker mk: LogEntry) {
         let unit = mk.unit.map { " \($0)" } ?? ""
         self.init(
             id: "marker:\(mk.id.uuidString)",
             kind: .marker,
-            date: mk.recordedAt,
+            date: mk.performedAt,
             title: "\(mk.markerType.displayName): \(formatMarker(mk.value))\(unit)",
             subtitle: nil,
             nextDue: nil,

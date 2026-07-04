@@ -7,7 +7,6 @@ struct TimelineServices {
     let medicationStore: MedicationStore
     let veterinarianStore: VeterinarianStore
     let diaryStore: DiaryStore
-    let healthMarkerStore: HealthMarkerStore
     let symptomEpisodeStore: SymptomEpisodeStore
     let symptomEntryStore: SymptomEntryStore
     let recommendationStore: VetRecommendationStore
@@ -37,7 +36,6 @@ struct TimelineView: View {
         self.services = services
         _model = State(initialValue: TimelineViewModel(
             medicationStore: services.medicationStore,
-            healthMarkerStore: services.healthMarkerStore,
             symptomEpisodeStore: services.symptomEpisodeStore,
             logStore: services.logStore
         ))
@@ -239,7 +237,7 @@ struct TimelineView: View {
             MedicationEditView(store: services.medicationStore, reminderScheduler: services.reminderScheduler,
                                veterinarianStore: services.veterinarianStore, editing: nil)
         case .marker:
-            MarkerEditView(store: services.healthMarkerStore)
+            MarkerEditView(logStore: services.logStore)
         case .symptom:
             EpisodeStartView(store: services.symptomEpisodeStore)
         case .activity:

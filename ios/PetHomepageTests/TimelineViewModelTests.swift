@@ -6,7 +6,6 @@ import XCTest
 final class TimelineViewModelTests: XCTestCase {
     private var context: NSManagedObjectContext!
     private var medicationStore: MedicationStore!
-    private var healthMarkerStore: HealthMarkerStore!
     private var symptomEpisodeStore: SymptomEpisodeStore!
     private var activityStore: ActivityStore!
     private var logStore: LogStore!
@@ -16,7 +15,6 @@ final class TimelineViewModelTests: XCTestCase {
         let petStore = PetStore(context: context)
         try petStore.createPet(name: "Sandy", species: "dog")
         medicationStore = MedicationStore(context: context, petStore: petStore)
-        healthMarkerStore = HealthMarkerStore(context: context, petStore: petStore)
         symptomEpisodeStore = SymptomEpisodeStore(context: context, petStore: petStore)
         activityStore = ActivityStore(context: context, petStore: petStore)
         logStore = LogStore(context: context, petStore: petStore)
@@ -25,7 +23,6 @@ final class TimelineViewModelTests: XCTestCase {
     private func makeVM() -> TimelineViewModel {
         TimelineViewModel(
             medicationStore: medicationStore,
-            healthMarkerStore: healthMarkerStore,
             symptomEpisodeStore: symptomEpisodeStore,
             logStore: logStore
         )
@@ -37,7 +34,7 @@ final class TimelineViewModelTests: XCTestCase {
         _ = try logStore.logVaccine(name: "Rabies", performedAt: day(10), nextDueAt: nil, lotNumber: nil, administeredBy: nil)
         _ = try logStore.logVetVisit(occurredAt: day(30), clinicName: "Bayside", vetName: nil, reason: "Checkup", diagnosis: nil, treatmentNotes: nil, nextVisitDate: nil)
         _ = try medicationStore.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily", scheduleTime: day(20), startedAt: day(20), endedAt: nil, refillDueAt: nil)
-        try healthMarkerStore.create(markerType: .weight, value: 31, unit: "kg", recordedAt: day(5))
+        try logStore.logMarker(type: .weight, value: 31, unit: "kg", recordedAt: day(5))
 
         let vm = makeVM()
         vm.load()
@@ -78,7 +75,6 @@ final class TimelineViewModelTests: XCTestCase {
             medicationStore: medicationStore,
             veterinarianStore: VeterinarianStore(context: context, petStore: PetStore(context: context)),
             diaryStore: DiaryStore(context: context, petStore: PetStore(context: context)),
-            healthMarkerStore: healthMarkerStore,
             symptomEpisodeStore: symptomEpisodeStore,
             symptomEntryStore: SymptomEntryStore(context: context),
             recommendationStore: VetRecommendationStore(context: context),
@@ -192,7 +188,6 @@ final class TimelineViewModelTests: XCTestCase {
 
         let vm = TimelineViewModel(
             medicationStore: MedicationStore(context: context, petStore: petStore),
-            healthMarkerStore: HealthMarkerStore(context: context, petStore: petStore),
             symptomEpisodeStore: SymptomEpisodeStore(context: context, petStore: petStore),
             logStore: logStore
         )

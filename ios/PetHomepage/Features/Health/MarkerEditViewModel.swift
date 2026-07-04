@@ -9,10 +9,10 @@ final class MarkerEditViewModel {
     var unit: String = "lb"
     var recordedAt: Date = Date()
 
-    private let store: HealthMarkerStore
+    private let logStore: LogStore
 
-    init(store: HealthMarkerStore) {
-        self.store = store
+    init(logStore: LogStore) {
+        self.logStore = logStore
     }
 
     /// Unit choices for the current marker type (empty = this type is unit-less).
@@ -38,9 +38,9 @@ final class MarkerEditViewModel {
     func save() throws {
         guard let parsed = Double(valueText.trimmingCharacters(in: .whitespaces)), parsed.isFinite else { return }
         let trimmedUnit = unit.trimmingCharacters(in: .whitespaces)
-        try store.create(markerType: markerType,
-                         value: parsed,
-                         unit: trimmedUnit.isEmpty ? nil : trimmedUnit,
-                         recordedAt: recordedAt)
+        try logStore.logMarker(type: markerType,
+                               value: parsed,
+                               unit: trimmedUnit.isEmpty ? nil : trimmedUnit,
+                               recordedAt: recordedAt)
     }
 }

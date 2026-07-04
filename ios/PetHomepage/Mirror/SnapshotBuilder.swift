@@ -13,7 +13,6 @@ final class SnapshotBuilder {
     private let petStore: PetStore
     private let medicationStore: MedicationStore
     private let recommendationStore: VetRecommendationStore
-    private let healthMarkerStore: HealthMarkerStore
     private let symptomEpisodeStore: SymptomEpisodeStore
     private let symptomEntryStore: SymptomEntryStore
     private let veterinarianStore: VeterinarianStore
@@ -23,7 +22,6 @@ final class SnapshotBuilder {
     init(petStore: PetStore,
          medicationStore: MedicationStore,
          recommendationStore: VetRecommendationStore,
-         healthMarkerStore: HealthMarkerStore,
          symptomEpisodeStore: SymptomEpisodeStore,
          symptomEntryStore: SymptomEntryStore,
          veterinarianStore: VeterinarianStore? = nil,
@@ -32,7 +30,6 @@ final class SnapshotBuilder {
         self.petStore = petStore
         self.medicationStore = medicationStore
         self.recommendationStore = recommendationStore
-        self.healthMarkerStore = healthMarkerStore
         self.symptomEpisodeStore = symptomEpisodeStore
         self.symptomEntryStore = symptomEntryStore
         self.veterinarianStore = veterinarianStore ?? VeterinarianStore(context: petStore.context, petStore: petStore)
@@ -100,13 +97,13 @@ final class SnapshotBuilder {
             RecommendationSnapshot(id: $0.id, date: $0.date, text: $0.text)
         }
 
-        let healthMarkers = try healthMarkerStore.markers().map {
+        let healthMarkers = try logStore.markers().map {
             HealthMarkerSnapshot(
                 id: $0.id,
                 markerType: $0.markerType.rawValue,
                 value: $0.value,
                 unit: $0.unit,
-                recordedAt: $0.recordedAt
+                recordedAt: $0.performedAt
             )
         }
 
