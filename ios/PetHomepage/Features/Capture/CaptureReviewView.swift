@@ -69,7 +69,10 @@ struct CaptureReviewView: View {
     private var chips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                chip(title: "Note only", systemImage: "square.and.pencil", active: model.tag == .none, suggested: model.suggestedTag == .none) {
+                // NB: `CaptureTag.none` must be spelled out — a bare `.none` against the optional
+                // `suggestedTag` resolves to `Optional.none`, making nil "match" and showing a
+                // phantom ✨ on this chip before any suggestion exists.
+                chip(title: "Note only", systemImage: "square.and.pencil", active: model.tag == .none, suggested: model.suggestedTag == CaptureTag.none) {
                     model.pick(.none)
                 }
                 ForEach(model.availableTypes) { type in
