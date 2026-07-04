@@ -1,11 +1,29 @@
 // ios/PetHomepage/App/ContentView.swift
+import PhotosUI
 import SwiftUI
+import UIKit
+
+/// A just-captured (or library-picked) photo, already downscaled — wrapped so it can drive a
+/// `.sheet(item:)` for the review-and-tag flow.
+private struct CapturedPhoto: Identifiable {
+    let id = UUID()
+    let data: Data
+}
 
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var context
 
     /// v1 default vet-visit cadence: see the vet every 6 months.
     private let vetCadenceMonths = 6
+
+    // Center camera tab: it's a pseudo-tab (index 2) that never actually gets selected — picking
+    // it snaps back to whatever was selected before and opens the camera (or the library picker
+    // fallback on Simulator, where there's no camera) full-screen instead.
+    @State private var selectedTab = 0
+    @State private var showCamera = false
+    @State private var showLibraryFallback = false
+    @State private var libraryItem: PhotosPickerItem?
+    @State private var capturedPhoto: CapturedPhoto?
 
     var body: some View {
         let petStore = PetStore(context: context)
@@ -102,18 +120,67 @@ struct ContentView: View {
             ingestionService: ingestionService
         )
 
-        return TabView {
+        return TabView(selection: $selectedTab) {
             PetProfileView(store: petStore, settings: settingsViewModel,
                            timelineServices: timelineServices)
                 .tabItem { Label("Home", systemImage: "house") }
+                .tag(0)
             TimelineView(services: timelineServices)
                 .tabItem { Label("Timeline", systemImage: "calendar") }
+                .tag(1)
+            Color.clear
+                .tabItem { Label("Capture", systemImage: "camera.fill") }
+                .tag(2)
             DiaryView(logStore: logStore)
                 .tabItem { Label("Diary", systemImage: "book") }
+                .tag(3)
             CareTeamView(store: veterinarianStore)
                 .tabItem { Label("Care Team", systemImage: "stethoscope") }
+                .tag(4)
         }
         .tint(Theme.primary)
         .task { try? activityStore.seedDefaultsIfNeeded() }
+        .onChange(of: selectedTab) { old, new in
+            guard new == 2 else { return }
+            selectedTab = old
+            if CameraPicker.isAvailable {
+                showCamera = true
+            } else {
+                showLibraryFallback = true
+            }
+        }
+        .fullScreenCover(isPresented: $showCamera) {
+            CameraPicker(
+                onCapture: { image in
+                    if let jpeg = ImageDownscaler.scaledJPEG(from: image) {
+                        capturedPhoto = CapturedPhoto(data: jpeg)
+                    }
+                },
+                onFinish: { showCamera = false }
+            )
+            .ignoresSafeArea()
+        }
+        .photosPicker(isPresented: $showLibraryFallback, selection: $libraryItem, matching: .images)
+        .onChange(of: libraryItem) { _, item in
+            guard let item else { return }
+            Task {
+                if let data = try? await item.loadTransferable(type: Data.self),
+                   let image = UIImage(data: data),
+                   let jpeg = ImageDownscaler.scaledJPEG(from: image) {
+                    await MainActor.run { capturedPhoto = CapturedPhoto(data: jpeg) }
+                }
+                await MainActor.run { libraryItem = nil }
+            }
+        }
+        .sheet(item: $capturedPhoto) { photo in
+            CaptureReviewView(
+                photo: photo.data,
+                logStore: logStore,
+                activityStore: activityStore,
+                medicationStore: medicationStore,
+                dueScheduler: dueScheduler,
+                onSaved: {}
+            )
+        }
     }
 }
