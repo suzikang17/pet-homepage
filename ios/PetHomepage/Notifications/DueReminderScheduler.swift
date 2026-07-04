@@ -29,15 +29,15 @@ final class DueReminderScheduler {
 
     // MARK: - Vaccinations
 
-    /// A one-shot reminder on the vaccination's nextDueAt date, or nil if it has no due date or id.
-    func vaccinationReminder(for vaccination: Vaccination) -> PendingReminder? {
-        guard let entityID = vaccination.id, let due = vaccination.nextDueAt else { return nil }
+    /// A one-shot reminder on the vaccine log's nextDueAt date, or nil if it has no due date.
+    func vaccinationReminder(for vaccine: LogEntry) -> PendingReminder? {
+        guard let due = vaccine.nextDueAt else { return nil }
         let dateComponents = calendar.dateComponents([.year, .month, .day], from: due)
         return PendingReminder(
             kind: .vaccination,
-            entityID: entityID,
+            entityID: vaccine.id,
             title: "Vaccination due",
-            body: "\(vaccination.vaccineName) is due",
+            body: "\(vaccine.title ?? "Vaccine") is due",
             hour: hour,
             minute: minute,
             dateComponents: dateComponents
@@ -45,23 +45,22 @@ final class DueReminderScheduler {
     }
 
     /// Schedules the vaccination reminder if it has a due date, otherwise cancels it.
-    func syncVaccination(_ vaccination: Vaccination) async {
-        if let reminder = vaccinationReminder(for: vaccination) {
+    func syncVaccination(_ vaccine: LogEntry) async {
+        if let reminder = vaccinationReminder(for: vaccine) {
             await scheduler.schedule(reminder)
-        } else if let entityID = vaccination.id {
-            await scheduler.cancel(kind: .vaccination, entityID: entityID)
+        } else {
+            await scheduler.cancel(kind: .vaccination, entityID: vaccine.id)
         }
     }
 
-    func syncVaccinations(_ vaccinations: [Vaccination]) async {
-        for vaccination in vaccinations {
-            await syncVaccination(vaccination)
+    func syncVaccinations(_ vaccines: [LogEntry]) async {
+        for vaccine in vaccines {
+            await syncVaccination(vaccine)
         }
     }
 
-    func cancelVaccination(_ vaccination: Vaccination) async {
-        guard let entityID = vaccination.id else { return }
-        await scheduler.cancel(kind: .vaccination, entityID: entityID)
+    func cancelVaccination(_ vaccine: LogEntry) async {
+        await scheduler.cancel(kind: .vaccination, entityID: vaccine.id)
     }
 
     // MARK: - Vet cadence

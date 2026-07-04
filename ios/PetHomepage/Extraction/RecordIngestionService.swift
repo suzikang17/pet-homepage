@@ -14,7 +14,7 @@ enum IngestionOutcome: Equatable {
 /// uploaded file via DocumentStore. The server `/api/extract` is deferred; this is
 /// driven by an injected ExtractionService elsewhere, so it stays fully testable.
 final class RecordIngestionService {
-    private let vaccinationStore: VaccinationStore
+    private let logStore: LogStore
     private let vetVisitStore: VetVisitStore
     private let medicationStore: MedicationStore
     private let documentStore: DocumentStore
@@ -23,12 +23,12 @@ final class RecordIngestionService {
     /// Parses day-only field dates (yyyy-MM-dd) in UTC to avoid time-zone drift.
     private let dayFormatter: DateFormatter
 
-    init(vaccinationStore: VaccinationStore,
+    init(logStore: LogStore,
          vetVisitStore: VetVisitStore,
          medicationStore: MedicationStore,
          documentStore: DocumentStore,
          calendar: Calendar = .current) {
-        self.vaccinationStore = vaccinationStore
+        self.logStore = logStore
         self.vetVisitStore = vetVisitStore
         self.medicationStore = medicationStore
         self.documentStore = documentStore
@@ -58,14 +58,14 @@ final class RecordIngestionService {
 
         switch result.fields {
         case .vaccination(let f):
-            let vax = try vaccinationStore.create(
-                vaccineName: f.vaccineName,
-                administeredAt: parseDay(f.administeredAt) ?? result.occurredAt,
+            let vax = try logStore.logVaccine(
+                name: f.vaccineName,
+                performedAt: parseDay(f.administeredAt) ?? result.occurredAt,
                 nextDueAt: parseDay(f.nextDueAt),
                 lotNumber: f.lotNumber,
                 administeredBy: f.administeredBy
             )
-            return .vaccination(vax.id ?? UUID())
+            return .vaccination(vax.id)
 
         case .vetVisit(let f):
             let visit = try vetVisitStore.create(

@@ -5,7 +5,7 @@ import CoreData
 
 final class RecordIngestionServiceTests: XCTestCase {
     private var context: NSManagedObjectContext!
-    private var vaxStore: VaccinationStore!
+    private var logStore: LogStore!
     private var vetVisitStore: VetVisitStore!
     private var medStore: MedicationStore!
     private var documentStore: DocumentStore!
@@ -16,12 +16,12 @@ final class RecordIngestionServiceTests: XCTestCase {
         context = PersistenceController(inMemory: true).container.viewContext
         let petStore = PetStore(context: context)
         try petStore.createPet(name: "Sandy", species: "dog")
-        vaxStore = VaccinationStore(context: context, petStore: petStore)
+        logStore = LogStore(context: context, petStore: petStore)
         vetVisitStore = VetVisitStore(context: context, petStore: petStore)
         medStore = MedicationStore(context: context, petStore: petStore)
         baseURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         documentStore = DocumentStore(baseURL: baseURL)
-        service = RecordIngestionService(vaccinationStore: vaxStore,
+        service = RecordIngestionService(logStore: logStore,
                                          vetVisitStore: vetVisitStore,
                                          medicationStore: medStore,
                                          documentStore: documentStore,
@@ -49,9 +49,9 @@ final class RecordIngestionServiceTests: XCTestCase {
         let outcome = try service.ingest(result, originalFile: (Data("pdf".utf8), "rabies.pdf"))
 
         guard case .vaccination = outcome else { return XCTFail("expected .vaccination outcome") }
-        let saved = try vaxStore.vaccinations()
+        let saved = try logStore.vaccines()
         XCTAssertEqual(saved.count, 1)
-        XCTAssertEqual(saved.first?.vaccineName, "Rabies")
+        XCTAssertEqual(saved.first?.title, "Rabies")
         XCTAssertEqual(saved.first?.lotNumber, "L7")
         XCTAssertNotNil(saved.first?.nextDueAt)
         XCTAssertEqual(try documentStore.read(named: "rabies.pdf"), Data("pdf".utf8))
@@ -108,7 +108,7 @@ final class RecordIngestionServiceTests: XCTestCase {
         let outcome = try service.ingest(result, originalFile: (Data("img".utf8), "scale.jpg"))
 
         XCTAssertEqual(outcome, .unsupported(.weight))
-        XCTAssertTrue(try vaxStore.vaccinations().isEmpty)
+        XCTAssertTrue(try logStore.vaccines().isEmpty)
         XCTAssertTrue(try vetVisitStore.visits().isEmpty)
         XCTAssertEqual(try documentStore.read(named: "scale.jpg"), Data("img".utf8))
     }

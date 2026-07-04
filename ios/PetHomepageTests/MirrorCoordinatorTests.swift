@@ -15,7 +15,6 @@ final class MirrorCoordinatorTests: XCTestCase {
         return SnapshotBuilder(
             petStore: petStore,
             medicationStore: MedicationStore(context: context, petStore: petStore),
-            vaccinationStore: VaccinationStore(context: context, petStore: petStore),
             vetVisitStore: VetVisitStore(context: context, petStore: petStore),
             recommendationStore: VetRecommendationStore(context: context),
             healthMarkerStore: HealthMarkerStore(context: context, petStore: petStore),

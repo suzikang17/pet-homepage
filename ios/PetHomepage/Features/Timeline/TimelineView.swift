@@ -4,7 +4,6 @@ import SwiftUI
 /// Everything the Timeline needs to open each record type's existing editor/detail. Built once
 /// in ContentView and shared (Home reuses the read stores for "due soon").
 struct TimelineServices {
-    let vaccinationStore: VaccinationStore
     let vetVisitStore: VetVisitStore
     let medicationStore: MedicationStore
     let veterinarianStore: VeterinarianStore
@@ -38,7 +37,6 @@ struct TimelineView: View {
     init(services: TimelineServices) {
         self.services = services
         _model = State(initialValue: TimelineViewModel(
-            vaccinationStore: services.vaccinationStore,
             vetVisitStore: services.vetVisitStore,
             medicationStore: services.medicationStore,
             healthMarkerStore: services.healthMarkerStore,
@@ -211,9 +209,8 @@ struct TimelineView: View {
     private func editor(for item: TimelineItem) -> some View {
         switch item.reference {
         case .vaccine(let v):
-            VaccinationEditView(store: services.vaccinationStore, dueScheduler: services.dueScheduler,
-                                veterinarianStore: services.veterinarianStore,
-                                diaryStore: services.diaryStore, editing: v)
+            VaccinationEditView(logStore: services.logStore, dueScheduler: services.dueScheduler,
+                                veterinarianStore: services.veterinarianStore, editing: v)
         case .vet(let v):
             VetVisitDetailView(visit: v, recommendationStore: services.recommendationStore,
                                diaryStore: services.diaryStore)
@@ -234,9 +231,8 @@ struct TimelineView: View {
     private func addEditor(for kind: TimelineKind) -> some View {
         switch kind {
         case .vaccine:
-            VaccinationEditView(store: services.vaccinationStore, dueScheduler: services.dueScheduler,
-                                veterinarianStore: services.veterinarianStore,
-                                diaryStore: services.diaryStore, editing: nil)
+            VaccinationEditView(logStore: services.logStore, dueScheduler: services.dueScheduler,
+                                veterinarianStore: services.veterinarianStore, editing: nil)
         case .vet:
             VetVisitEditView(store: services.vetVisitStore, dueScheduler: services.dueScheduler,
                              cadenceMonths: services.cadenceMonths,

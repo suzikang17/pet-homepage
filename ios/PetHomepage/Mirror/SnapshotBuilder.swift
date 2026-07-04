@@ -12,7 +12,6 @@ enum SnapshotBuilderError: Error, Equatable {
 final class SnapshotBuilder {
     private let petStore: PetStore
     private let medicationStore: MedicationStore
-    private let vaccinationStore: VaccinationStore
     private let vetVisitStore: VetVisitStore
     private let recommendationStore: VetRecommendationStore
     private let healthMarkerStore: HealthMarkerStore
@@ -24,7 +23,6 @@ final class SnapshotBuilder {
 
     init(petStore: PetStore,
          medicationStore: MedicationStore,
-         vaccinationStore: VaccinationStore,
          vetVisitStore: VetVisitStore,
          recommendationStore: VetRecommendationStore,
          healthMarkerStore: HealthMarkerStore,
@@ -35,7 +33,6 @@ final class SnapshotBuilder {
          now: @escaping () -> Date = { Date() }) {
         self.petStore = petStore
         self.medicationStore = medicationStore
-        self.vaccinationStore = vaccinationStore
         self.vetVisitStore = vetVisitStore
         self.recommendationStore = recommendationStore
         self.healthMarkerStore = healthMarkerStore
@@ -73,11 +70,11 @@ final class SnapshotBuilder {
             )
         }
 
-        let vaccinations = try vaccinationStore.vaccinations().map { vax in
+        let vaccinations = try logStore.vaccines().map { vax in
             VaccinationSnapshot(
-                id: vax.id ?? UUID(),
-                vaccineName: vax.vaccineName,
-                administeredAt: vax.administeredAt,
+                id: vax.id,
+                vaccineName: vax.title ?? "",
+                administeredAt: vax.performedAt,
                 nextDueAt: vax.nextDueAt,
                 lotNumber: vax.lotNumber,
                 administeredBy: vax.administeredBy,

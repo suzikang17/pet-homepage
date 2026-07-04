@@ -5,11 +5,11 @@ struct VaccinationEditView: View {
     @State private var model: VaccinationEditViewModel
     @Environment(\.dismiss) private var dismiss
 
-    init(store: VaccinationStore, dueScheduler: DueReminderScheduler,
-         veterinarianStore: VeterinarianStore, diaryStore: DiaryStore, editing: Vaccination?) {
-        _model = State(initialValue: VaccinationEditViewModel(store: store, dueScheduler: dueScheduler,
+    init(logStore: LogStore, dueScheduler: DueReminderScheduler,
+         veterinarianStore: VeterinarianStore, editing: LogEntry?) {
+        _model = State(initialValue: VaccinationEditViewModel(logStore: logStore, dueScheduler: dueScheduler,
                                                               veterinarianStore: veterinarianStore,
-                                                              diaryStore: diaryStore, editing: editing))
+                                                              editing: editing))
     }
 
     var body: some View {

@@ -5,7 +5,6 @@ import XCTest
 
 final class TimelineViewModelTests: XCTestCase {
     private var context: NSManagedObjectContext!
-    private var vaccinationStore: VaccinationStore!
     private var vetVisitStore: VetVisitStore!
     private var medicationStore: MedicationStore!
     private var healthMarkerStore: HealthMarkerStore!
@@ -17,7 +16,6 @@ final class TimelineViewModelTests: XCTestCase {
         context = PersistenceController(inMemory: true).container.viewContext
         let petStore = PetStore(context: context)
         try petStore.createPet(name: "Sandy", species: "dog")
-        vaccinationStore = VaccinationStore(context: context, petStore: petStore)
         vetVisitStore = VetVisitStore(context: context, petStore: petStore)
         medicationStore = MedicationStore(context: context, petStore: petStore)
         healthMarkerStore = HealthMarkerStore(context: context, petStore: petStore)
@@ -28,7 +26,6 @@ final class TimelineViewModelTests: XCTestCase {
 
     private func makeVM() -> TimelineViewModel {
         TimelineViewModel(
-            vaccinationStore: vaccinationStore,
             vetVisitStore: vetVisitStore,
             medicationStore: medicationStore,
             healthMarkerStore: healthMarkerStore,
@@ -40,7 +37,7 @@ final class TimelineViewModelTests: XCTestCase {
     private func day(_ n: Int) -> Date { Date(timeIntervalSince1970: Double(n) * 86_400) }
 
     func testLoadAggregatesEveryTypeNewestFirst() throws {
-        _ = try vaccinationStore.create(vaccineName: "Rabies", administeredAt: day(10), nextDueAt: nil, lotNumber: nil, administeredBy: nil)
+        _ = try logStore.logVaccine(name: "Rabies", performedAt: day(10), nextDueAt: nil, lotNumber: nil, administeredBy: nil)
         _ = try vetVisitStore.create(occurredAt: day(30), clinicName: "Bayside", vetName: nil, reason: "Checkup", diagnosis: nil, treatmentNotes: nil, nextVisitDate: nil)
         _ = try medicationStore.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily", scheduleTime: day(20), startedAt: day(20), endedAt: nil, refillDueAt: nil)
         try healthMarkerStore.create(markerType: .weight, value: 31, unit: "kg", recordedAt: day(5))
@@ -53,7 +50,7 @@ final class TimelineViewModelTests: XCTestCase {
     }
 
     func testFilterRestrictsToOneKind() throws {
-        _ = try vaccinationStore.create(vaccineName: "Rabies", administeredAt: day(1), nextDueAt: nil, lotNumber: nil, administeredBy: nil)
+        _ = try logStore.logVaccine(name: "Rabies", performedAt: day(1), nextDueAt: nil, lotNumber: nil, administeredBy: nil)
         _ = try medicationStore.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily", scheduleTime: day(1), startedAt: day(1), endedAt: nil, refillDueAt: nil)
 
         let vm = makeVM()
@@ -66,7 +63,7 @@ final class TimelineViewModelTests: XCTestCase {
     func testDueSoonReturnsUpcomingNextDuesSortedAscendingWithinHorizon() throws {
         let now = day(1_000)
         let inDays: (Int) -> Date = { now.addingTimeInterval(Double($0) * 86_400) }
-        _ = try vaccinationStore.create(vaccineName: "DHPP", administeredAt: now, nextDueAt: inDays(20), lotNumber: nil, administeredBy: nil)
+        _ = try logStore.logVaccine(name: "DHPP", performedAt: now, nextDueAt: inDays(20), lotNumber: nil, administeredBy: nil)
         _ = try vetVisitStore.create(occurredAt: now, clinicName: "Bayside", vetName: nil, reason: nil, diagnosis: nil, treatmentNotes: nil, nextVisitDate: inDays(5))
         _ = try medicationStore.create(drugName: "X", dosage: "", frequency: "", scheduleTime: now, startedAt: now, endedAt: nil, refillDueAt: inDays(90))
 
@@ -81,7 +78,6 @@ final class TimelineViewModelTests: XCTestCase {
     private func makeServices(reminderScheduler: MedicationReminderScheduler,
                               dueScheduler: DueReminderScheduler) -> TimelineServices {
         TimelineServices(
-            vaccinationStore: vaccinationStore,
             vetVisitStore: vetVisitStore,
             medicationStore: medicationStore,
             veterinarianStore: VeterinarianStore(context: context, petStore: PetStore(context: context)),
@@ -124,8 +120,8 @@ final class TimelineViewModelTests: XCTestCase {
     func testDeleteVaccinationRemovesItAndCancelsDueReminder() async throws {
         let fake = FakeNotificationScheduler()
         let dueScheduler = DueReminderScheduler(scheduler: fake)
-        let vax = try vaccinationStore.create(vaccineName: "Rabies", administeredAt: day(1),
-                                              nextDueAt: day(400), lotNumber: nil, administeredBy: nil)
+        let vax = try logStore.logVaccine(name: "Rabies", performedAt: day(1),
+                                          nextDueAt: day(400), lotNumber: nil, administeredBy: nil)
         await dueScheduler.syncVaccination(vax)
         let before = await fake.pendingIDs(kind: .vaccination)
         XCTAssertFalse(before.isEmpty)
@@ -174,7 +170,6 @@ final class TimelineViewModelTests: XCTestCase {
         _ = try logStore.logActivity(type: type, performedAt: Date(), note: nil, intervalDays: 7)
 
         let vm = TimelineViewModel(
-            vaccinationStore: VaccinationStore(context: context, petStore: petStore),
             vetVisitStore: VetVisitStore(context: context, petStore: petStore),
             medicationStore: MedicationStore(context: context, petStore: petStore),
             healthMarkerStore: HealthMarkerStore(context: context, petStore: petStore),

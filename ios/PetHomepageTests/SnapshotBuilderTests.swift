@@ -8,7 +8,6 @@ final class SnapshotBuilderTests: XCTestCase {
     private var petStore: PetStore!
     private var medicationStore: MedicationStore!
     private var logStore: LogStore!
-    private var vaccinationStore: VaccinationStore!
     private var vetVisitStore: VetVisitStore!
     private var recommendationStore: VetRecommendationStore!
     private var healthMarkerStore: HealthMarkerStore!
@@ -21,7 +20,6 @@ final class SnapshotBuilderTests: XCTestCase {
         petStore = PetStore(context: context)
         medicationStore = MedicationStore(context: context, petStore: petStore)
         logStore = LogStore(context: context, petStore: petStore)
-        vaccinationStore = VaccinationStore(context: context, petStore: petStore)
         vetVisitStore = VetVisitStore(context: context, petStore: petStore)
         recommendationStore = VetRecommendationStore(context: context)
         healthMarkerStore = HealthMarkerStore(context: context, petStore: petStore)
@@ -34,7 +32,6 @@ final class SnapshotBuilderTests: XCTestCase {
         SnapshotBuilder(
             petStore: petStore,
             medicationStore: medicationStore,
-            vaccinationStore: vaccinationStore,
             vetVisitStore: vetVisitStore,
             recommendationStore: recommendationStore,
             healthMarkerStore: healthMarkerStore,
@@ -115,8 +112,8 @@ final class SnapshotBuilderTests: XCTestCase {
         try logStore.logDose(for: med, at: date)
         try logStore.logDose(for: med, at: date.addingTimeInterval(86_400))
 
-        try vaccinationStore.create(vaccineName: "Rabies", administeredAt: date,
-                                    nextDueAt: date, lotNumber: "L1", administeredBy: "Dr. Vet")
+        try logStore.logVaccine(name: "Rabies", performedAt: date,
+                                nextDueAt: date, lotNumber: "L1", administeredBy: "Dr. Vet")
 
         let visit = try vetVisitStore.create(occurredAt: date, clinicName: "Clinic",
                                              vetName: "Dr. Vet", reason: "checkup",

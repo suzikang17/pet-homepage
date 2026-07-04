@@ -5,7 +5,7 @@ import CoreData
 
 final class RecordUploadViewModelTests: XCTestCase {
     private var context: NSManagedObjectContext!
-    private var vaxStore: VaccinationStore!
+    private var logStore: LogStore!
     private var vetVisitStore: VetVisitStore!
     private var medStore: MedicationStore!
     private var documentStore: DocumentStore!
@@ -16,12 +16,12 @@ final class RecordUploadViewModelTests: XCTestCase {
         context = PersistenceController(inMemory: true).container.viewContext
         let petStore = PetStore(context: context)
         try petStore.createPet(name: "Sandy", species: "dog")
-        vaxStore = VaccinationStore(context: context, petStore: petStore)
+        logStore = LogStore(context: context, petStore: petStore)
         vetVisitStore = VetVisitStore(context: context, petStore: petStore)
         medStore = MedicationStore(context: context, petStore: petStore)
         baseURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         documentStore = DocumentStore(baseURL: baseURL)
-        ingestion = RecordIngestionService(vaccinationStore: vaxStore, vetVisitStore: vetVisitStore,
+        ingestion = RecordIngestionService(logStore: logStore, vetVisitStore: vetVisitStore,
                                            medicationStore: medStore, documentStore: documentStore,
                                            calendar: Calendar(identifier: .gregorian))
     }
@@ -65,7 +65,7 @@ final class RecordUploadViewModelTests: XCTestCase {
         } else {
             XCTFail("expected .saved, got \(vm.state)")
         }
-        XCTAssertEqual(try vaxStore.vaccinations().count, 1)
+        XCTAssertEqual(try logStore.vaccines().count, 1)
         XCTAssertEqual(try documentStore.read(named: "r.pdf"), Data("pdf".utf8))
     }
 

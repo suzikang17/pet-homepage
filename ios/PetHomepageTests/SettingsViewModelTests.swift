@@ -24,7 +24,6 @@ final class SettingsViewModelTests: XCTestCase {
         let builder = SnapshotBuilder(
             petStore: petStore,
             medicationStore: MedicationStore(context: context, petStore: petStore),
-            vaccinationStore: VaccinationStore(context: context, petStore: petStore),
             vetVisitStore: VetVisitStore(context: context, petStore: petStore),
             recommendationStore: VetRecommendationStore(context: context),
             healthMarkerStore: HealthMarkerStore(context: context, petStore: petStore),

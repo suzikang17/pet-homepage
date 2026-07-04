@@ -5,7 +5,6 @@ import CoreData
 
 final class DueReminderSchedulerTests: XCTestCase {
     private var context: NSManagedObjectContext!
-    private var vaxStore: VaccinationStore!
     private var activityStore: ActivityStore!
     private var logStore: LogStore!
     private var calendar: Calendar!
@@ -14,7 +13,6 @@ final class DueReminderSchedulerTests: XCTestCase {
         context = PersistenceController(inMemory: true).container.viewContext
         let petStore = PetStore(context: context)
         try petStore.createPet(name: "Sandy", species: "dog")
-        vaxStore = VaccinationStore(context: context, petStore: petStore)
         activityStore = ActivityStore(context: context, petStore: petStore)
         logStore = LogStore(context: context, petStore: petStore)
         calendar = Calendar(identifier: .gregorian)
@@ -22,8 +20,8 @@ final class DueReminderSchedulerTests: XCTestCase {
 
     func testVaccinationReminderUsesNextDueAtDate() throws {
         let due = calendar.date(from: DateComponents(year: 2027, month: 3, day: 15))!
-        let vax = try vaxStore.create(vaccineName: "Rabies", administeredAt: Date(timeIntervalSince1970: 1),
-                                      nextDueAt: due, lotNumber: nil, administeredBy: nil)
+        let vax = try logStore.logVaccine(name: "Rabies", performedAt: Date(timeIntervalSince1970: 1),
+                                          nextDueAt: due, lotNumber: nil, administeredBy: nil)
         let sched = DueReminderScheduler(scheduler: FakeNotificationScheduler(), calendar: calendar, hour: 9, minute: 0)
 
         let reminder = sched.vaccinationReminder(for: vax)
@@ -38,8 +36,8 @@ final class DueReminderSchedulerTests: XCTestCase {
     }
 
     func testVaccinationWithoutNextDueHasNoReminder() throws {
-        let vax = try vaxStore.create(vaccineName: "Rabies", administeredAt: Date(timeIntervalSince1970: 1),
-                                      nextDueAt: nil, lotNumber: nil, administeredBy: nil)
+        let vax = try logStore.logVaccine(name: "Rabies", performedAt: Date(timeIntervalSince1970: 1),
+                                          nextDueAt: nil, lotNumber: nil, administeredBy: nil)
         let sched = DueReminderScheduler(scheduler: FakeNotificationScheduler(), calendar: calendar, hour: 9, minute: 0)
         XCTAssertNil(sched.vaccinationReminder(for: vax))
     }
@@ -48,8 +46,8 @@ final class DueReminderSchedulerTests: XCTestCase {
         let fake = FakeNotificationScheduler()
         let sched = DueReminderScheduler(scheduler: fake, calendar: calendar, hour: 9, minute: 0)
         let due = calendar.date(from: DateComponents(year: 2027, month: 3, day: 15))!
-        let vax = try vaxStore.create(vaccineName: "Rabies", administeredAt: Date(timeIntervalSince1970: 1),
-                                      nextDueAt: due, lotNumber: nil, administeredBy: nil)
+        let vax = try logStore.logVaccine(name: "Rabies", performedAt: Date(timeIntervalSince1970: 1),
+                                          nextDueAt: due, lotNumber: nil, administeredBy: nil)
 
         await sched.syncVaccination(vax)
         var pending = await fake.pendingIDs(kind: .vaccination)

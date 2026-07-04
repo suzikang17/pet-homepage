@@ -5,9 +5,11 @@ import CoreData
 /// Replaces the occurrence roles of DiaryStore/ActivityStore/DoseLogStore. Definitions
 /// (ActivityType, Medication) live in their own stores. Reminder scheduling stays in the ViewModels.
 final class LogStore {
-    private let context: NSManagedObjectContext
-    private let petStore: PetStore
-    private let calendar: Calendar
+    // internal (not private): kind-specific creates/queries live in per-kind extensions
+    // (LogStore+Vaccine.swift etc.) in other files and need access to these.
+    let context: NSManagedObjectContext
+    let petStore: PetStore
+    let calendar: Calendar
 
     init(context: NSManagedObjectContext, petStore: PetStore, calendar: Calendar = .current) {
         self.context = context
@@ -45,7 +47,7 @@ final class LogStore {
         return entry
     }
 
-    private func makeEntry(performedAt: Date, note: String?) throws -> LogEntry {
+    func makeEntry(performedAt: Date, note: String?) throws -> LogEntry {
         let entry = LogEntry(context: context)
         entry.id = UUID()
         entry.performedAt = performedAt
@@ -81,7 +83,7 @@ final class LogStore {
 
     // MARK: - Queries (pet-scoped, newest first)
 
-    private func fetch(_ predicate: NSPredicate, limit: Int? = nil) throws -> [LogEntry] {
+    func fetch(_ predicate: NSPredicate, limit: Int? = nil) throws -> [LogEntry] {
         let request = LogEntry.fetchRequest()
         request.predicate = predicate
         request.sortDescriptors = [NSSortDescriptor(key: "performedAt", ascending: false)]

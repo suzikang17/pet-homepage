@@ -196,7 +196,6 @@ struct PetProfileView: View {
     private func refresh() {
         guard let s = timelineServices else { return }
         let vm = TimelineViewModel(
-            vaccinationStore: s.vaccinationStore,
             vetVisitStore: s.vetVisitStore,
             medicationStore: s.medicationStore,
             healthMarkerStore: s.healthMarkerStore,

@@ -34,7 +34,7 @@ enum TimelineKind: String, CaseIterable, Identifiable {
 
 /// The underlying record a row points back to, so a tap can open its existing editor/detail.
 enum TimelineReference {
-    case vaccine(Vaccination)
+    case vaccine(LogEntry)
     case vet(VetVisit)
     case medication(Medication)
     case marker(HealthMarker)
@@ -61,20 +61,17 @@ final class TimelineViewModel {
     var filter: TimelineKind?
     var errorMessage: String?
 
-    private let vaccinationStore: VaccinationStore
     private let vetVisitStore: VetVisitStore
     private let medicationStore: MedicationStore
     private let healthMarkerStore: HealthMarkerStore
     private let symptomEpisodeStore: SymptomEpisodeStore
     private let logStore: LogStore
 
-    init(vaccinationStore: VaccinationStore,
-         vetVisitStore: VetVisitStore,
+    init(vetVisitStore: VetVisitStore,
          medicationStore: MedicationStore,
          healthMarkerStore: HealthMarkerStore,
          symptomEpisodeStore: SymptomEpisodeStore,
          logStore: LogStore) {
-        self.vaccinationStore = vaccinationStore
         self.vetVisitStore = vetVisitStore
         self.medicationStore = medicationStore
         self.healthMarkerStore = healthMarkerStore
@@ -85,7 +82,7 @@ final class TimelineViewModel {
     func load() {
         do {
             var out: [TimelineItem] = []
-            out += try vaccinationStore.vaccinations().map(TimelineItem.init(vaccine:))
+            out += try logStore.vaccines().map(TimelineItem.init(vaccine:))
             out += try vetVisitStore.visits().map(TimelineItem.init(vet:))
             out += try medicationStore.medications().map(TimelineItem.init(medication:))
             out += try healthMarkerStore.markers().map(TimelineItem.init(marker:))
@@ -120,7 +117,7 @@ final class TimelineViewModel {
         switch item.reference {
         case .vaccine(let v):
             await services.dueScheduler.cancelVaccination(v)
-            try? services.vaccinationStore.delete(v)
+            try? services.logStore.delete(v)
         case .vet(let v):
             try? services.vetVisitStore.delete(v)
             let last = (try? services.vetVisitStore.mostRecentVisitDate()) ?? nil
@@ -154,12 +151,12 @@ private func formatMarker(_ value: Double) -> String {
 }
 
 extension TimelineItem {
-    init(vaccine v: Vaccination) {
+    init(vaccine v: LogEntry) {
         self.init(
-            id: "vaccine:\(v.id?.uuidString ?? UUID().uuidString)",
+            id: "vaccine:\(v.id.uuidString)",
             kind: .vaccine,
-            date: v.administeredAt ?? .distantPast,
-            title: v.vaccineName,
+            date: v.performedAt,
+            title: v.title ?? "Vaccine",
             subtitle: v.administeredBy.map { "by \($0)" },
             nextDue: v.nextDueAt,
             reference: .vaccine(v)

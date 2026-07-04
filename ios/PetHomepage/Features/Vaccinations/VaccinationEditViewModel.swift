@@ -1,4 +1,3 @@
-// ios/PetHomepage/Features/Vaccinations/VaccinationEditViewModel.swift
 import Foundation
 import Observation
 
@@ -15,20 +14,18 @@ final class VaccinationEditViewModel {
     var pendingPhotos: [Data] = []
     var existingPhotos: [Photo] = []
 
-    private let store: VaccinationStore
+    private let logStore: LogStore
     private let dueScheduler: DueReminderScheduler
-    private let diaryStore: DiaryStore
-    private let editing: Vaccination?
+    private let editing: LogEntry?
 
-    init(store: VaccinationStore, dueScheduler: DueReminderScheduler,
-         veterinarianStore: VeterinarianStore, diaryStore: DiaryStore, editing: Vaccination?) {
-        self.store = store
+    init(logStore: LogStore, dueScheduler: DueReminderScheduler,
+         veterinarianStore: VeterinarianStore, editing: LogEntry?) {
+        self.logStore = logStore
         self.dueScheduler = dueScheduler
-        self.diaryStore = diaryStore
         self.editing = editing
         if let vax = editing {
-            vaccineName = vax.vaccineName
-            administeredAt = vax.administeredAt ?? Date()
+            vaccineName = vax.title ?? ""
+            administeredAt = vax.performedAt
             if let due = vax.nextDueAt {
                 hasNextDue = true
                 nextDueAt = due
@@ -50,7 +47,7 @@ final class VaccinationEditViewModel {
         if pendingPhotos.indices.contains(index) { pendingPhotos.remove(at: index) }
     }
     func deleteExisting(_ photo: Photo) {
-        try? diaryStore.deletePhoto(photo)
+        try? logStore.deletePhoto(photo)
         existingPhotos.removeAll { $0 == photo }
     }
 
@@ -59,19 +56,19 @@ final class VaccinationEditViewModel {
         let lot = lotNumber.isEmpty ? nil : lotNumber
         let by = administeredBy.isEmpty ? nil : administeredBy
 
-        let vaccination: Vaccination
+        let vaccination: LogEntry
         if let existing = editing {
-            try store.update(existing, vaccineName: vaccineName, administeredAt: administeredAt,
-                             nextDueAt: due, lotNumber: lot, administeredBy: by)
+            try logStore.updateVaccine(existing, name: vaccineName, performedAt: administeredAt,
+                                       nextDueAt: due, lotNumber: lot, administeredBy: by)
             vaccination = existing
         } else {
-            vaccination = try store.create(vaccineName: vaccineName, administeredAt: administeredAt,
-                                           nextDueAt: due, lotNumber: lot, administeredBy: by)
+            vaccination = try logStore.logVaccine(name: vaccineName, performedAt: administeredAt,
+                                                  nextDueAt: due, lotNumber: lot, administeredBy: by)
         }
         vaccination.veterinarian = selectedVet
         try? vaccination.managedObjectContext?.save()
         for data in pendingPhotos {
-            try? diaryStore.addPhoto(toVaccination: vaccination, imageData: data)
+            try? logStore.addPhoto(to: vaccination, imageData: data)
         }
         await dueScheduler.syncVaccination(vaccination)
     }

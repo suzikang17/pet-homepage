@@ -32,7 +32,6 @@ struct ContentView: View {
     var body: some View {
         let petStore = PetStore(context: context)
         let medicationStore = MedicationStore(context: context, petStore: petStore)
-        let vaccinationStore = VaccinationStore(context: context, petStore: petStore)
         let vetVisitStore = VetVisitStore(context: context, petStore: petStore)
         let recommendationStore = VetRecommendationStore(context: context)
         let reminderScheduler = MedicationReminderScheduler(scheduler: UNNotificationScheduler())
@@ -63,7 +62,6 @@ struct ContentView: View {
         let snapshotBuilder = SnapshotBuilder(
             petStore: petStore,
             medicationStore: medicationStore,
-            vaccinationStore: vaccinationStore,
             vetVisitStore: vetVisitStore,
             recommendationStore: recommendationStore,
             healthMarkerStore: healthMarkerStore,
@@ -84,7 +82,7 @@ struct ContentView: View {
             ?? DocumentStore(baseURL: FileManager.default.temporaryDirectory)
         let documentSharing = DocumentSharing(documentStore: documentStore)
         let ingestionService = RecordIngestionService(
-            vaccinationStore: vaccinationStore,
+            logStore: logStore,
             vetVisitStore: vetVisitStore,
             medicationStore: medicationStore,
             documentStore: documentStore
@@ -106,7 +104,6 @@ struct ContentView: View {
 
         // The unified read stream + everything its rows need to open each record's editor.
         let timelineServices = TimelineServices(
-            vaccinationStore: vaccinationStore,
             vetVisitStore: vetVisitStore,
             medicationStore: medicationStore,
             veterinarianStore: veterinarianStore,
