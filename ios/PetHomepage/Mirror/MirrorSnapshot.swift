@@ -17,6 +17,7 @@ struct MirrorSnapshot: Codable, Equatable {
     var symptomEpisodes: [SymptomEpisodeSnapshot]
     var careTeam: [VeterinarianSnapshot] = []
     var diary: [DiaryEntrySnapshot] = []
+    var activityLogs: [ActivityLogSnapshot] = []
 
     enum CodingKeys: String, CodingKey {
         case schemaVersion = "schema_version"
@@ -30,12 +31,14 @@ struct MirrorSnapshot: Codable, Equatable {
         case symptomEpisodes = "symptom_episodes"
         case careTeam = "care_team"
         case diary
+        case activityLogs = "activity_logs"
     }
 
     /// The current wire-format version. Bump when the shape changes so the web side can branch.
     /// v2 added `care_team` + a `veterinarian` (name) on medications/vaccinations/vet_visits.
     /// v3 added `diary` (entries with a photo_count; photo binaries stay on-device).
-    static let currentSchemaVersion = 3
+    /// v4 added `activity_logs` (flat, denormalized LogEntry occurrences with an activityType).
+    static let currentSchemaVersion = 4
 
     /// Shared encoder: ISO-8601 dates, snake_case already handled by explicit CodingKeys.
     static let encoder: JSONEncoder = {
@@ -175,6 +178,28 @@ struct DiaryEntrySnapshot: Codable, Equatable {
     enum CodingKeys: String, CodingKey {
         case id, date, note
         case photoCount = "photo_count"
+    }
+}
+
+struct ActivityLogSnapshot: Codable, Equatable {
+    var id: UUID
+    var typeName: String
+    var category: String
+    var icon: String
+    var performedAt: Date
+    var note: String?
+    var intervalDays: Int
+    var nextDueAt: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case typeName = "type_name"
+        case category
+        case icon
+        case performedAt = "performed_at"
+        case note
+        case intervalDays = "interval_days"
+        case nextDueAt = "next_due_at"
     }
 }
 

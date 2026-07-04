@@ -90,6 +90,16 @@ type Snapshot = {
     note?: string
     photo_count: number
   }>
+  activity_logs?: Array<{
+    id: string
+    type_name: string
+    category: string
+    icon: string
+    performed_at: string
+    note?: string
+    interval_days: number
+    next_due_at?: string
+  }>
 }
 
 function fmt(iso?: string): string {
@@ -200,6 +210,20 @@ export function MirrorDashboard() {
               </span>
             )}
             {e.note && <div style={meta}>{e.note}</div>}
+          </div>
+        ))}
+      </Section>
+
+      <Section title="Activities" count={snap.activity_logs?.length ?? 0}>
+        {(snap.activity_logs ?? []).map((a) => (
+          <div key={a.id} style={card()}>
+            <strong>{a.type_name}</strong>
+            <span style={{ color: '#6b7280' }}> · {fmt(a.performed_at)}</span>
+            <div style={meta}>
+              {a.category}
+              {a.next_due_at ? ` · next due ${fmt(a.next_due_at)}` : ''}
+            </div>
+            {a.note && <div style={meta}>{a.note}</div>}
           </div>
         ))}
       </Section>

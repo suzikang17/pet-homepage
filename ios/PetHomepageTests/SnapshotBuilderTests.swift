@@ -14,6 +14,7 @@ final class SnapshotBuilderTests: XCTestCase {
     private var healthMarkerStore: HealthMarkerStore!
     private var symptomEpisodeStore: SymptomEpisodeStore!
     private var symptomEntryStore: SymptomEntryStore!
+    private var activityStore: ActivityStore!
 
     override func setUpWithError() throws {
         context = PersistenceController(inMemory: true).container.viewContext
@@ -26,6 +27,7 @@ final class SnapshotBuilderTests: XCTestCase {
         healthMarkerStore = HealthMarkerStore(context: context, petStore: petStore)
         symptomEpisodeStore = SymptomEpisodeStore(context: context, petStore: petStore)
         symptomEntryStore = SymptomEntryStore(context: context)
+        activityStore = ActivityStore(context: context, petStore: petStore)
     }
 
     private func makeBuilder() -> SnapshotBuilder {
@@ -79,6 +81,27 @@ final class SnapshotBuilderTests: XCTestCase {
         XCTAssertEqual(snapshot.diary.count, 1)
         XCTAssertEqual(snapshot.diary.first?.note, "Beach day")
         XCTAssertEqual(snapshot.diary.first?.photoCount, 1)
+        XCTAssertEqual(snapshot.schemaVersion, MirrorSnapshot.currentSchemaVersion)
+    }
+
+    func testBuildIncludesActivityLogsWithNextDueStamped() throws {
+        try petStore.createPet(name: "Sandy", species: "dog")
+        let type = try activityStore.createType(name: "Bath", category: .care,
+                                                iconName: "drop.fill", defaultIntervalDays: 30)
+        let performedAt = Date(timeIntervalSince1970: 1_700_000_000)
+        try logStore.logActivity(type: type, performedAt: performedAt, note: "Used oatmeal shampoo", intervalDays: 30)
+
+        let snapshot = try makeBuilder().build()
+
+        XCTAssertEqual(snapshot.activityLogs.count, 1)
+        let log = try XCTUnwrap(snapshot.activityLogs.first)
+        XCTAssertEqual(log.typeName, "Bath")
+        XCTAssertEqual(log.category, "care")
+        XCTAssertEqual(log.icon, "drop.fill")
+        XCTAssertEqual(log.performedAt, performedAt)
+        XCTAssertEqual(log.note, "Used oatmeal shampoo")
+        XCTAssertEqual(log.intervalDays, 30)
+        XCTAssertEqual(log.nextDueAt, Calendar.current.date(byAdding: .day, value: 30, to: performedAt))
         XCTAssertEqual(snapshot.schemaVersion, MirrorSnapshot.currentSchemaVersion)
     }
 

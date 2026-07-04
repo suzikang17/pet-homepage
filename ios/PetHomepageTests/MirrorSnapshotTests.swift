@@ -37,6 +37,11 @@ final class MirrorSnapshotTests: XCTestCase {
                                        startedAt: date, resolvedAt: nil, status: "active",
                                        entries: [SymptomEntrySnapshot(id: UUID(), date: date,
                                                  severity: "mild", note: "ok", suspectedCause: "food")])
+            ],
+            activityLogs: [
+                ActivityLogSnapshot(id: UUID(), typeName: "Bath", category: "care",
+                                    icon: "drop.fill", performedAt: date, note: "Used oatmeal shampoo",
+                                    intervalDays: 30, nextDueAt: date)
             ]
         )
     }
@@ -56,6 +61,8 @@ final class MirrorSnapshotTests: XCTestCase {
         XCTAssertTrue(json.contains("\"vet_visits\""))
         XCTAssertTrue(json.contains("\"unlinked_recommendations\""))
         XCTAssertTrue(json.contains("\"symptom_episodes\""))
+        XCTAssertTrue(json.contains("\"activity_logs\""))
+        XCTAssertTrue(json.contains("\"type_name\""))
     }
 
     func testNestedCollectionCountsSurviveRoundTrip() throws {
@@ -66,5 +73,6 @@ final class MirrorSnapshotTests: XCTestCase {
         XCTAssertEqual(decoded.medications.first?.doseLogs.count, 1)
         XCTAssertEqual(decoded.vetVisits.first?.recommendations.count, 1)
         XCTAssertEqual(decoded.symptomEpisodes.first?.entries.count, 1)
+        XCTAssertEqual(decoded.activityLogs.first?.typeName, "Bath")
     }
 }

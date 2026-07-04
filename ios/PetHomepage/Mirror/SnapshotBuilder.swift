@@ -145,6 +145,20 @@ final class SnapshotBuilder {
             DiaryEntrySnapshot(id: $0.id, date: $0.performedAt, note: $0.note, photoCount: $0.photoArray.count)
         }
 
+        let activityLogs = try logStore.activityLogs().compactMap { log -> ActivityLogSnapshot? in
+            guard let type = log.activityType else { return nil }
+            return ActivityLogSnapshot(
+                id: log.id,
+                typeName: type.name,
+                category: type.categoryRaw,
+                icon: type.iconName,
+                performedAt: log.performedAt,
+                note: log.note,
+                intervalDays: Int(log.intervalDays),
+                nextDueAt: log.nextDueAt
+            )
+        }
+
         return MirrorSnapshot(
             schemaVersion: MirrorSnapshot.currentSchemaVersion,
             generatedAt: now(),
@@ -156,7 +170,8 @@ final class SnapshotBuilder {
             healthMarkers: healthMarkers,
             symptomEpisodes: symptomEpisodes,
             careTeam: careTeam,
-            diary: diary
+            diary: diary,
+            activityLogs: activityLogs
         )
     }
 
