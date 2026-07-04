@@ -22,6 +22,11 @@ final class CaptureReviewViewModel {
     var availableTypes: [ActivityType] = []
     var activeMeds: [Medication] = []
 
+    /// The tag OCR suggested, so the view can show a ✨ marker on the matching chip. Cleared
+    /// whenever the user picks a different tag than the one suggested.
+    var suggestedTag: CaptureTag?
+    private(set) var userPickedTag = false
+
     private let logStore: LogStore
     private let dueScheduler: DueReminderScheduler
 
@@ -43,6 +48,42 @@ final class CaptureReviewViewModel {
     private var noteOrNil: String? {
         let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
+    }
+
+    /// Records a user-driven tag choice (chip tap). Clears the ✨ suggestion marker unless the
+    /// user happened to pick the same tag OCR already suggested.
+    func pick(_ tag: CaptureTag) {
+        self.tag = tag
+        userPickedTag = true
+        if suggestedTag != tag {
+            suggestedTag = nil
+        }
+    }
+
+    /// Runs on-device OCR against the photo and, on a match, pre-selects the corresponding chip —
+    /// but only if the user hasn't already picked one and nothing is selected yet.
+    func runSuggestion() async {
+        var candidateNames: [String] = []
+        var candidateTags: [CaptureTag] = []
+        for med in activeMeds {
+            candidateNames.append(med.drugName)
+            candidateTags.append(.medication(med))
+        }
+        for type in availableTypes {
+            candidateNames.append(type.name)
+            candidateTags.append(.activity(type))
+        }
+
+        guard let index = await TagSuggester.suggest(photo: photo, candidateNames: candidateNames) else {
+            return
+        }
+        let matched = candidateTags[index]
+
+        await MainActor.run {
+            guard !userPickedTag && tag == .none else { return }
+            tag = matched
+            suggestedTag = matched
+        }
     }
 
     func save() async throws {

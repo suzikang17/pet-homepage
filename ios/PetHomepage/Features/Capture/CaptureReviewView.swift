@@ -49,6 +49,7 @@ struct CaptureReviewView: View {
                 TextField("Note", text: $model.note)
             }
         }
+        .task { await model.runSuggestion() }
     }
 
     @ViewBuilder
@@ -68,17 +69,17 @@ struct CaptureReviewView: View {
     private var chips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                chip(title: "Note only", systemImage: "square.and.pencil", active: model.tag == .none) {
-                    model.tag = .none
+                chip(title: "Note only", systemImage: "square.and.pencil", active: model.tag == .none, suggested: model.suggestedTag == .none) {
+                    model.pick(.none)
                 }
                 ForEach(model.availableTypes) { type in
-                    chip(title: type.name, systemImage: type.iconName, active: model.tag == .activity(type)) {
-                        model.tag = .activity(type)
+                    chip(title: type.name, systemImage: type.iconName, active: model.tag == .activity(type), suggested: model.suggestedTag == .activity(type)) {
+                        model.pick(.activity(type))
                     }
                 }
                 ForEach(model.activeMeds, id: \.id) { med in
-                    chip(title: med.drugName, systemImage: "pills", active: model.tag == .medication(med)) {
-                        model.tag = .medication(med)
+                    chip(title: med.drugName, systemImage: "pills", active: model.tag == .medication(med), suggested: model.suggestedTag == .medication(med)) {
+                        model.pick(.medication(med))
                     }
                 }
             }
@@ -87,9 +88,16 @@ struct CaptureReviewView: View {
         }
     }
 
-    private func chip(title: String, systemImage: String, active: Bool, _ action: @escaping () -> Void) -> some View {
+    private func chip(title: String, systemImage: String, active: Bool, suggested: Bool, _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Label(title, systemImage: systemImage)
+            Label {
+                Text(title)
+                if suggested {
+                    Image(systemName: "sparkles")
+                }
+            } icon: {
+                Image(systemName: systemImage)
+            }
                 .font(.subheadline.weight(.semibold))
                 .padding(.horizontal, 14)
                 .padding(.vertical, 7)
