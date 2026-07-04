@@ -196,7 +196,6 @@ struct PetProfileView: View {
     private func refresh() {
         guard let s = timelineServices else { return }
         let vm = TimelineViewModel(
-            vetVisitStore: s.vetVisitStore,
             medicationStore: s.medicationStore,
             healthMarkerStore: s.healthMarkerStore,
             symptomEpisodeStore: s.symptomEpisodeStore,
@@ -209,8 +208,8 @@ struct PetProfileView: View {
         let meds = (try? s.medicationStore.medications()) ?? []
         activeMeds = meds.filter { $0.endedAt == nil || ($0.endedAt.map { $0 > Date() } ?? true) }
         latestWeight = (try? s.healthMarkerStore.series(of: .weight))?.last
-        let visits = (try? s.vetVisitStore.visits()) ?? []
-        nextVetVisit = visits.compactMap(\.nextVisitDate).filter { $0 >= Date() }.min()
+        let visits = (try? s.logStore.vetVisits()) ?? []
+        nextVetVisit = visits.compactMap(\.nextDueAt).filter { $0 >= Date() }.min()
     }
 
     private func logDose(_ med: Medication) {

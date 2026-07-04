@@ -8,7 +8,6 @@ final class SnapshotBuilderTests: XCTestCase {
     private var petStore: PetStore!
     private var medicationStore: MedicationStore!
     private var logStore: LogStore!
-    private var vetVisitStore: VetVisitStore!
     private var recommendationStore: VetRecommendationStore!
     private var healthMarkerStore: HealthMarkerStore!
     private var symptomEpisodeStore: SymptomEpisodeStore!
@@ -20,7 +19,6 @@ final class SnapshotBuilderTests: XCTestCase {
         petStore = PetStore(context: context)
         medicationStore = MedicationStore(context: context, petStore: petStore)
         logStore = LogStore(context: context, petStore: petStore)
-        vetVisitStore = VetVisitStore(context: context, petStore: petStore)
         recommendationStore = VetRecommendationStore(context: context)
         healthMarkerStore = HealthMarkerStore(context: context, petStore: petStore)
         symptomEpisodeStore = SymptomEpisodeStore(context: context, petStore: petStore)
@@ -32,7 +30,6 @@ final class SnapshotBuilderTests: XCTestCase {
         SnapshotBuilder(
             petStore: petStore,
             medicationStore: medicationStore,
-            vetVisitStore: vetVisitStore,
             recommendationStore: recommendationStore,
             healthMarkerStore: healthMarkerStore,
             symptomEpisodeStore: symptomEpisodeStore,
@@ -115,11 +112,11 @@ final class SnapshotBuilderTests: XCTestCase {
         try logStore.logVaccine(name: "Rabies", performedAt: date,
                                 nextDueAt: date, lotNumber: "L1", administeredBy: "Dr. Vet")
 
-        let visit = try vetVisitStore.create(occurredAt: date, clinicName: "Clinic",
+        let visit = try logStore.logVetVisit(occurredAt: date, clinicName: "Clinic",
                                              vetName: "Dr. Vet", reason: "checkup",
                                              diagnosis: nil, treatmentNotes: nil, nextVisitDate: date)
-        try recommendationStore.create(text: "rest", date: date, vetVisit: visit)
-        try recommendationStore.create(text: "call back", date: date, vetVisit: nil)
+        try recommendationStore.create(text: "rest", date: date, logEntry: visit)
+        try recommendationStore.create(text: "call back", date: date, logEntry: nil)
 
         try healthMarkerStore.create(markerType: .weight, value: 12.3, unit: "kg", recordedAt: date)
         try healthMarkerStore.create(markerType: .energy, value: 3, unit: nil, recordedAt: date)

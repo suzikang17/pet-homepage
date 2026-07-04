@@ -15,7 +15,6 @@ enum IngestionOutcome: Equatable {
 /// driven by an injected ExtractionService elsewhere, so it stays fully testable.
 final class RecordIngestionService {
     private let logStore: LogStore
-    private let vetVisitStore: VetVisitStore
     private let medicationStore: MedicationStore
     private let documentStore: DocumentStore
     private let calendar: Calendar
@@ -24,12 +23,10 @@ final class RecordIngestionService {
     private let dayFormatter: DateFormatter
 
     init(logStore: LogStore,
-         vetVisitStore: VetVisitStore,
          medicationStore: MedicationStore,
          documentStore: DocumentStore,
          calendar: Calendar = .current) {
         self.logStore = logStore
-        self.vetVisitStore = vetVisitStore
         self.medicationStore = medicationStore
         self.documentStore = documentStore
         self.calendar = calendar
@@ -68,7 +65,7 @@ final class RecordIngestionService {
             return .vaccination(vax.id)
 
         case .vetVisit(let f):
-            let visit = try vetVisitStore.create(
+            let visit = try logStore.logVetVisit(
                 occurredAt: result.occurredAt,
                 clinicName: f.clinicName,
                 vetName: f.vetName,

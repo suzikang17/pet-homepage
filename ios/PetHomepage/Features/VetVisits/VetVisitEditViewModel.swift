@@ -15,25 +15,25 @@ final class VetVisitEditViewModel {
     var availableVets: [Veterinarian] = []
     var selectedVet: Veterinarian?
 
-    private let store: VetVisitStore
+    private let logStore: LogStore
     private let dueScheduler: DueReminderScheduler
     private let cadenceMonths: Int
-    private let editing: VetVisit?
+    private let editing: LogEntry?
 
-    init(store: VetVisitStore, dueScheduler: DueReminderScheduler, cadenceMonths: Int,
-         veterinarianStore: VeterinarianStore, editing: VetVisit?) {
-        self.store = store
+    init(logStore: LogStore, dueScheduler: DueReminderScheduler, cadenceMonths: Int,
+         veterinarianStore: VeterinarianStore, editing: LogEntry?) {
+        self.logStore = logStore
         self.dueScheduler = dueScheduler
         self.cadenceMonths = cadenceMonths
         self.editing = editing
         if let visit = editing {
-            occurredAt = visit.occurredAt
+            occurredAt = visit.performedAt
             clinicName = visit.clinicName ?? ""
             vetName = visit.vetName ?? ""
-            reason = visit.reason ?? ""
+            reason = visit.title ?? ""
             diagnosis = visit.diagnosis ?? ""
             treatmentNotes = visit.treatmentNotes ?? ""
-            if let next = visit.nextVisitDate {
+            if let next = visit.nextDueAt {
                 hasNextVisit = true
                 nextVisitDate = next
             }
@@ -48,15 +48,15 @@ final class VetVisitEditViewModel {
 
     func save() async throws {
         let next = hasNextVisit ? nextVisitDate : nil
-        let visit: VetVisit
+        let visit: LogEntry
         if let existing = editing {
-            try store.update(existing, occurredAt: occurredAt,
+            try logStore.updateVetVisit(existing, occurredAt: occurredAt,
                              clinicName: nilIfEmpty(clinicName), vetName: nilIfEmpty(vetName),
                              reason: nilIfEmpty(reason), diagnosis: nilIfEmpty(diagnosis),
                              treatmentNotes: nilIfEmpty(treatmentNotes), nextVisitDate: next)
             visit = existing
         } else {
-            visit = try store.create(occurredAt: occurredAt,
+            visit = try logStore.logVetVisit(occurredAt: occurredAt,
                              clinicName: nilIfEmpty(clinicName), vetName: nilIfEmpty(vetName),
                              reason: nilIfEmpty(reason), diagnosis: nilIfEmpty(diagnosis),
                              treatmentNotes: nilIfEmpty(treatmentNotes), nextVisitDate: next)
@@ -64,7 +64,7 @@ final class VetVisitEditViewModel {
         visit.veterinarian = selectedVet
         try? visit.managedObjectContext?.save()
         // Saving a visit changes "most recent visit" → re-sync the cadence reminder.
-        let lastVisit = try? store.mostRecentVisitDate()
+        let lastVisit = try? logStore.mostRecentVisitDate()
         await dueScheduler.syncVetCadence(
             lastVisit: lastVisit,
             cadence: VetCadence(months: cadenceMonths, hour: 9, minute: 0)

@@ -35,7 +35,7 @@ enum TimelineKind: String, CaseIterable, Identifiable {
 /// The underlying record a row points back to, so a tap can open its existing editor/detail.
 enum TimelineReference {
     case vaccine(LogEntry)
-    case vet(VetVisit)
+    case vet(LogEntry)
     case medication(Medication)
     case marker(HealthMarker)
     case symptom(SymptomEpisode)
@@ -61,18 +61,15 @@ final class TimelineViewModel {
     var filter: TimelineKind?
     var errorMessage: String?
 
-    private let vetVisitStore: VetVisitStore
     private let medicationStore: MedicationStore
     private let healthMarkerStore: HealthMarkerStore
     private let symptomEpisodeStore: SymptomEpisodeStore
     private let logStore: LogStore
 
-    init(vetVisitStore: VetVisitStore,
-         medicationStore: MedicationStore,
+    init(medicationStore: MedicationStore,
          healthMarkerStore: HealthMarkerStore,
          symptomEpisodeStore: SymptomEpisodeStore,
          logStore: LogStore) {
-        self.vetVisitStore = vetVisitStore
         self.medicationStore = medicationStore
         self.healthMarkerStore = healthMarkerStore
         self.symptomEpisodeStore = symptomEpisodeStore
@@ -83,7 +80,7 @@ final class TimelineViewModel {
         do {
             var out: [TimelineItem] = []
             out += try logStore.vaccines().map(TimelineItem.init(vaccine:))
-            out += try vetVisitStore.visits().map(TimelineItem.init(vet:))
+            out += try logStore.vetVisits().map(TimelineItem.init(vet:))
             out += try medicationStore.medications().map(TimelineItem.init(medication:))
             out += try healthMarkerStore.markers().map(TimelineItem.init(marker:))
             out += try symptomEpisodeStore.episodes().map(TimelineItem.init(symptom:))
@@ -119,8 +116,8 @@ final class TimelineViewModel {
             await services.dueScheduler.cancelVaccination(v)
             try? services.logStore.delete(v)
         case .vet(let v):
-            try? services.vetVisitStore.delete(v)
-            let last = (try? services.vetVisitStore.mostRecentVisitDate()) ?? nil
+            try? services.logStore.delete(v)
+            let last = (try? services.logStore.mostRecentVisitDate()) ?? nil
             await services.dueScheduler.syncVetCadence(
                 lastVisit: last,
                 cadence: VetCadence(months: services.cadenceMonths, hour: 9, minute: 0)
@@ -163,14 +160,14 @@ extension TimelineItem {
         )
     }
 
-    init(vet v: VetVisit) {
+    init(vet v: LogEntry) {
         self.init(
             id: "vet:\(v.id.uuidString)",
             kind: .vet,
-            date: v.occurredAt,
+            date: v.performedAt,
             title: v.clinicName ?? "Vet visit",
-            subtitle: v.reason ?? v.vetName,
-            nextDue: v.nextVisitDate,
+            subtitle: v.title ?? v.vetName,
+            nextDue: v.nextDueAt,
             reference: .vet(v)
         )
     }

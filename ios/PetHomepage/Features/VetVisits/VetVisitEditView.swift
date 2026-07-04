@@ -5,9 +5,9 @@ struct VetVisitEditView: View {
     @State private var model: VetVisitEditViewModel
     @Environment(\.dismiss) private var dismiss
 
-    init(store: VetVisitStore, dueScheduler: DueReminderScheduler, cadenceMonths: Int,
-         veterinarianStore: VeterinarianStore, editing: VetVisit?) {
-        _model = State(initialValue: VetVisitEditViewModel(store: store, dueScheduler: dueScheduler,
+    init(logStore: LogStore, dueScheduler: DueReminderScheduler, cadenceMonths: Int,
+         veterinarianStore: VeterinarianStore, editing: LogEntry?) {
+        _model = State(initialValue: VetVisitEditViewModel(logStore: logStore, dueScheduler: dueScheduler,
                                                            cadenceMonths: cadenceMonths,
                                                            veterinarianStore: veterinarianStore, editing: editing))
     }

@@ -6,7 +6,6 @@ import CoreData
 final class RecordUploadViewModelTests: XCTestCase {
     private var context: NSManagedObjectContext!
     private var logStore: LogStore!
-    private var vetVisitStore: VetVisitStore!
     private var medStore: MedicationStore!
     private var documentStore: DocumentStore!
     private var baseURL: URL!
@@ -17,11 +16,10 @@ final class RecordUploadViewModelTests: XCTestCase {
         let petStore = PetStore(context: context)
         try petStore.createPet(name: "Sandy", species: "dog")
         logStore = LogStore(context: context, petStore: petStore)
-        vetVisitStore = VetVisitStore(context: context, petStore: petStore)
         medStore = MedicationStore(context: context, petStore: petStore)
         baseURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         documentStore = DocumentStore(baseURL: baseURL)
-        ingestion = RecordIngestionService(logStore: logStore, vetVisitStore: vetVisitStore,
+        ingestion = RecordIngestionService(logStore: logStore,
                                            medicationStore: medStore, documentStore: documentStore,
                                            calendar: Calendar(identifier: .gregorian))
     }

@@ -4,30 +4,30 @@ import SwiftUI
 struct VetVisitDetailView: View {
     @State private var model: VetVisitDetailViewModel
     @State private var photos: [Photo] = []
-    private let visit: VetVisit
-    private let diaryStore: DiaryStore
+    private let visit: LogEntry
+    private let logStore: LogStore
 
-    init(visit: VetVisit, recommendationStore: VetRecommendationStore, diaryStore: DiaryStore) {
+    init(visit: LogEntry, recommendationStore: VetRecommendationStore, logStore: LogStore) {
         _model = State(initialValue: VetVisitDetailViewModel(visit: visit, recommendationStore: recommendationStore))
         self.visit = visit
-        self.diaryStore = diaryStore
+        self.logStore = logStore
     }
 
     var body: some View {
         Form {
             Section("Visit") {
-                LabeledContent("Date", value: model.visit.occurredAt.formatted(date: .abbreviated, time: .omitted))
+                LabeledContent("Date", value: model.visit.performedAt.formatted(date: .abbreviated, time: .omitted))
                 if let clinic = model.visit.clinicName { LabeledContent("Clinic", value: clinic) }
                 if let careVet = model.visit.veterinarian { LabeledContent("Veterinarian", value: careVet.name) }
                 if let vet = model.visit.vetName { LabeledContent("Vet", value: vet) }
-                if let reason = model.visit.reason { LabeledContent("Reason", value: reason) }
+                if let reason = model.visit.title { LabeledContent("Reason", value: reason) }
                 if let diagnosis = model.visit.diagnosis { LabeledContent("Diagnosis", value: diagnosis) }
                 if let notes = model.visit.treatmentNotes { LabeledContent("Treatment", value: notes) }
             }
             PhotoStripSection(
                 photos: photos,
-                onAdd: { try? diaryStore.addPhoto(toVetVisit: visit, imageData: $0) },
-                onDelete: { try? diaryStore.deletePhoto($0); photos = visit.photoArray },
+                onAdd: { try? logStore.addPhoto(to: visit, imageData: $0) },
+                onDelete: { try? logStore.deletePhoto($0); photos = visit.photoArray },
                 onReload: { photos = visit.photoArray }
             )
             Section("Recommendations") {

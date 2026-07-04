@@ -5,22 +5,22 @@ import CoreData
 
 final class VetVisitDetailViewModelTests: XCTestCase {
     private var context: NSManagedObjectContext!
-    private var visitStore: VetVisitStore!
+    private var logStore: LogStore!
     private var recStore: VetRecommendationStore!
 
     override func setUpWithError() throws {
         context = PersistenceController(inMemory: true).container.viewContext
         let petStore = PetStore(context: context)
         try petStore.createPet(name: "Sandy", species: "dog")
-        visitStore = VetVisitStore(context: context, petStore: petStore)
+        logStore = LogStore(context: context, petStore: petStore)
         recStore = VetRecommendationStore(context: context)
     }
 
     func testLoadShowsRecommendationsForVisit() throws {
-        let visit = try visitStore.create(occurredAt: Date(timeIntervalSince1970: 1),
-                                          clinicName: nil, vetName: nil, reason: nil,
-                                          diagnosis: nil, treatmentNotes: nil, nextVisitDate: nil)
-        try recStore.create(text: "Senior food", date: Date(timeIntervalSince1970: 2), vetVisit: visit)
+        let visit = try logStore.logVetVisit(occurredAt: Date(timeIntervalSince1970: 1),
+                                             clinicName: nil, vetName: nil, reason: nil,
+                                             diagnosis: nil, treatmentNotes: nil, nextVisitDate: nil)
+        try recStore.create(text: "Senior food", date: Date(timeIntervalSince1970: 2), logEntry: visit)
         let vm = VetVisitDetailViewModel(visit: visit, recommendationStore: recStore)
 
         try vm.load()
@@ -29,9 +29,9 @@ final class VetVisitDetailViewModelTests: XCTestCase {
     }
 
     func testAddRecommendationAppendsAndClearsInput() throws {
-        let visit = try visitStore.create(occurredAt: Date(timeIntervalSince1970: 1),
-                                          clinicName: nil, vetName: nil, reason: nil,
-                                          diagnosis: nil, treatmentNotes: nil, nextVisitDate: nil)
+        let visit = try logStore.logVetVisit(occurredAt: Date(timeIntervalSince1970: 1),
+                                             clinicName: nil, vetName: nil, reason: nil,
+                                             diagnosis: nil, treatmentNotes: nil, nextVisitDate: nil)
         let vm = VetVisitDetailViewModel(visit: visit, recommendationStore: recStore)
         vm.newRecommendationText = "Recheck in 2 weeks"
 

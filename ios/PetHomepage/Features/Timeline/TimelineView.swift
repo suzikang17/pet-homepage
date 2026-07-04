@@ -4,7 +4,6 @@ import SwiftUI
 /// Everything the Timeline needs to open each record type's existing editor/detail. Built once
 /// in ContentView and shared (Home reuses the read stores for "due soon").
 struct TimelineServices {
-    let vetVisitStore: VetVisitStore
     let medicationStore: MedicationStore
     let veterinarianStore: VeterinarianStore
     let diaryStore: DiaryStore
@@ -37,7 +36,6 @@ struct TimelineView: View {
     init(services: TimelineServices) {
         self.services = services
         _model = State(initialValue: TimelineViewModel(
-            vetVisitStore: services.vetVisitStore,
             medicationStore: services.medicationStore,
             healthMarkerStore: services.healthMarkerStore,
             symptomEpisodeStore: services.symptomEpisodeStore,
@@ -213,7 +211,7 @@ struct TimelineView: View {
                                 veterinarianStore: services.veterinarianStore, editing: v)
         case .vet(let v):
             VetVisitDetailView(visit: v, recommendationStore: services.recommendationStore,
-                               diaryStore: services.diaryStore)
+                               logStore: services.logStore)
         case .medication(let m):
             MedicationEditView(store: services.medicationStore, reminderScheduler: services.reminderScheduler,
                                veterinarianStore: services.veterinarianStore, editing: m)
@@ -234,7 +232,7 @@ struct TimelineView: View {
             VaccinationEditView(logStore: services.logStore, dueScheduler: services.dueScheduler,
                                 veterinarianStore: services.veterinarianStore, editing: nil)
         case .vet:
-            VetVisitEditView(store: services.vetVisitStore, dueScheduler: services.dueScheduler,
+            VetVisitEditView(logStore: services.logStore, dueScheduler: services.dueScheduler,
                              cadenceMonths: services.cadenceMonths,
                              veterinarianStore: services.veterinarianStore, editing: nil)
         case .medication:

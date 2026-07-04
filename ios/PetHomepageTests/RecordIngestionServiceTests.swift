@@ -6,7 +6,6 @@ import CoreData
 final class RecordIngestionServiceTests: XCTestCase {
     private var context: NSManagedObjectContext!
     private var logStore: LogStore!
-    private var vetVisitStore: VetVisitStore!
     private var medStore: MedicationStore!
     private var documentStore: DocumentStore!
     private var baseURL: URL!
@@ -17,12 +16,10 @@ final class RecordIngestionServiceTests: XCTestCase {
         let petStore = PetStore(context: context)
         try petStore.createPet(name: "Sandy", species: "dog")
         logStore = LogStore(context: context, petStore: petStore)
-        vetVisitStore = VetVisitStore(context: context, petStore: petStore)
         medStore = MedicationStore(context: context, petStore: petStore)
         baseURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         documentStore = DocumentStore(baseURL: baseURL)
         service = RecordIngestionService(logStore: logStore,
-                                         vetVisitStore: vetVisitStore,
                                          medicationStore: medStore,
                                          documentStore: documentStore,
                                          calendar: Calendar(identifier: .gregorian))
@@ -70,10 +67,10 @@ final class RecordIngestionServiceTests: XCTestCase {
         let outcome = try service.ingest(result, originalFile: nil)
 
         guard case .vetVisit = outcome else { return XCTFail("expected .vetVisit outcome") }
-        let saved = try vetVisitStore.visits()
+        let saved = try logStore.vetVisits()
         XCTAssertEqual(saved.first?.clinicName, "Paws")
         XCTAssertEqual(saved.first?.diagnosis, "Healthy")
-        XCTAssertNotNil(saved.first?.nextVisitDate)
+        XCTAssertNotNil(saved.first?.nextDueAt)
     }
 
     func testIngestMedicationStartWritesRecord() throws {
@@ -109,7 +106,7 @@ final class RecordIngestionServiceTests: XCTestCase {
 
         XCTAssertEqual(outcome, .unsupported(.weight))
         XCTAssertTrue(try logStore.vaccines().isEmpty)
-        XCTAssertTrue(try vetVisitStore.visits().isEmpty)
+        XCTAssertTrue(try logStore.vetVisits().isEmpty)
         XCTAssertEqual(try documentStore.read(named: "scale.jpg"), Data("img".utf8))
     }
 }
