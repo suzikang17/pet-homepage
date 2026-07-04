@@ -5,9 +5,17 @@ final class PetStore {
     /// The shared managed-object context. Read-only to collaborators (e.g. SnapshotBuilder),
     /// which need it for fetches the typed stores don't expose.
     let context: NSManagedObjectContext
+    /// Where the active-pet selection is persisted. Injectable so tests can use a scratch
+    /// suite instead of polluting `.standard`.
+    private let defaults: UserDefaults
 
-    init(context: NSManagedObjectContext) {
+    /// UserDefaults key for the active pet's `id.uuidString`. Per-device (not synced) —
+    /// deliberate v1 simplification (see multi-pet design doc).
+    private static let activePetIDKey = "activePetID"
+
+    init(context: NSManagedObjectContext, defaults: UserDefaults = .standard) {
         self.context = context
+        self.defaults = defaults
     }
 
     @discardableResult
@@ -20,8 +28,31 @@ final class PetStore {
         return pet
     }
 
-    /// v1 is single-pet: return the one pet if it exists.
+    /// All pets, sorted by name.
+    func pets() throws -> [Pet] {
+        let request = Pet.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
+        return try context.fetch(request)
+    }
+
+    /// Persists `pet` as the active pet (per-device). Every store scopes its reads/writes
+    /// through `currentPet()`, so this is the whole switcher mechanism.
+    func setActivePet(_ pet: Pet) {
+        defaults.set(pet.id.uuidString, forKey: Self.activePetIDKey)
+    }
+
+    /// The active pet: the one matching the persisted `activePetID` if it still exists,
+    /// else the first pet (existing v1 behavior; also the fallback for a missing/unknown/
+    /// deleted id, e.g. pre-multi-pet installs that never wrote the key).
     func currentPet() throws -> Pet? {
+        if let idString = defaults.string(forKey: Self.activePetIDKey), let id = UUID(uuidString: idString) {
+            let request = Pet.fetchRequest()
+            request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+            request.fetchLimit = 1
+            if let pet = try context.fetch(request).first {
+                return pet
+            }
+        }
         let request = Pet.fetchRequest()
         request.fetchLimit = 1
         return try context.fetch(request).first
