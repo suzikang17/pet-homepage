@@ -1,0 +1,31 @@
+name: feature
+dir: features
+heading: Features
+id: { strategy: sequential, pad: 3 }
+body: free
+frontmatter:
+  - { name: title, type: string, required: true }
+  - { name: status, type: enum, values: [shipped, in-progress, planned], required: true }
+  - { name: area, type: enum, values: [ios, web, cross] }
+  - { name: entry_point, type: string }
+  - { name: since, type: date }
+index:
+  - { header: "#", source: id }
+  - { header: Feature, source: title, link: true }
+  - { header: Status, source: status }
+  - { header: Area, source: area }
+  - { header: "Entry point", source: entry_point }
+  - { header: Since, source: since, format: date }
+prompt: |
+  You are writing a feature doc — the product-facing description of one user-visible capability.
+  Audience: a PM or designer, not an engineer. Given a title, produce the markdown body only
+  (no frontmatter).
+
+  Sections in order (omit any that are empty):
+  - One-line summary at the top (bold): what the user can do because this exists.
+  - ## How it works — the user flow, step by step, in product terms.
+  - ## Details — behaviors, defaults, edge cases a PM would ask about.
+  - ## Design notes — deliberate choices and their rationale (link decisions where they exist).
+
+  Rules: present tense, concrete, no implementation classes/file names unless a behavior is
+  inexplicable without them. Short — a feature doc is a page, not a spec.
