@@ -12,7 +12,7 @@
   is current.
 - **[`features/`](features/index.md)** — the PM-facing feature inventory: what
   exists today, status, entry points. Lore type `feature`.
-- **[`20-architecture.md`](20-architecture.md)** — how the system hangs together.
+- **[`architecture.md`](architecture.md)** — how the system hangs together.
 - **`superpowers/specs/` + `superpowers/plans/`** — frozen designs and
   implementation plans, per feature/refactor.
 - **[`devlog/`](devlog/index.md)** — day-by-day session history (lore type `devlog`).
