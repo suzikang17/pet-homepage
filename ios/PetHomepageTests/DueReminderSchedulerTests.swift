@@ -117,6 +117,31 @@ final class DueReminderSchedulerTests: XCTestCase {
         XCTAssertTrue(reminder?.body.contains("Bath") ?? false)
     }
 
+    func testActivityReminderUsesTypeReminderTime() throws {
+        let type = try activityStore.createType(name: "Bath", category: .care, iconName: "shower",
+                                                defaultIntervalDays: 30, reminderHour: 18, reminderMinute: 30)
+        let performed = calendar.date(from: DateComponents(year: 2026, month: 6, day: 1))!
+        let log = try logStore.logActivity(type: type, performedAt: performed, note: nil, intervalDays: 30)
+        let sched = DueReminderScheduler(scheduler: FakeNotificationScheduler(), calendar: calendar, hour: 9, minute: 0)
+
+        let reminder = sched.activityReminder(for: log)
+
+        XCTAssertEqual(reminder?.hour, 18)
+        XCTAssertEqual(reminder?.minute, 30)
+    }
+
+    func testActivityReminderDefaultsToNineWhenTypeUsesDefaults() throws {
+        let type = try activityStore.createType(name: "Bath", category: .care, iconName: "shower", defaultIntervalDays: 30)
+        let performed = calendar.date(from: DateComponents(year: 2026, month: 6, day: 1))!
+        let log = try logStore.logActivity(type: type, performedAt: performed, note: nil, intervalDays: 30)
+        let sched = DueReminderScheduler(scheduler: FakeNotificationScheduler(), calendar: calendar, hour: 9, minute: 0)
+
+        let reminder = sched.activityReminder(for: log)
+
+        XCTAssertEqual(reminder?.hour, 9)
+        XCTAssertEqual(reminder?.minute, 0)
+    }
+
     func testActivityWithoutNextDueHasNoReminder() throws {
         let type = try activityStore.createType(name: "Bath", category: .care, iconName: "shower", defaultIntervalDays: 0)
         let log = try logStore.logActivity(type: type, performedAt: Date(), note: nil, intervalDays: 0)

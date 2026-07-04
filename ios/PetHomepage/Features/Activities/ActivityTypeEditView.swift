@@ -6,7 +6,7 @@ import SwiftUI
 /// back through `onSave` (the parent's ViewModel owns the store write).
 struct ActivityTypeEditView: View {
     let type: ActivityType
-    let onSave: (_ name: String, _ category: ActivityCategory, _ iconName: String, _ intervalDays: Int) -> Void
+    let onSave: (_ name: String, _ category: ActivityCategory, _ iconName: String, _ intervalDays: Int, _ reminderHour: Int, _ reminderMinute: Int) -> Void
     @Environment(\.dismiss) private var dismiss
 
     @State private var name: String
@@ -14,9 +14,10 @@ struct ActivityTypeEditView: View {
     @State private var iconName: String
     @State private var hasCadence: Bool
     @State private var intervalDays: Int
+    @State private var reminderTime: Date
 
     init(type: ActivityType,
-         onSave: @escaping (_ name: String, _ category: ActivityCategory, _ iconName: String, _ intervalDays: Int) -> Void) {
+         onSave: @escaping (_ name: String, _ category: ActivityCategory, _ iconName: String, _ intervalDays: Int, _ reminderHour: Int, _ reminderMinute: Int) -> Void) {
         self.type = type
         self.onSave = onSave
         _name = State(initialValue: type.name)
@@ -24,6 +25,10 @@ struct ActivityTypeEditView: View {
         _iconName = State(initialValue: type.iconName)
         _hasCadence = State(initialValue: type.defaultIntervalDays > 0)
         _intervalDays = State(initialValue: type.defaultIntervalDays > 0 ? Int(type.defaultIntervalDays) : 30)
+        let seeded = Calendar.current.date(bySettingHour: Int(type.reminderHour),
+                                           minute: Int(type.reminderMinute),
+                                           second: 0, of: Date()) ?? Date()
+        _reminderTime = State(initialValue: seeded)
     }
 
     /// A curated set of pet-care SF Symbols to choose from (free-text symbol names are too
@@ -42,7 +47,9 @@ struct ActivityTypeEditView: View {
             confirmDisabled: trimmedName.isEmpty,
             onCancel: { dismiss() },
             onConfirm: {
-                onSave(trimmedName, category, iconName, hasCadence ? intervalDays : 0)
+                let comps = Calendar.current.dateComponents([.hour, .minute], from: reminderTime)
+                onSave(trimmedName, category, iconName, hasCadence ? intervalDays : 0,
+                       comps.hour ?? 9, comps.minute ?? 0)
                 dismiss()
             }
         ) {
@@ -74,6 +81,7 @@ struct ActivityTypeEditView: View {
                 Toggle("Repeat reminder", isOn: $hasCadence)
                 if hasCadence {
                     Stepper("Every \(intervalDays) days", value: $intervalDays, in: 1...365)
+                    DatePicker("Remind at", selection: $reminderTime, displayedComponents: .hourAndMinute)
                 }
             }
         }

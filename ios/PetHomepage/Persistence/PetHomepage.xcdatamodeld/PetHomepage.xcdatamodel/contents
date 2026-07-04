@@ -122,6 +122,8 @@
         <attribute name="defaultIntervalDays" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="sortOrder" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="isArchived" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="reminderHour" optional="YES" attributeType="Integer 64" defaultValueString="9" usesScalarValueType="YES"/>
+        <attribute name="reminderMinute" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="activityTypes" inverseEntity="Pet"/>
         <relationship name="logEntries" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="LogEntry" inverseName="activityType" inverseEntity="LogEntry"/>
     </entity>

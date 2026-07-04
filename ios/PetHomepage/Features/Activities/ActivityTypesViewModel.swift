@@ -23,8 +23,12 @@ final class ActivityTypesViewModel {
                 name: String,
                 category: ActivityCategory,
                 iconName: String,
-                defaultIntervalDays: Int) {
-        try? store.updateType(type, name: name, category: category, iconName: iconName, defaultIntervalDays: defaultIntervalDays)
+                defaultIntervalDays: Int,
+                reminderHour: Int = 9,
+                reminderMinute: Int = 0) {
+        try? store.updateType(type, name: name, category: category, iconName: iconName,
+                              defaultIntervalDays: defaultIntervalDays,
+                              reminderHour: reminderHour, reminderMinute: reminderMinute)
         reload()
     }
 }

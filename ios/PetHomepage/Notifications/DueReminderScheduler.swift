@@ -101,13 +101,16 @@ final class DueReminderScheduler {
         guard let due = log.nextDueAt else { return nil }
         let name = log.activityType?.name ?? "Activity"
         let dateComponents = calendar.dateComponents([.year, .month, .day], from: due)
+        // Use the activity type's own reminder time when available; otherwise the scheduler default.
+        let reminderHour = log.activityType.map { Int($0.reminderHour) } ?? hour
+        let reminderMinute = log.activityType.map { Int($0.reminderMinute) } ?? minute
         return PendingReminder(
             kind: .activity,
             entityID: log.id,
             title: "\(name) due",
             body: "Time for \(name)",
-            hour: hour,
-            minute: minute,
+            hour: reminderHour,
+            minute: reminderMinute,
             dateComponents: dateComponents
         )
     }

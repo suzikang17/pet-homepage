@@ -19,13 +19,17 @@ final class ActivityStore {
     func createType(name: String,
                     category: ActivityCategory,
                     iconName: String,
-                    defaultIntervalDays: Int) throws -> ActivityType {
+                    defaultIntervalDays: Int,
+                    reminderHour: Int = 9,
+                    reminderMinute: Int = 0) throws -> ActivityType {
         let type = ActivityType(context: context)
         type.id = UUID()
         type.name = name
         type.category = category
         type.iconName = iconName
         type.defaultIntervalDays = Int64(defaultIntervalDays)
+        type.reminderHour = Int64(reminderHour)
+        type.reminderMinute = Int64(reminderMinute)
         type.sortOrder = Int64(try types(includeArchived: true).count)
         type.isArchived = false
         type.pet = try petStore.ensurePet()
@@ -54,11 +58,15 @@ final class ActivityStore {
                     name: String,
                     category: ActivityCategory,
                     iconName: String,
-                    defaultIntervalDays: Int) throws {
+                    defaultIntervalDays: Int,
+                    reminderHour: Int = 9,
+                    reminderMinute: Int = 0) throws {
         type.name = name
         type.category = category
         type.iconName = iconName
         type.defaultIntervalDays = Int64(defaultIntervalDays)
+        type.reminderHour = Int64(reminderHour)
+        type.reminderMinute = Int64(reminderMinute)
         try context.save()
     }
 

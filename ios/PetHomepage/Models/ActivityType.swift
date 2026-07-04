@@ -10,6 +10,8 @@ public class ActivityType: NSManagedObject {
     @NSManaged public var defaultIntervalDays: Int64
     @NSManaged public var sortOrder: Int64
     @NSManaged public var isArchived: Bool
+    @NSManaged public var reminderHour: Int64
+    @NSManaged public var reminderMinute: Int64
     @NSManaged public var pet: Pet?
 }
 

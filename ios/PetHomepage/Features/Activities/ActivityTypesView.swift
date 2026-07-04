@@ -48,8 +48,10 @@ struct ActivityTypesView: View {
         }
         .onAppear { model.reload() }
         .sheet(item: $editingType, onDismiss: { model.reload() }) { type in
-            ActivityTypeEditView(type: type) { name, category, iconName, intervalDays in
-                model.update(type, name: name, category: category, iconName: iconName, defaultIntervalDays: intervalDays)
+            ActivityTypeEditView(type: type) { name, category, iconName, intervalDays, reminderHour, reminderMinute in
+                model.update(type, name: name, category: category, iconName: iconName,
+                             defaultIntervalDays: intervalDays,
+                             reminderHour: reminderHour, reminderMinute: reminderMinute)
             }
         }
     }
