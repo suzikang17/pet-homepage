@@ -6,10 +6,11 @@ struct VetVisitEditView: View {
     @Environment(\.dismiss) private var dismiss
 
     init(logStore: LogStore, dueScheduler: DueReminderScheduler, cadenceMonths: Int,
-         veterinarianStore: VeterinarianStore, editing: LogEntry?) {
+         veterinarianStore: VeterinarianStore, editing: LogEntry?, initialPhoto: Data? = nil) {
         _model = State(initialValue: VetVisitEditViewModel(logStore: logStore, dueScheduler: dueScheduler,
                                                            cadenceMonths: cadenceMonths,
-                                                           veterinarianStore: veterinarianStore, editing: editing))
+                                                           veterinarianStore: veterinarianStore, editing: editing,
+                                                           initialPhoto: initialPhoto))
     }
 
     var body: some View {
@@ -36,6 +37,13 @@ struct VetVisitEditView: View {
                     DatePicker("Next visit", selection: $model.nextVisitDate, displayedComponents: .date)
                 }
             }
+            PendingPhotoSection(
+                existing: model.existingPhotos,
+                pending: model.pendingPhotos,
+                onPick: { model.addPickedPhoto($0) },
+                onDeleteExisting: { model.deleteExisting($0) },
+                onRemovePending: { model.removePending(at: $0) }
+            )
         }
     }
 }

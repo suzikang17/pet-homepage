@@ -104,6 +104,61 @@ final class CaptureReviewViewModelTests: XCTestCase {
         XCTAssertEqual(doses.first?.photoArray.count, 1)
     }
 
+    func testSaveWithMarkerTagLogsMarkerWithValueUnitAndPhoto() async throws {
+        let vm = makeModel()
+        vm.pick(.marker(.weight))
+        vm.markerValue = "42.5"
+        vm.markerUnit = "lb"
+        vm.performedAt = Date(timeIntervalSince1970: 0)
+        try await vm.save()
+
+        let markers = try logStore.markers()
+        XCTAssertEqual(markers.count, 1)
+        let entry = try XCTUnwrap(markers.first)
+        XCTAssertEqual(entry.kind, .marker)
+        XCTAssertEqual(entry.markerType, .weight)
+        XCTAssertEqual(entry.value, 42.5)
+        XCTAssertEqual(entry.unit, "lb")
+        XCTAssertEqual(entry.photoArray.count, 1)
+    }
+
+    func testMarkerTagWithEmptyValueBlocksSave() {
+        let vm = makeModel()
+        vm.pick(.marker(.weight))
+
+        XCTAssertFalse(vm.isValid, "Save should stay disabled until a valid number is entered")
+    }
+
+    func testMarkerTagWithNonNumericValueBlocksSave() {
+        let vm = makeModel()
+        vm.pick(.marker(.weight))
+        vm.markerValue = "not a number"
+
+        XCTAssertFalse(vm.isValid)
+    }
+
+    func testMarkerTagWithValidValueAllowsSave() {
+        let vm = makeModel()
+        vm.pick(.marker(.weight))
+        vm.markerValue = "10"
+
+        XCTAssertTrue(vm.isValid)
+    }
+
+    func testSaveWithInvalidMarkerValueThrowsAndDoesNotCreateEntry() async throws {
+        let vm = makeModel()
+        vm.pick(.marker(.weight))
+        vm.markerValue = ""
+
+        do {
+            try await vm.save()
+            XCTFail("Expected save() to throw for an unparseable marker value")
+        } catch {
+            // expected
+        }
+        XCTAssertEqual(try logStore.markers().count, 0)
+    }
+
     func testActiveMedFilteringExcludesEndedMedications() throws {
         let ended = try medicationStore.create(
             drugName: "Old med",

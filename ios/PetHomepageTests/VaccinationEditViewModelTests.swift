@@ -34,4 +34,16 @@ final class VaccinationEditViewModelTests: XCTestCase {
         let pending = await fake.pendingIDs(kind: .vaccination)
         XCTAssertEqual(pending.count, 1)
     }
+
+    /// Capture-sheet handoff: a "Vaccine" tag on a captured photo opens this editor with the
+    /// photo already staged as a pending photo (vaccination has required fields, so it can't
+    /// instant-save from the capture sheet).
+    func testInitialPhotoSeedsPendingPhotos() {
+        let photo = Data([0xFF, 0xD8, 0xFF, 0xD9])
+        let vm = VaccinationEditViewModel(logStore: logStore, dueScheduler: dueScheduler,
+                                          veterinarianStore: veterinarianStore, editing: nil,
+                                          initialPhoto: photo)
+
+        XCTAssertEqual(vm.pendingPhotos, [photo])
+    }
 }

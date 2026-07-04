@@ -14,6 +14,8 @@ final class VetVisitEditViewModel {
     var nextVisitDate: Date = Date()
     var availableVets: [Veterinarian] = []
     var selectedVet: Veterinarian?
+    var pendingPhotos: [Data] = []
+    var existingPhotos: [Photo] = []
 
     private let logStore: LogStore
     private let dueScheduler: DueReminderScheduler
@@ -21,7 +23,7 @@ final class VetVisitEditViewModel {
     private let editing: LogEntry?
 
     init(logStore: LogStore, dueScheduler: DueReminderScheduler, cadenceMonths: Int,
-         veterinarianStore: VeterinarianStore, editing: LogEntry?) {
+         veterinarianStore: VeterinarianStore, editing: LogEntry?, initialPhoto: Data? = nil) {
         self.logStore = logStore
         self.dueScheduler = dueScheduler
         self.cadenceMonths = cadenceMonths
@@ -40,11 +42,26 @@ final class VetVisitEditViewModel {
         }
         availableVets = (try? veterinarianStore.veterinarians()) ?? []
         selectedVet = editing?.veterinarian
+        existingPhotos = editing?.photoArray ?? []
+        // Capture handoff: a photo tagged "Vet visit" in the capture sheet arrives pre-staged
+        // here (vet visits have required fields, so it can't instant-save from that sheet).
+        if let initialPhoto {
+            pendingPhotos.append(initialPhoto)
+        }
     }
 
     var isValid: Bool { true } // occurredAt always set; other fields optional
 
     private func nilIfEmpty(_ s: String) -> String? { s.isEmpty ? nil : s }
+
+    func addPickedPhoto(_ data: Data) { pendingPhotos.append(data) }
+    func removePending(at index: Int) {
+        if pendingPhotos.indices.contains(index) { pendingPhotos.remove(at: index) }
+    }
+    func deleteExisting(_ photo: Photo) {
+        try? logStore.deletePhoto(photo)
+        existingPhotos.removeAll { $0 == photo }
+    }
 
     func save() async throws {
         let next = hasNextVisit ? nextVisitDate : nil
@@ -63,6 +80,9 @@ final class VetVisitEditViewModel {
         }
         visit.veterinarian = selectedVet
         try? visit.managedObjectContext?.save()
+        for data in pendingPhotos {
+            try? logStore.addPhoto(to: visit, imageData: data)
+        }
         // Saving a visit changes "most recent visit" → re-sync the cadence reminder.
         let lastVisit = try? logStore.mostRecentVisitDate()
         await dueScheduler.syncVetCadence(

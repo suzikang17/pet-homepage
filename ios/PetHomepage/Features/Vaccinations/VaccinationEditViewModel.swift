@@ -19,7 +19,7 @@ final class VaccinationEditViewModel {
     private let editing: LogEntry?
 
     init(logStore: LogStore, dueScheduler: DueReminderScheduler,
-         veterinarianStore: VeterinarianStore, editing: LogEntry?) {
+         veterinarianStore: VeterinarianStore, editing: LogEntry?, initialPhoto: Data? = nil) {
         self.logStore = logStore
         self.dueScheduler = dueScheduler
         self.editing = editing
@@ -36,6 +36,11 @@ final class VaccinationEditViewModel {
         availableVets = (try? veterinarianStore.veterinarians()) ?? []
         selectedVet = editing?.veterinarian
         existingPhotos = editing?.photoArray ?? []
+        // Capture handoff: a photo tagged "Vaccine" in the capture sheet arrives pre-staged here
+        // (vaccination has required fields, so it can't instant-save from that sheet).
+        if let initialPhoto {
+            pendingPhotos.append(initialPhoto)
+        }
     }
 
     var isValid: Bool {

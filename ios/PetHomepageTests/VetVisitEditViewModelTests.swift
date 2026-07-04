@@ -17,10 +17,10 @@ final class VetVisitEditViewModelTests: XCTestCase {
     }
 
     private func makeVM(editing: LogEntry? = nil, cadenceMonths: Int = 6,
-                        dueScheduler: DueReminderScheduler) -> VetVisitEditViewModel {
+                        dueScheduler: DueReminderScheduler, initialPhoto: Data? = nil) -> VetVisitEditViewModel {
         VetVisitEditViewModel(logStore: logStore, dueScheduler: dueScheduler,
                               cadenceMonths: cadenceMonths, veterinarianStore: veterinarianStore,
-                              editing: editing)
+                              editing: editing, initialPhoto: initialPhoto)
     }
 
     func testSaveCreatesNewVisitAndResyncsCadence() async throws {
@@ -71,5 +71,27 @@ final class VetVisitEditViewModelTests: XCTestCase {
 
         XCTAssertEqual(try logStore.vetVisits().count, 1)
         XCTAssertEqual(try logStore.vetVisits().first?.clinicName, "Bayside (updated)")
+    }
+
+    /// Capture-sheet handoff: a "Vet visit" tag on a captured photo opens this editor with the
+    /// photo already staged as a pending photo (vet visits have required fields, so it can't
+    /// instant-save from the capture sheet).
+    func testInitialPhotoSeedsPendingPhotos() {
+        let photo = Data([0xFF, 0xD8, 0xFF, 0xD9])
+        let vm = makeVM(dueScheduler: DueReminderScheduler(scheduler: FakeNotificationScheduler()),
+                        initialPhoto: photo)
+
+        XCTAssertEqual(vm.pendingPhotos, [photo])
+    }
+
+    func testSaveAttachesPendingPhotos() async throws {
+        let vm = makeVM(dueScheduler: DueReminderScheduler(scheduler: FakeNotificationScheduler()),
+                        initialPhoto: Data([0xFF, 0xD8, 0xFF, 0xD9]))
+        vm.clinicName = "Bayside"
+
+        try await vm.save()
+
+        let saved = try logStore.vetVisits()
+        XCTAssertEqual(saved.first?.photoArray.count, 1)
     }
 }

@@ -3,11 +3,22 @@ import Foundation
 import Observation
 
 /// What a captured photo gets tagged as: nothing (plain diary entry), an activity occurrence,
-/// or a medication dose. Drives which LogStore create call `save()` makes.
+/// a medication dose, or a health marker reading. Drives which LogStore create call `save()`
+/// makes. Vaccine/vet visit are NOT tags here — they hand off to their own prefilled editors
+/// instead of saving through this sheet (see `RecordHandoff`).
 enum CaptureTag: Equatable {
     case none
     case activity(ActivityType)
     case medication(Medication)
+    case marker(MarkerType)
+}
+
+/// Record kinds that require their full editor (required fields, so no instant-save from the
+/// capture sheet): picking one closes the review sheet and hands the photo off to the matching
+/// prefilled editor. See `ContentView`'s staged-photo/onDismiss presentation pattern.
+enum RecordHandoff {
+    case vaccine
+    case vet
 }
 
 /// Backs the post-capture review-and-tag sheet: pick a tag, optional note/date, then log it
@@ -21,6 +32,11 @@ final class CaptureReviewViewModel {
     var performedAt: Date = Date()
     var availableTypes: [ActivityType] = []
     var activeMeds: [Medication] = []
+
+    /// Text-field-friendly value/unit for the `.marker` tag; only relevant while `tag` is
+    /// `.marker`. Mirrors MarkerEditViewModel's validation and unit defaults.
+    var markerValue: String = ""
+    var markerUnit: String = ""
 
     /// The tag OCR suggested, so the view can show a ✨ marker on the matching chip. Cleared
     /// whenever the user picks a different tag than the one suggested.
@@ -50,14 +66,36 @@ final class CaptureReviewViewModel {
         return trimmed.isEmpty ? nil : trimmed
     }
 
+    /// Unit choices for a marker type (empty = unit-less). Mirrors MarkerEditViewModel's picker
+    /// so capture-tagged markers get the same defaults.
+    func unitOptions(for markerType: MarkerType) -> [String] {
+        switch markerType {
+        case .weight: ["lb", "kg"]
+        case .temperature: ["°C", "°F"]
+        case .appetite, .energy, .water, .other: []
+        }
+    }
+
     /// Records a user-driven tag choice (chip tap). Clears the ✨ suggestion marker unless the
-    /// user happened to pick the same tag OCR already suggested.
+    /// user happened to pick the same tag OCR already suggested. Picking a marker type (re)seeds
+    /// its default unit.
     func pick(_ tag: CaptureTag) {
         self.tag = tag
         userPickedTag = true
         if suggestedTag != tag {
             suggestedTag = nil
         }
+        if case .marker(let type) = tag {
+            markerUnit = unitOptions(for: type).first ?? ""
+        }
+    }
+
+    /// False only while `.marker` is tagged and `markerValue` isn't a valid finite number —
+    /// blocks Save in the sheet until a real reading is entered.
+    var isValid: Bool {
+        guard case .marker = tag else { return true }
+        guard let parsed = Double(markerValue.trimmingCharacters(in: .whitespaces)) else { return false }
+        return parsed.isFinite
     }
 
     /// Runs on-device OCR against the photo and, on a match, pre-selects the corresponding chip —
@@ -106,7 +144,22 @@ final class CaptureReviewViewModel {
             entry = log
         case .medication(let med):
             entry = try logStore.logDose(for: med, at: performedAt, note: noteOrNil)
+        case .marker(let type):
+            guard let parsed = Double(markerValue.trimmingCharacters(in: .whitespaces)), parsed.isFinite else {
+                throw CaptureReviewError.invalidMarkerValue
+            }
+            let trimmedUnit = markerUnit.trimmingCharacters(in: .whitespaces)
+            entry = try logStore.logMarker(type: type,
+                                           value: parsed,
+                                           unit: trimmedUnit.isEmpty ? nil : trimmedUnit,
+                                           recordedAt: performedAt)
         }
         try logStore.addPhoto(to: entry, imageData: photo)
     }
+}
+
+enum CaptureReviewError: Error {
+    /// `.save()` was called while `.marker` was tagged but `markerValue` didn't parse — the UI
+    /// should never allow this (Save is disabled via `isValid`), but `save()` guards it too.
+    case invalidMarkerValue
 }

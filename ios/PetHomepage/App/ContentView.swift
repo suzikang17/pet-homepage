@@ -10,6 +10,15 @@ private struct CapturedPhoto: Identifiable {
     let data: Data
 }
 
+/// A record-editor handoff staged from the capture review sheet: which editor to open, with the
+/// photo that should arrive pre-staged as a pending photo. Wrapped so it can drive
+/// `.sheet(item:)` once the review sheet has fully dismissed.
+private struct HandoffPresentation: Identifiable {
+    let id = UUID()
+    let kind: RecordHandoff
+    let photo: Data
+}
+
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var context
 
@@ -28,6 +37,13 @@ struct ContentView: View {
     /// is a known SwiftUI flake (the sheet can silently never appear).
     @State private var pendingPhoto: Data?
     @State private var capturedPhoto: CapturedPhoto?
+    /// Staged the same way as `pendingPhoto`: a "Vaccine"/"Vet visit" chip in the review sheet
+    /// dismisses that sheet and records the handoff here; once the review sheet's `onDismiss`
+    /// fires, it's promoted to `activeHandoff` to present the prefilled editor. Presenting the
+    /// editor sheet in the same transaction as the review sheet's dismissal is the same known
+    /// SwiftUI flake as the camera cover above.
+    @State private var pendingHandoff: HandoffPresentation?
+    @State private var activeHandoff: HandoffPresentation?
 
     var body: some View {
         let petStore = PetStore(context: context)
@@ -171,15 +187,36 @@ struct ContentView: View {
                 await MainActor.run { libraryItem = nil }
             }
         }
-        .sheet(item: $capturedPhoto) { photo in
+        .sheet(item: $capturedPhoto, onDismiss: {
+            if let handoff = pendingHandoff {
+                pendingHandoff = nil
+                activeHandoff = handoff
+            }
+        }) { photo in
             CaptureReviewView(
                 photo: photo.data,
                 logStore: logStore,
                 activityStore: activityStore,
                 medicationStore: medicationStore,
                 dueScheduler: dueScheduler,
-                onSaved: {}
+                onSaved: {},
+                onHandoff: { kind in
+                    pendingHandoff = HandoffPresentation(kind: kind, photo: photo.data)
+                }
             )
+        }
+        .sheet(item: $activeHandoff) { handoff in
+            switch handoff.kind {
+            case .vaccine:
+                VaccinationEditView(logStore: logStore, dueScheduler: dueScheduler,
+                                     veterinarianStore: veterinarianStore, editing: nil,
+                                     initialPhoto: handoff.photo)
+            case .vet:
+                VetVisitEditView(logStore: logStore, dueScheduler: dueScheduler,
+                                  cadenceMonths: vetCadenceMonths,
+                                  veterinarianStore: veterinarianStore, editing: nil,
+                                  initialPhoto: handoff.photo)
+            }
         }
     }
 }
