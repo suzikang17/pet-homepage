@@ -18,6 +18,10 @@
 - **[`devlog/`](devlog/index.md)** — day-by-day session history (lore type `devlog`).
 - **`decisions/`** — ADRs.
 
+**Pretty viewer:** `open docs/site/index.html` — a browsable, brand-styled site of
+all of the above (sidebar, search, wikilinks). Regenerate after editing docs with
+`npm run docs:site`.
+
 Who should read which: see the wiki concept *who-reads-what*
 (`~/dev/wiki/concepts/who-reads-what.md`).
 

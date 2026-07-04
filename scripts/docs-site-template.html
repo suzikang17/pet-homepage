@@ -1,0 +1,257 @@
+<title>Homepage · Docs</title>
+<style>
+  :root{
+    --violet:#6C4CF1; --violet2:#9B5CF6; --coral:#FF6B5C;
+    --bg:#F4F3FA; --card:#FFFFFF; --ink:#16142A; --soft:#6E6A86;
+    --ok:#12B886; --warn:#F59E0B; --line:rgba(22,20,42,.08);
+    --disp:ui-rounded,-apple-system,BlinkMacSystemFont,"SF Pro Rounded","Segoe UI",sans-serif;
+    --body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15.5px;line-height:1.65}
+  #app{display:grid;grid-template-columns:288px 1fr;height:100vh}
+  a{color:var(--violet)}
+  ::selection{background:rgba(108,76,241,.18)}
+
+  /* ---------- sidebar ---------- */
+  #side{background:var(--card);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+  #brand{display:flex;align-items:center;gap:12px;padding:20px 18px 14px;cursor:pointer}
+  #brand .paw{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;color:#fff;font-size:19px;
+    background:linear-gradient(135deg,var(--violet),var(--violet2));box-shadow:0 6px 14px rgba(108,76,241,.35)}
+  #brand h1{font-family:var(--disp);font-weight:800;font-size:19px;margin:0;letter-spacing:-.01em}
+  #brand .sub{font-size:10.5px;font-weight:800;letter-spacing:.14em;color:var(--soft);text-transform:uppercase}
+  #search{margin:0 14px 10px;position:relative}
+  #search input{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:11px;
+    padding:9px 12px;font:inherit;font-size:13.5px;color:var(--ink);outline:none}
+  #search input:focus-visible{border-color:var(--violet);box-shadow:0 0 0 3px rgba(108,76,241,.15)}
+  #search kbd{position:absolute;right:9px;top:8px;font-family:var(--mono);font-size:10.5px;color:var(--soft);
+    border:1px solid var(--line);border-radius:5px;padding:1px 6px;background:var(--card)}
+  #nav{overflow-y:auto;padding:4px 14px 24px;min-height:0}
+  .navlabel{font-size:10.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--soft);
+    margin:16px 4px 6px;display:flex;justify-content:space-between;align-items:baseline}
+  .navlabel .n{font-family:var(--mono);font-size:10px}
+  .navdoc{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;background:none;cursor:pointer;
+    font:inherit;font-size:13.5px;color:var(--ink);padding:6px 10px;border-radius:9px;line-height:1.35}
+  .navdoc:hover{background:var(--bg)}
+  .navdoc.on{background:var(--violet);color:#fff;font-weight:600}
+  .navdoc:focus-visible{outline:2px solid var(--violet);outline-offset:1px}
+  .dot{width:7px;height:7px;border-radius:50%;flex:none}
+  .dot.shipped,.dot.current{background:var(--ok)} .dot.frozen{background:var(--warn)}
+  .dot.superseded{background:var(--soft)} .dot.none{background:transparent;border:1.5px solid var(--line)}
+  .navdoc.on .dot.none{border-color:rgba(255,255,255,.5)}
+  #nomatch{color:var(--soft);font-size:13px;padding:12px 10px;display:none}
+
+  /* ---------- main ---------- */
+  #main{overflow-y:auto;min-height:0;scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){#main{scroll-behavior:auto} .card,.navdoc{transition:none!important}}
+  #page{max-width:860px;margin:0 auto;padding:28px 40px 80px}
+
+  .hero{background:linear-gradient(135deg,var(--violet),var(--violet2));border-radius:24px;color:#fff;
+    padding:30px 32px 26px;box-shadow:0 14px 30px rgba(108,76,241,.28);margin-bottom:28px}
+  .hero .eyebrow{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;opacity:.85;
+    display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .hero h2{font-family:var(--disp);font-weight:800;font-size:clamp(26px,4vw,38px);margin:8px 0 0;
+    letter-spacing:-.015em;text-wrap:balance;line-height:1.12}
+  .hero .desc{margin:10px 0 0;opacity:.9;max-width:56ch}
+  .chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.05em;
+    background:rgba(255,255,255,.16);border-radius:99px;padding:3px 11px;text-transform:none}
+  .chip .dot{width:6px;height:6px}
+  .chip.shipped .dot,.chip.current .dot{background:#7BF0C9} .chip.frozen .dot{background:#FFD48A}
+  .chip.superseded .dot{background:rgba(255,255,255,.6)}
+
+  /* landing cards */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 20px;cursor:pointer;
+    text-align:left;font:inherit;color:var(--ink);transition:transform .15s,box-shadow .15s;box-shadow:0 4px 12px rgba(22,20,42,.04)}
+  .card:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(22,20,42,.09)}
+  .card:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
+  .card h3{font-family:var(--disp);font-weight:800;font-size:17px;margin:0 0 5px;display:flex;align-items:baseline;gap:8px}
+  .card h3 .n{font-family:var(--mono);font-size:11px;color:var(--violet);font-weight:600}
+  .card p{margin:0;color:var(--soft);font-size:13.5px;line-height:1.5}
+  .card .who{margin-top:10px;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--violet)}
+  .routing{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 24px;margin-top:26px}
+  .routing h3{font-family:var(--disp);font-weight:800;margin:0 0 8px;font-size:15px}
+  .routing p{margin:0;color:var(--soft);font-size:13.5px}
+  .routing b{color:var(--ink)}
+
+  /* ---------- article ---------- */
+  article{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:36px 44px 40px;
+    box-shadow:0 6px 18px rgba(22,20,42,.05)}
+  article>*:first-child{margin-top:0}
+  article h1{display:none}
+  article h2{font-family:var(--disp);font-weight:800;font-size:22px;letter-spacing:-.01em;margin:34px 0 10px;text-wrap:balance}
+  article h3{font-family:var(--disp);font-weight:800;font-size:17px;margin:26px 0 8px}
+  article h4{font-size:14px;font-weight:700;margin:20px 0 6px;text-transform:uppercase;letter-spacing:.07em;color:var(--soft)}
+  article p,article li{max-width:70ch}
+  article li{margin:3px 0}
+  article hr{border:0;border-top:1px solid var(--line);margin:28px 0}
+  article blockquote{margin:14px 0;padding:10px 18px;border-left:3px solid var(--violet2);
+    background:rgba(108,76,241,.05);border-radius:0 12px 12px 0;color:var(--soft)}
+  article blockquote p{margin:4px 0}
+  article code{font-family:var(--mono);font-size:.86em;background:rgba(108,76,241,.08);
+    border-radius:6px;padding:1.5px 6px}
+  article pre{background:#1D1A33;color:#EDEAFF;border-radius:14px;padding:18px 20px;overflow-x:auto;
+    font-family:var(--mono);font-size:12.5px;line-height:1.55}
+  article pre code{background:none;padding:0;color:inherit;font-size:inherit}
+  .tablewrap{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:14px}
+  article table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+  article th{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--soft);text-align:left;
+    background:var(--bg);padding:9px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+  article td{padding:9px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  article tr:last-child td{border-bottom:0}
+  .wiki{color:var(--violet);border-bottom:1.5px dotted rgba(108,76,241,.5);cursor:pointer;font-weight:500}
+  .wiki.dead{color:var(--soft);border-bottom-style:dashed;cursor:default}
+  input[type=checkbox]{accent-color:var(--violet)}
+  .pn{display:flex;justify-content:space-between;gap:12px;margin-top:22px}
+  .pn button{border:1px solid var(--line);background:var(--card);border-radius:13px;padding:12px 18px;font:inherit;
+    font-size:13px;cursor:pointer;color:var(--ink);max-width:48%;text-align:left}
+  .pn button:hover{border-color:var(--violet)} .pn button:focus-visible{outline:2px solid var(--violet)}
+  .pn .lbl{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--soft)}
+  mark{background:rgba(255,107,92,.28);border-radius:3px;padding:0 1px}
+
+  @media (max-width:760px){
+    #app{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+    #side{max-height:44vh;border-right:0;border-bottom:1px solid var(--line)}
+    #page{padding:20px 16px 60px}
+    article{padding:24px 20px}
+  }
+</style>
+
+<div id="app">
+  <aside id="side">
+    <div id="brand" onclick="go('')" tabindex="0" role="button" aria-label="Home" onkeydown="if(event.key==='Enter')go('')">
+      <div class="paw">🐾</div>
+      <div><h1>Homepage</h1><div class="sub">docs · homepage.pet</div></div>
+    </div>
+    <div id="search"><input id="q" type="search" placeholder="Search docs…" aria-label="Search docs"><kbd>/</kbd></div>
+    <nav id="nav" aria-label="Documentation"></nav>
+  </aside>
+  <div id="main"><div id="page"></div></div>
+</div>
+
+<script>
+const DATA = __DOCS_JSON__;
+const COLW = { architecture:"New engineer? Start here", features:"PM &amp; design: start here",
+  planning:"Founder brain: why + roadmap", specs:"Frozen intent, per feature", devlog:"What just happened" };
+const byId = DATA.docs;
+const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+/* ---------- tiny markdown renderer ---------- */
+function md(src){
+  const fences = [];
+  src = src.replace(/```([\s\S]*?)```/g, (_,c)=>{ fences.push(c.replace(/^\w*\n/,"")); return " F"+(fences.length-1)+" "; });
+  const lines = src.split("\n"); const out = []; let i=0;
+  const inline = t => esc(t)
+    .replace(/`([^`]+)`/g,(_,c)=>"<code>"+c+"</code>")
+    .replace(/\[\[([^\]]+)\]\]/g,(_,n)=>{ const d=resolve(n); return d?`<span class="wiki" onclick="go('doc/${d}')">${n}</span>`:`<span class="wiki dead" title="removed note">${n}</span>`; })
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g,(_,t2,u)=>{ if(/^https?:/.test(u)) return `<a href="${u}" target="_blank" rel="noopener">${t2}</a>`; const d=resolve(u.replace(/\.md$/,"").split("/").pop()); return d?`<span class="wiki" onclick="go('doc/${d}')">${t2}</span>`:t2; })
+    .replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>").replace(/(^|[\s(])\*([^*\n]+)\*/g,"$1<i>$2</i>")
+    .replace(/(^|[\s(])_([^_\n]+)_(?=[\s.,;:)!?]|$)/g,"$1<i>$2</i>");
+  while(i<lines.length){
+    let L = lines[i];
+    const f = L.match(/^ F(\d+) /); if(f){ out.push("<pre><code>"+esc(fences[+f[1]])+"</code></pre>"); i++; continue; }
+    if(/^\s*$/.test(L)){ i++; continue; }
+    const h = L.match(/^(#{1,4}) (.+)/); if(h){ out.push(`<h${h[1].length}>${inline(h[2])}</h${h[1].length}>`); i++; continue; }
+    if(/^---+$/.test(L)){ out.push("<hr>"); i++; continue; }
+    if(/^\|/.test(L)){ const rows=[]; while(i<lines.length && /^\|/.test(lines[i])){ rows.push(lines[i]); i++; }
+      const cells = r => r.replace(/^\||\|$/g,"").split("|").map(c=>c.trim());
+      let html = '<div class="tablewrap"><table><thead><tr>'+cells(rows[0]).map(c=>"<th>"+inline(c)+"</th>").join("")+"</tr></thead><tbody>";
+      for(let r=2;r<rows.length;r++) html += "<tr>"+cells(rows[r]).map(c=>"<td>"+inline(c)+"</td>").join("")+"</tr>";
+      out.push(html+"</tbody></table></div>"); continue; }
+    if(/^>/.test(L)){ const q=[]; while(i<lines.length && /^>/.test(lines[i])){ q.push(lines[i].replace(/^>\s?/,"")); i++; }
+      out.push("<blockquote><p>"+q.map(inline).join("<br>")+"</p></blockquote>"); continue; }
+    const li = L.match(/^(\s*)([-*]|\d+\.) (.+)/);
+    if(li){ const ord = /\d/.test(li[2]); const items=[];
+      while(i<lines.length){ const m=lines[i].match(/^(\s*)([-*]|\d+\.) (.+)/);
+        if(m){ items.push({ind:m[1].length,txt:m[3]}); i++; }
+        else if(/^\s{2,}\S/.test(lines[i]) && items.length){ items[items.length-1].txt += " "+lines[i].trim(); i++; }
+        else break; }
+      let html=(ord?"<ol>":"<ul>"); let depth=0;
+      for(const it of items){ const d=it.ind>=2?1:0;
+        if(d>depth){html+="<ul>";depth=d;} else if(d<depth){html+="</ul>";depth=d;}
+        let t=it.txt.replace(/^\[([ x])\] /,(_,c)=>`<input type="checkbox" disabled ${c==="x"?"checked":""}> `);
+        html+="<li>"+inline(t)+"</li>"; }
+      if(depth)html+="</ul>"; html+=(ord?"</ol>":"</ul>"); out.push(html); continue; }
+    const para=[L]; i++;
+    while(i<lines.length && !/^\s*$/.test(lines[i]) && !/^(#|\||>|---|[-*] |\d+\. | )/.test(lines[i])){ para.push(lines[i]); i++; }
+    out.push("<p>"+inline(para.join(" "))+"</p>");
+  }
+  return out.join("\n");
+}
+function resolve(name){
+  const n = name.trim().toLowerCase();
+  if(byId[n]) return n;
+  for(const id in byId){ if(id.toLowerCase()===n || byId[id].title.toLowerCase()===n) return id;
+    if(id.replace(/^\d+-/,"")===n.replace(/^\d+-/,"")) return id; }
+  return null;
+}
+
+/* ---------- views ---------- */
+const statusOf = d => (d.meta.status || (d.col==="devlog"||d.col==="specs"?"":"")) || "";
+function chips(d){
+  let h="";
+  const s=statusOf(d); if(s) h+=`<span class="chip ${s}"><span class="dot"></span>${s}</span>`;
+  if(d.meta.area) h+=`<span class="chip">${esc(d.meta.area)}</span>`;
+  if(d.meta.entry_point) h+=`<span class="chip">↳ ${esc(d.meta.entry_point)}</span>`;
+  if(d.meta.since||d.meta.date) h+=`<span class="chip">${esc(d.meta.since||d.meta.date)}</span>`;
+  return h;
+}
+function landing(){
+  const cards = DATA.collections.map(c=>`
+    <button class="card" onclick="go('doc/${c.docs[0]}')">
+      <h3>${c.label} <span class="n">${c.docs.length}</span></h3>
+      <p>${c.desc}</p><div class="who">${COLW[c.id]||""}</div>
+    </button>`).join("");
+  return `<div class="hero"><div class="eyebrow">pet-homepage · documentation</div>
+      <h2>Everything about Homepage, one pretty place.</h2>
+      <p class="desc">The iOS-first pet health tracker — its features, architecture, plans, and history. ${Object.keys(byId).length} docs across ${DATA.collections.length} collections.</p></div>
+    <div class="grid">${cards}</div>
+    <div class="routing"><h3>Who reads what</h3>
+      <p><b>What can it do?</b> → Features · <b>Why does it exist?</b> → Planning · <b>How is it built?</b> → Architecture ·
+      <b>What did we intend?</b> → Specs · <b>What just happened?</b> → Devlog · <b>ADRs</b> → none yet (docs/decisions/ is empty — first architectural decision record still to come).</p></div>`;
+}
+function docView(id){
+  const d = byId[id]; const col = DATA.collections.find(c=>c.id===d.col);
+  const idx = col.docs.indexOf(id);
+  const prev = col.docs[idx-1], next = col.docs[idx+1];
+  const pn = (prev||next)?`<div class="pn">
+      ${prev?`<button onclick="go('doc/${prev}')"><span class="lbl">← Previous</span>${esc(byId[prev].title)}</button>`:"<span></span>"}
+      ${next?`<button onclick="go('doc/${next}')" style="text-align:right"><span class="lbl">Next →</span>${esc(byId[next].title)}</button>`:""}
+    </div>`:"";
+  return `<div class="hero"><div class="eyebrow">${col.label} · ${idx+1} of ${col.docs.length} ${chips(d)}</div>
+      <h2>${esc(d.title)}</h2></div>
+    <article>${md(d.body)}</article>${pn}`;
+}
+
+/* ---------- nav + routing ---------- */
+function nav(filter){
+  const q = (filter||"").toLowerCase();
+  let html=""; let any=false;
+  for(const c of DATA.collections){
+    const docs = c.docs.filter(id => !q || byId[id].title.toLowerCase().includes(q) || byId[id].body.toLowerCase().includes(q));
+    if(!docs.length) continue; any=true;
+    html += `<div class="navlabel">${c.label}<span class="n">${docs.length}</span></div>`;
+    for(const id of docs){ const d=byId[id]; const s=statusOf(d)||"none";
+      html += `<button class="navdoc${location.hash==="#doc/"+id?" on":""}" onclick="go('doc/${id}')">
+        <span class="dot ${s}"></span><span>${esc(d.title)}</span></button>`; }
+  }
+  document.getElementById("nav").innerHTML = html || `<div id="nomatch" style="display:block">Nothing matches “${esc(filter)}”.</div>`;
+}
+function go(route){ location.hash = route; }
+function render(){
+  const h = location.hash.replace(/^#/,"");
+  const page = document.getElementById("page");
+  if(h.startsWith("doc/") && byId[h.slice(4)]) page.innerHTML = docView(h.slice(4));
+  else page.innerHTML = landing();
+  nav(document.getElementById("q").value);
+  document.getElementById("main").scrollTop = 0;
+}
+window.addEventListener("hashchange", render);
+document.getElementById("q").addEventListener("input", e => nav(e.target.value));
+document.addEventListener("keydown", e => {
+  if(e.key==="/" && document.activeElement.tagName!=="INPUT"){ e.preventDefault(); document.getElementById("q").focus(); }
+});
+render();
+</script>
