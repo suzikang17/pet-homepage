@@ -23,6 +23,10 @@ struct ContentView: View {
     @State private var showCamera = false
     @State private var showLibraryFallback = false
     @State private var libraryItem: PhotosPickerItem?
+    /// Staged during capture; promoted to `capturedPhoto` only after the camera cover has fully
+    /// dismissed. Presenting the review sheet in the same transaction as the cover's dismissal
+    /// is a known SwiftUI flake (the sheet can silently never appear).
+    @State private var pendingPhoto: Data?
     @State private var capturedPhoto: CapturedPhoto?
 
     var body: some View {
@@ -149,11 +153,16 @@ struct ContentView: View {
                 showLibraryFallback = true
             }
         }
-        .fullScreenCover(isPresented: $showCamera) {
+        .fullScreenCover(isPresented: $showCamera, onDismiss: {
+            if let data = pendingPhoto {
+                pendingPhoto = nil
+                capturedPhoto = CapturedPhoto(data: data)
+            }
+        }) {
             CameraPicker(
                 onCapture: { image in
                     if let jpeg = ImageDownscaler.scaledJPEG(from: image) {
-                        capturedPhoto = CapturedPhoto(data: jpeg)
+                        pendingPhoto = jpeg
                     }
                 },
                 onFinish: { showCamera = false }
