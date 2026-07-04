@@ -20,38 +20,25 @@ final class DiaryStoreTests: XCTestCase {
         return try context.fetch(request)
     }
 
-    func testVetVisitPhotoAppearsAsPetPhoto() throws {
-        let vetVisitStore = VetVisitStore(context: context, petStore: petStore)
-        let visit = try vetVisitStore.create(occurredAt: Date(), clinicName: "Bayside", vetName: nil,
-                                             reason: "checkup", diagnosis: nil, treatmentNotes: nil, nextVisitDate: nil)
-        try store.addPhoto(toVetVisit: visit, imageData: Data([0x9]))
-
-        XCTAssertEqual(visit.photoArray.count, 1)
-        XCTAssertEqual(try allPhotos().count, 1, "record photos are attached to the pet")
-        XCTAssertEqual(try allPhotos().first?.vetVisit, visit)
+    private func makeMedication() throws -> Medication {
+        let medStore = MedicationStore(context: context, petStore: petStore)
+        return try medStore.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily",
+                                   scheduleTime: Date(), startedAt: Date(), endedAt: nil, refillDueAt: nil)
     }
 
-    func testMedicationAndVaccinePhotosAreAttached() throws {
-        let medStore = MedicationStore(context: context, petStore: petStore)
-        let med = try medStore.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily",
-                                      scheduleTime: Date(), startedAt: Date(), endedAt: nil, refillDueAt: nil)
+    func testMedicationPhotoIsAttachedAndPetScoped() throws {
+        let med = try makeMedication()
         try store.addPhoto(toMedication: med, imageData: Data([0x1]))
 
-        let vaxStore = VaccinationStore(context: context, petStore: petStore)
-        let vax = try vaxStore.create(vaccineName: "Rabies", administeredAt: Date(),
-                                      nextDueAt: nil, lotNumber: nil, administeredBy: nil)
-        try store.addPhoto(toVaccination: vax, imageData: Data([0x2]))
-
         XCTAssertEqual(med.photoArray.count, 1)
-        XCTAssertEqual(vax.photoArray.count, 1)
-        XCTAssertEqual(try allPhotos().count, 2, "med + vaccine photos are attached")
+        XCTAssertEqual(try allPhotos().count, 1, "record photos are attached to the pet")
+        XCTAssertEqual(try allPhotos().first?.medication, med)
+        XCTAssertNotNil(try allPhotos().first?.pet)
     }
 
     func testDeletePhotoRemovesIt() throws {
-        let vetVisitStore = VetVisitStore(context: context, petStore: petStore)
-        let visit = try vetVisitStore.create(occurredAt: Date(), clinicName: "Bayside", vetName: nil,
-                                             reason: "checkup", diagnosis: nil, treatmentNotes: nil, nextVisitDate: nil)
-        let photo = try store.addPhoto(toVetVisit: visit, imageData: Data([0x9]))
+        let med = try makeMedication()
+        let photo = try store.addPhoto(toMedication: med, imageData: Data([0x9]))
         XCTAssertEqual(try allPhotos().count, 1)
 
         try store.deletePhoto(photo)

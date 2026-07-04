@@ -10,7 +10,6 @@ public class VetRecommendation: NSManagedObject {
     /// always assigns a date on create, so this non-optional declaration is safe.
     @NSManaged public var date: Date
     @NSManaged public var text: String
-    @NSManaged public var vetVisit: VetVisit?
     @NSManaged public var logEntry: LogEntry?
 }
 

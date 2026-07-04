@@ -1,8 +1,9 @@
 // ios/PetHomepage/Stores/DiaryStore.swift
 import CoreData
 
-/// Photo-attach service for the not-yet-unified record entities (vet visits, vaccinations,
-/// medications), pet-scoped. Diary entries and activity/dose photos now go through LogStore.
+/// Photo-attach service for Medication (a definition, so its photos hang off the med itself,
+/// not a LogEntry). Every occurrence photo — diary, activity, dose, vaccine, vet, marker — goes
+/// through LogStore.addPhoto(to:) instead.
 final class DiaryStore {
     private let context: NSManagedObjectContext
     private let petStore: PetStore
@@ -15,19 +16,6 @@ final class DiaryStore {
     // MARK: Photos
 
     @discardableResult
-    func addPhoto(toVetVisit visit: VetVisit, imageData: Data, caption: String? = nil, createdAt: Date = Date()) throws -> Photo {
-        let photo = Photo(context: context)
-        photo.id = UUID()
-        photo.imageData = imageData
-        photo.caption = caption
-        photo.createdAt = createdAt
-        photo.pet = try petStore.ensurePet()
-        photo.vetVisit = visit
-        try context.save()
-        return photo
-    }
-
-    @discardableResult
     func addPhoto(toMedication med: Medication, imageData: Data, caption: String? = nil, createdAt: Date = Date()) throws -> Photo {
         let photo = Photo(context: context)
         photo.id = UUID()
@@ -36,19 +24,6 @@ final class DiaryStore {
         photo.createdAt = createdAt
         photo.pet = try petStore.ensurePet()
         photo.medication = med
-        try context.save()
-        return photo
-    }
-
-    @discardableResult
-    func addPhoto(toVaccination vax: Vaccination, imageData: Data, caption: String? = nil, createdAt: Date = Date()) throws -> Photo {
-        let photo = Photo(context: context)
-        photo.id = UUID()
-        photo.imageData = imageData
-        photo.caption = caption
-        photo.createdAt = createdAt
-        photo.pet = try petStore.ensurePet()
-        photo.vaccination = vax
         try context.save()
         return photo
     }

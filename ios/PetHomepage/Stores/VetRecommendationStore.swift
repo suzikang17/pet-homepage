@@ -2,9 +2,7 @@
 import CoreData
 
 /// Logs recommendations a vet gave. Each may link to a vet-visit LogEntry (logEntry != nil)
-/// or stand alone (logEntry == nil — "the vet said X over the phone"). Retargeted from
-/// VetVisit to LogEntry; the legacy `vetVisit` relationship still exists on VetRecommendation
-/// but is never written by this store anymore.
+/// or stand alone (logEntry == nil — "the vet said X over the phone").
 final class VetRecommendationStore {
     private let context: NSManagedObjectContext
 

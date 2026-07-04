@@ -12,8 +12,6 @@ public class Veterinarian: NSManagedObject {
     @NSManaged public var website: String?
     @NSManaged public var notes: String?
     @NSManaged public var pet: Pet?
-    @NSManaged public var vetVisits: NSSet?
-    @NSManaged public var vaccinations: NSSet?
     @NSManaged public var medications: NSSet?
     @NSManaged public var logEntries: NSSet?
 }

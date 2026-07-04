@@ -2,9 +2,7 @@
 import CoreData
 
 /// Daily logs under a symptom occurrence. Each entry links to a parent `LogEntry` (kind
-/// `.symptom`). Retargeted from `SymptomEpisode` to `LogEntry` — the legacy `episode`
-/// relationship still exists on `SymptomEntry` but is never written by this store anymore.
-/// Follows the VetRecommendationStore (parent-linked) pattern.
+/// `.symptom`). Follows the VetRecommendationStore (parent-linked) pattern.
 final class SymptomEntryStore {
     private let context: NSManagedObjectContext
 

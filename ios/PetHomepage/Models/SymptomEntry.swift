@@ -30,7 +30,6 @@ public class SymptomEntry: NSManagedObject {
     @NSManaged public var severityRaw: String
     @NSManaged public var note: String?
     @NSManaged public var suspectedCause: String?
-    @NSManaged public var episode: SymptomEpisode?
     @NSManaged public var logEntry: LogEntry?
 }
 

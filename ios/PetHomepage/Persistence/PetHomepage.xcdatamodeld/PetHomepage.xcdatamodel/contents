@@ -9,10 +9,6 @@
         <attribute name="adoptionDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="photoData" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
         <relationship name="medications" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Medication" inverseName="pet" inverseEntity="Medication"/>
-        <relationship name="vaccinations" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Vaccination" inverseName="pet" inverseEntity="Vaccination"/>
-        <relationship name="vetVisits" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="VetVisit" inverseName="pet" inverseEntity="VetVisit"/>
-        <relationship name="healthMarkers" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="HealthMarker" inverseName="pet" inverseEntity="HealthMarker"/>
-        <relationship name="symptomEpisodes" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="SymptomEpisode" inverseName="pet" inverseEntity="SymptomEpisode"/>
         <relationship name="veterinarians" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Veterinarian" inverseName="pet" inverseEntity="Veterinarian"/>
         <relationship name="photos" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Photo" inverseName="pet" inverseEntity="Photo"/>
         <relationship name="activityTypes" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ActivityType" inverseName="pet" inverseEntity="ActivityType"/>
@@ -32,55 +28,11 @@
         <relationship name="photos" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Photo" inverseName="medication" inverseEntity="Photo"/>
         <relationship name="logEntries" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="LogEntry" inverseName="medication" inverseEntity="LogEntry"/>
     </entity>
-    <entity name="Vaccination" representedClassName="Vaccination" syncable="YES" codeGenerationType="none">
-        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
-        <attribute name="vaccineName" optional="NO" attributeType="String" defaultValueString=""/>
-        <attribute name="administeredAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
-        <attribute name="nextDueAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
-        <attribute name="lotNumber" optional="YES" attributeType="String"/>
-        <attribute name="administeredBy" optional="YES" attributeType="String"/>
-        <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="vaccinations" inverseEntity="Pet"/>
-        <relationship name="veterinarian" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Veterinarian" inverseName="vaccinations" inverseEntity="Veterinarian"/>
-        <relationship name="photos" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Photo" inverseName="vaccination" inverseEntity="Photo"/>
-    </entity>
-    <entity name="VetVisit" representedClassName="VetVisit" syncable="YES" codeGenerationType="none">
-        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
-        <attribute name="occurredAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
-        <attribute name="clinicName" optional="YES" attributeType="String"/>
-        <attribute name="vetName" optional="YES" attributeType="String"/>
-        <attribute name="reason" optional="YES" attributeType="String"/>
-        <attribute name="diagnosis" optional="YES" attributeType="String"/>
-        <attribute name="treatmentNotes" optional="YES" attributeType="String"/>
-        <attribute name="nextVisitDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
-        <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="vetVisits" inverseEntity="Pet"/>
-        <relationship name="recommendations" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="VetRecommendation" inverseName="vetVisit" inverseEntity="VetRecommendation"/>
-        <relationship name="veterinarian" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Veterinarian" inverseName="vetVisits" inverseEntity="Veterinarian"/>
-        <relationship name="photos" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Photo" inverseName="vetVisit" inverseEntity="Photo"/>
-    </entity>
     <entity name="VetRecommendation" representedClassName="VetRecommendation" syncable="YES" codeGenerationType="none">
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="text" optional="NO" attributeType="String" defaultValueString=""/>
-        <relationship name="vetVisit" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="VetVisit" inverseName="recommendations" inverseEntity="VetVisit"/>
         <relationship name="logEntry" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="LogEntry" inverseName="recommendations" inverseEntity="LogEntry"/>
-    </entity>
-    <entity name="HealthMarker" representedClassName="HealthMarker" syncable="YES" codeGenerationType="none">
-        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
-        <attribute name="markerTypeRaw" optional="NO" attributeType="String" defaultValueString=""/>
-        <attribute name="value" optional="YES" attributeType="Double" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="unit" optional="YES" attributeType="String"/>
-        <attribute name="recordedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
-        <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="healthMarkers" inverseEntity="Pet"/>
-    </entity>
-    <entity name="SymptomEpisode" representedClassName="SymptomEpisode" syncable="YES" codeGenerationType="none">
-        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
-        <attribute name="categoryRaw" optional="NO" attributeType="String" defaultValueString=""/>
-        <attribute name="title" optional="YES" attributeType="String"/>
-        <attribute name="startedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
-        <attribute name="resolvedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
-        <attribute name="statusRaw" optional="NO" attributeType="String" defaultValueString="active"/>
-        <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="symptomEpisodes" inverseEntity="Pet"/>
-        <relationship name="entries" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="SymptomEntry" inverseName="episode" inverseEntity="SymptomEntry"/>
     </entity>
     <entity name="SymptomEntry" representedClassName="SymptomEntry" syncable="YES" codeGenerationType="none">
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
@@ -88,7 +40,6 @@
         <attribute name="severityRaw" optional="NO" attributeType="String" defaultValueString="mild"/>
         <attribute name="note" optional="YES" attributeType="String"/>
         <attribute name="suspectedCause" optional="YES" attributeType="String"/>
-        <relationship name="episode" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="SymptomEpisode" inverseName="entries" inverseEntity="SymptomEpisode"/>
         <relationship name="logEntry" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="LogEntry" inverseName="symptomEntries" inverseEntity="LogEntry"/>
     </entity>
     <entity name="Veterinarian" representedClassName="Veterinarian" syncable="YES" codeGenerationType="none">
@@ -101,8 +52,6 @@
         <attribute name="website" optional="YES" attributeType="String"/>
         <attribute name="notes" optional="YES" attributeType="String"/>
         <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="veterinarians" inverseEntity="Pet"/>
-        <relationship name="vetVisits" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="VetVisit" inverseName="veterinarian" inverseEntity="VetVisit"/>
-        <relationship name="vaccinations" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Vaccination" inverseName="veterinarian" inverseEntity="Vaccination"/>
         <relationship name="medications" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Medication" inverseName="veterinarian" inverseEntity="Medication"/>
         <relationship name="logEntries" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="LogEntry" inverseName="veterinarian" inverseEntity="LogEntry"/>
     </entity>
@@ -112,9 +61,7 @@
         <attribute name="caption" optional="YES" attributeType="String"/>
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="photos" inverseEntity="Pet"/>
-        <relationship name="vetVisit" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="VetVisit" inverseName="photos" inverseEntity="VetVisit"/>
         <relationship name="medication" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Medication" inverseName="photos" inverseEntity="Medication"/>
-        <relationship name="vaccination" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Vaccination" inverseName="photos" inverseEntity="Vaccination"/>
         <relationship name="logEntry" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="LogEntry" inverseName="photos" inverseEntity="LogEntry"/>
     </entity>
     <entity name="ActivityType" representedClassName="ActivityType" syncable="YES" codeGenerationType="none">
