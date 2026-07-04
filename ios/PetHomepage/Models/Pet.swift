@@ -20,3 +20,5 @@ extension Pet {
         NSFetchRequest<Pet>(entityName: "Pet")
     }
 }
+
+extension Pet: Identifiable {} // `id: UUID` satisfies Identifiable for sheets/lists

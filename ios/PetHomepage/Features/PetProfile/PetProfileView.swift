@@ -11,6 +11,9 @@ struct PetProfileView: View {
     @State private var photoItem: PhotosPickerItem?
     @State private var showPhotoPicker = false
     @State private var cropTarget: PickedImage?
+    @State private var showAvatarActions = false
+    @State private var showPetSwitcher = false
+    @State private var showAddPet = false
 
     // Dashboard data, refreshed on appear + after any add.
     @State private var upcoming: [TimelineItem] = []
@@ -40,7 +43,7 @@ struct PetProfileView: View {
                     subtitle: model.name.isEmpty ? "Your pet" : model.name,
                     systemImage: speciesIcon,
                     backgroundImage: avatarImage,
-                    onTapAvatar: { showPhotoPicker = true },
+                    onTapAvatar: { showAvatarActions = true },
                     onSettings: settings != nil ? { showSettings = true } : nil
                 )
 
@@ -70,6 +73,25 @@ struct PetProfileView: View {
             .onChange(of: photoItem) { _, item in if let item { loadPhoto(item) } }
             .sheet(item: $cropTarget) { picked in
                 PhotoCropView(image: picked.image) { model.setPhoto($0) }
+            }
+            // The avatar tap is one affordance with three intents. A confirmationDialog (rather
+            // than turning the tap into a Menu) keeps HeroHeader's `onTapAvatar: (() -> Void)?`
+            // API untouched — it's the only call site, but this is still the smaller diff.
+            .confirmationDialog("Pet", isPresented: $showAvatarActions, titleVisibility: .hidden) {
+                Button("Switch pet…") { showPetSwitcher = true }
+                Button("Add pet…") { showAddPet = true }
+                Button("Change photo…") { showPhotoPicker = true }
+                Button("Cancel", role: .cancel) {}
+            }
+            .sheet(isPresented: $showPetSwitcher) {
+                PetSwitcherView(pets: model.pets, activePetID: model.activePetID) { pet in
+                    switchTo(pet)
+                }
+            }
+            .sheet(isPresented: $showAddPet) {
+                AddPetSheet { name, species in
+                    addPet(name: name, species: species)
+                }
             }
             .onAppear { model.reload(); refresh() }
         }
@@ -214,6 +236,29 @@ struct PetProfileView: View {
         guard let s = timelineServices else { return }
         _ = try? s.logStore.logDose(for: med, at: Date())
         refresh()
+    }
+
+    /// Switches the active pet, seeds its starter activity types (idempotent), then reloads the
+    /// hero + dashboard slices so they reflect the newly active pet.
+    private func switchTo(_ pet: Pet) {
+        model.switchTo(pet)
+        seedActivityDefaultsIfPossible()
+        model.reload()
+        refresh()
+    }
+
+    /// Creates + activates a new pet, seeds its starter activity types, then reloads.
+    private func addPet(name: String, species: String) {
+        model.addPet(name: name, species: species)
+        seedActivityDefaultsIfPossible()
+        model.reload()
+        refresh()
+    }
+
+    /// `timelineServices` can be nil (e.g. previews), so seeding is best-effort.
+    private func seedActivityDefaultsIfPossible() {
+        guard let s = timelineServices else { return }
+        try? s.activityStore.seedDefaultsIfNeeded()
     }
 
 
