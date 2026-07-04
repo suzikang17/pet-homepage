@@ -137,6 +137,7 @@ struct HeroHeader: View {
     private var avatarView: some View {
         if let onTapAvatar {
             Button(action: onTapAvatar) { avatarBadge }.buttonStyle(.plain)
+                .accessibilityIdentifier("heroAvatarButton")
         } else {
             avatarCircle
         }

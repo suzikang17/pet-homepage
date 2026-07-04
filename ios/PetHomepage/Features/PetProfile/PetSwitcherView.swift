@@ -28,10 +28,15 @@ struct PetSwitcherView: View {
                         if pet.id == activePetID {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundStyle(Theme.primary)
+                                .accessibilityIdentifier("petSwitcherCheckmark")
                         }
                     }
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("petSwitcherRow.\(pet.name)")
+                // SwiftUI flattens a Button's children into one accessibility element, hiding
+                // the checkmark image from XCUITest — expose active-ness as the row's value.
+                .accessibilityValue(pet.id == activePetID ? "active" : "")
             }
             .navigationTitle("Switch pet")
             .navigationBarTitleDisplayMode(.inline)
@@ -89,6 +94,7 @@ struct AddPetSheet: View {
         ) {
             Section("Pet") {
                 TextField("Name", text: $name)
+                    .accessibilityIdentifier("addPetNameField")
                 TextField("Species", text: $species)
             }
         }

@@ -98,12 +98,17 @@ struct ContentView: View {
         )
         let extractEndpoint = UserDefaults.standard.string(forKey: "extractEndpoint") ?? ""
         let extractSecret = UserDefaults.standard.string(forKey: "extractSecret") ?? ""
-        let extractionService = URLSessionExtractionService(
-            config: ExtractionConfig(
-                endpoint: URL(string: extractEndpoint) ?? URL(string: "https://example.invalid/api/extract")!,
-                secret: extractSecret.isEmpty ? nil : extractSecret
+        // Under `--uitest` with no endpoint configured, extraction is genuinely unusable — pass
+        // nil so the "Scan a record" menu entry stays hidden (deterministic for UI tests).
+        // Normal launches keep the existing always-on service (it just errors until configured).
+        let extractionService: ExtractionService? = (UITestSupport.isUITest && extractEndpoint.isEmpty)
+            ? nil
+            : URLSessionExtractionService(
+                config: ExtractionConfig(
+                    endpoint: URL(string: extractEndpoint) ?? URL(string: "https://example.invalid/api/extract")!,
+                    secret: extractSecret.isEmpty ? nil : extractSecret
+                )
             )
-        )
         let settingsViewModel = SettingsViewModel(
             settings: mirrorSettings,
             coordinator: mirrorCoordinator,
@@ -150,6 +155,14 @@ struct ContentView: View {
         .onChange(of: selectedTab) { old, new in
             guard new == 2 else { return }
             selectedTab = old
+            // `--uitest-stub-camera`: skip the real camera/library picker entirely and land
+            // straight on the review-and-tag sheet with a generated photo already staged.
+            if UITestSupport.stubCamera {
+                if let jpeg = UITestSupport.stubPhotoJPEG() {
+                    capturedPhoto = CapturedPhoto(data: jpeg)
+                }
+                return
+            }
             if CameraPicker.isAvailable {
                 showCamera = true
             } else {

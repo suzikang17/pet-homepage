@@ -65,6 +65,7 @@ struct TimelineView: View {
                     }
                     .pickerStyle(.segmented)
                     .padding(.horizontal, 18)
+                    .accessibilityIdentifier("timelineViewModePicker")
 
                     if viewMode == .stream {
                         chips
@@ -109,6 +110,7 @@ struct TimelineView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
         }
+        .accessibilityIdentifier("timelineChipsStrip")
     }
 
     private func chip(_ title: String, active: Bool, _ action: @escaping () -> Void) -> some View {
@@ -122,6 +124,7 @@ struct TimelineView: View {
                 .overlay(Capsule().stroke(Theme.ink.opacity(active ? 0 : 0.08)))
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("timelineChip.\(title)")
     }
 
     @ViewBuilder
@@ -142,6 +145,7 @@ struct TimelineView: View {
                                 .frame(maxWidth: .infinity)
                                 .clipped()
                                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                .accessibilityIdentifier("timelinePhotoCell")
                         }
                     }
                 }
@@ -241,6 +245,7 @@ struct TimelineView: View {
                 .background(Theme.primary, in: Circle())
                 .shadow(color: Theme.primary.opacity(0.35), radius: 12, y: 5)
         }
+        .accessibilityIdentifier("timelineAddButton")
         .padding(.trailing, 22)
         .padding(.bottom, 24)
     }

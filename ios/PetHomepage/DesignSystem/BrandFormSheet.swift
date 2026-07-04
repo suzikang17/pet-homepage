@@ -17,6 +17,7 @@ struct SheetHeader: View {
             HStack {
                 Button("Cancel", action: onCancel)
                     .foregroundStyle(.white.opacity(0.95))
+                    .accessibilityIdentifier("sheet.cancel")
                 Spacer()
                 if let onConfirm {
                     Button(action: onConfirm) {
@@ -25,6 +26,7 @@ struct SheetHeader: View {
                     .foregroundStyle(.white)
                     .disabled(confirmDisabled)
                     .opacity(confirmDisabled ? 0.45 : 1)
+                    .accessibilityIdentifier("sheet.save")
                 }
             }
             HStack(spacing: 10) {
