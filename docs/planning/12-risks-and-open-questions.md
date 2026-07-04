@@ -1,3 +1,9 @@
+---
+lore_type: planning
+title: "Risks and Open Questions"
+status: frozen
+---
+
 # Risks and Open Questions
 
 An honest inventory of what could kill this product, and the things we don't know yet. Review periodically. Update as things resolve.

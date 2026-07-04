@@ -1,3 +1,9 @@
+---
+lore_type: planning
+title: "Problem and Users"
+status: frozen
+---
+
 # Problem and Users
 
 ## The problem

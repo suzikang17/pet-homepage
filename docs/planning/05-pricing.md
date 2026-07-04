@@ -1,3 +1,9 @@
+---
+lore_type: planning
+title: "Pricing"
+status: frozen
+---
+
 # Pricing
 
 ## Strategy summary

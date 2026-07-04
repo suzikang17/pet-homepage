@@ -1,0 +1,21 @@
+name: planning
+dir: planning
+heading: Planning
+id: { strategy: slug }
+body: free
+frontmatter:
+  - { name: title, type: string, required: true }
+  - { name: status, type: enum, values: [current, frozen, superseded], required: true }
+  - { name: created, type: date }
+index:
+  - { header: Doc, source: title, link: true }
+  - { header: Status, source: status }
+prompt: |
+  You are writing a planning doc — a point-in-time business/product-planning chapter
+  (vision, problem/users, pricing, competition, partnerships, risks, roadmap).
+  Audience: founder/PM. Given a title, produce the markdown body only (no frontmatter).
+
+  Planning docs argue WHY and WHAT-NEXT, never what currently exists (that's the
+  feature type) or how it's built (architecture). They freeze once the phase they
+  were written in ends — mark status accordingly rather than rewriting history;
+  supersede with a new doc when thinking changes materially.

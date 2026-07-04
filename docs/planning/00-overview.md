@@ -1,3 +1,9 @@
+---
+lore_type: planning
+title: "Overview"
+status: frozen
+---
+
 # Overview
 
 ## Brand

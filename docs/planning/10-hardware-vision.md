@@ -1,3 +1,9 @@
+---
+lore_type: planning
+title: "Hardware Vision"
+status: frozen
+---
+
 # Hardware Vision
 
 ## TL;DR

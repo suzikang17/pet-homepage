@@ -1,3 +1,9 @@
+---
+lore_type: planning
+title: "Vet Partnerships"
+status: frozen
+---
+
 # Vet Partnerships
 
 ## TL;DR

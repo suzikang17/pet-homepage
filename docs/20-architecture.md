@@ -80,3 +80,4 @@ Next.js (repo root `app/`, `components/`) + Convex (`convex/`):
 - Specs: `docs/superpowers/specs/` (activities, full unification, multi-pet).
 - Day-by-day history: `docs/devlog/` (lore).
 - Feature inventory: `docs/features/` (lore `feature` type — the PM-facing view).
+- Business/product planning: `docs/planning/` (lore `planning` type — mostly frozen Phase-0 chapters + the roadmap).

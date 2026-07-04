@@ -1,3 +1,9 @@
+---
+lore_type: planning
+title: "Competition"
+status: frozen
+---
+
 # Competition
 
 Research date: **April 2026.**

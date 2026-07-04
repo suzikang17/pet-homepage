@@ -1,3 +1,9 @@
+---
+lore_type: planning
+title: "Roadmap"
+status: current
+---
+
 # Roadmap
 
 Multi-year phased plan. Designed to be flexible — each phase gates the next based on validation signals.
