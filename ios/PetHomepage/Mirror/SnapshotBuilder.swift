@@ -13,7 +13,6 @@ final class SnapshotBuilder {
     private let petStore: PetStore
     private let medicationStore: MedicationStore
     private let recommendationStore: VetRecommendationStore
-    private let symptomEpisodeStore: SymptomEpisodeStore
     private let symptomEntryStore: SymptomEntryStore
     private let veterinarianStore: VeterinarianStore
     private let logStore: LogStore
@@ -22,7 +21,6 @@ final class SnapshotBuilder {
     init(petStore: PetStore,
          medicationStore: MedicationStore,
          recommendationStore: VetRecommendationStore,
-         symptomEpisodeStore: SymptomEpisodeStore,
          symptomEntryStore: SymptomEntryStore,
          veterinarianStore: VeterinarianStore? = nil,
          logStore: LogStore? = nil,
@@ -30,7 +28,6 @@ final class SnapshotBuilder {
         self.petStore = petStore
         self.medicationStore = medicationStore
         self.recommendationStore = recommendationStore
-        self.symptomEpisodeStore = symptomEpisodeStore
         self.symptomEntryStore = symptomEntryStore
         self.veterinarianStore = veterinarianStore ?? VeterinarianStore(context: petStore.context, petStore: petStore)
         self.logStore = logStore ?? LogStore(context: petStore.context, petStore: petStore)
@@ -107,12 +104,12 @@ final class SnapshotBuilder {
             )
         }
 
-        let symptomEpisodes = try symptomEpisodeStore.episodes().map { episode in
+        let symptomEpisodes = try logStore.episodes().map { episode in
             SymptomEpisodeSnapshot(
                 id: episode.id,
                 category: episode.category.rawValue,
                 title: episode.title,
-                startedAt: episode.startedAt,
+                startedAt: episode.performedAt,
                 resolvedAt: episode.resolvedAt,
                 status: episode.status.rawValue,
                 entries: try symptomEntryStore.entries(for: episode).map {

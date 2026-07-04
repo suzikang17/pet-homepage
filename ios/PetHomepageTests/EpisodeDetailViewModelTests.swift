@@ -5,20 +5,20 @@ import CoreData
 
 final class EpisodeDetailViewModelTests: XCTestCase {
     private var context: NSManagedObjectContext!
-    private var episodeStore: SymptomEpisodeStore!
+    private var logStore: LogStore!
     private var entryStore: SymptomEntryStore!
 
     override func setUpWithError() throws {
         context = PersistenceController(inMemory: true).container.viewContext
         let petStore = PetStore(context: context)
         try petStore.createPet(name: "Sandy", species: "dog")
-        episodeStore = SymptomEpisodeStore(context: context, petStore: petStore)
+        logStore = LogStore(context: context, petStore: petStore)
         entryStore = SymptomEntryStore(context: context)
     }
 
     private func makeVM() throws -> EpisodeDetailViewModel {
-        let episode = try episodeStore.start(category: .digestive, title: "Loose stool", startedAt: Date(timeIntervalSince1970: 0))
-        return EpisodeDetailViewModel(episode: episode, episodeStore: episodeStore, entryStore: entryStore)
+        let episode = try logStore.startEpisode(category: .digestive, title: "Loose stool", startedAt: Date(timeIntervalSince1970: 0))
+        return EpisodeDetailViewModel(episode: episode, logStore: logStore, entryStore: entryStore)
     }
 
     func testLoadShowsEntriesOldestFirst() throws {

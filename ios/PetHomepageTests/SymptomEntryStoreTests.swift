@@ -5,17 +5,17 @@ import CoreData
 
 final class SymptomEntryStoreTests: XCTestCase {
     private var context: NSManagedObjectContext!
-    private var episodeStore: SymptomEpisodeStore!
+    private var logStore: LogStore!
 
     override func setUpWithError() throws {
         context = PersistenceController(inMemory: true).container.viewContext
         let petStore = PetStore(context: context)
         try petStore.createPet(name: "Sandy", species: "dog")
-        episodeStore = SymptomEpisodeStore(context: context, petStore: petStore)
+        logStore = LogStore(context: context, petStore: petStore)
     }
 
-    private func makeEpisode() throws -> SymptomEpisode {
-        try episodeStore.start(category: .digestive, title: "Loose stool", startedAt: Date(timeIntervalSince1970: 0))
+    private func makeEpisode() throws -> LogEntry {
+        try logStore.startEpisode(category: .digestive, title: "Loose stool", startedAt: Date(timeIntervalSince1970: 0))
     }
 
     func testAddEntryLinksToEpisode() throws {
@@ -28,7 +28,7 @@ final class SymptomEntryStoreTests: XCTestCase {
                                        note: "Skipped breakfast",
                                        suspectedCause: "New treats")
 
-        XCTAssertEqual(entry.episode?.id, episode.id)
+        XCTAssertEqual(entry.logEntry?.id, episode.id)
         XCTAssertEqual(entry.severity, .moderate)
         XCTAssertEqual(entry.note, "Skipped breakfast")
         XCTAssertEqual(entry.suspectedCause, "New treats")
@@ -49,7 +49,7 @@ final class SymptomEntryStoreTests: XCTestCase {
     func testEntriesAreScopedToTheirEpisode() throws {
         let store = SymptomEntryStore(context: context)
         let a = try makeEpisode()
-        let b = try episodeStore.start(category: .skin, title: "Itch", startedAt: Date(timeIntervalSince1970: 5_000))
+        let b = try logStore.startEpisode(category: .skin, title: "Itch", startedAt: Date(timeIntervalSince1970: 5_000))
         try store.addEntry(to: a, date: Date(timeIntervalSince1970: 1_000), severity: .mild, note: nil, suspectedCause: nil)
         try store.addEntry(to: a, date: Date(timeIntervalSince1970: 2_000), severity: .mild, note: nil, suspectedCause: nil)
         try store.addEntry(to: b, date: Date(timeIntervalSince1970: 6_000), severity: .severe, note: nil, suspectedCause: nil)

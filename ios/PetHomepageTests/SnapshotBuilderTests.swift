@@ -9,7 +9,6 @@ final class SnapshotBuilderTests: XCTestCase {
     private var medicationStore: MedicationStore!
     private var logStore: LogStore!
     private var recommendationStore: VetRecommendationStore!
-    private var symptomEpisodeStore: SymptomEpisodeStore!
     private var symptomEntryStore: SymptomEntryStore!
     private var activityStore: ActivityStore!
 
@@ -19,7 +18,6 @@ final class SnapshotBuilderTests: XCTestCase {
         medicationStore = MedicationStore(context: context, petStore: petStore)
         logStore = LogStore(context: context, petStore: petStore)
         recommendationStore = VetRecommendationStore(context: context)
-        symptomEpisodeStore = SymptomEpisodeStore(context: context, petStore: petStore)
         symptomEntryStore = SymptomEntryStore(context: context)
         activityStore = ActivityStore(context: context, petStore: petStore)
     }
@@ -29,7 +27,6 @@ final class SnapshotBuilderTests: XCTestCase {
             petStore: petStore,
             medicationStore: medicationStore,
             recommendationStore: recommendationStore,
-            symptomEpisodeStore: symptomEpisodeStore,
             symptomEntryStore: symptomEntryStore,
             logStore: logStore,
             now: { Date(timeIntervalSince1970: 1_700_000_000) }
@@ -118,7 +115,7 @@ final class SnapshotBuilderTests: XCTestCase {
         try logStore.logMarker(type: .weight, value: 12.3, unit: "kg", recordedAt: date)
         try logStore.logMarker(type: .energy, value: 3, unit: nil, recordedAt: date)
 
-        let episode = try symptomEpisodeStore.start(category: .digestive, title: "tummy", startedAt: date)
+        let episode = try logStore.startEpisode(category: .digestive, title: "tummy", startedAt: date)
         try symptomEntryStore.addEntry(to: episode, date: date, severity: .mild,
                                        note: "ok", suspectedCause: "food")
 

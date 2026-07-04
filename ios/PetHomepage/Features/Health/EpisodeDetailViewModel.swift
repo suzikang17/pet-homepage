@@ -4,7 +4,7 @@ import Observation
 
 @Observable
 final class EpisodeDetailViewModel {
-    let episode: SymptomEpisode
+    let episode: LogEntry
     var entries: [SymptomEntry] = []
 
     // Add-entry form fields.
@@ -13,14 +13,14 @@ final class EpisodeDetailViewModel {
     var newSuspectedCause: String = ""
     var newDate: Date = Date()
 
-    private let episodeStore: SymptomEpisodeStore
+    private let logStore: LogStore
     private let entryStore: SymptomEntryStore
 
-    init(episode: SymptomEpisode,
-         episodeStore: SymptomEpisodeStore,
+    init(episode: LogEntry,
+         logStore: LogStore,
          entryStore: SymptomEntryStore) {
         self.episode = episode
-        self.episodeStore = episodeStore
+        self.logStore = logStore
         self.entryStore = entryStore
         try? load()
     }
@@ -50,6 +50,6 @@ final class EpisodeDetailViewModel {
     }
 
     func resolve() throws {
-        try episodeStore.resolve(episode, at: Date())
+        try logStore.resolveEpisode(episode, at: Date())
     }
 }

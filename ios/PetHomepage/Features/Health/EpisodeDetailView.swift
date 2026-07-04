@@ -4,12 +4,12 @@ import SwiftUI
 struct EpisodeDetailView: View {
     @State private var model: EpisodeDetailViewModel
 
-    init(episode: SymptomEpisode,
-         episodeStore: SymptomEpisodeStore,
+    init(episode: LogEntry,
+         logStore: LogStore,
          entryStore: SymptomEntryStore) {
         _model = State(initialValue: EpisodeDetailViewModel(
             episode: episode,
-            episodeStore: episodeStore,
+            logStore: logStore,
             entryStore: entryStore
         ))
     }
@@ -18,7 +18,7 @@ struct EpisodeDetailView: View {
         Form {
             Section("Episode") {
                 LabeledContent("Category", value: model.episode.category.displayName)
-                LabeledContent("Started", value: model.episode.startedAt.formatted(date: .abbreviated, time: .omitted))
+                LabeledContent("Started", value: model.episode.performedAt.formatted(date: .abbreviated, time: .omitted))
                 LabeledContent("Status", value: model.isResolved ? "Resolved" : "Active")
                 if let resolvedAt = model.episode.resolvedAt {
                     LabeledContent("Resolved", value: resolvedAt.formatted(date: .abbreviated, time: .omitted))

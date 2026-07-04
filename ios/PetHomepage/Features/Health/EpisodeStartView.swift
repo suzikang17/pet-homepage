@@ -5,7 +5,7 @@ struct EpisodeStartView: View {
     @State private var model: EpisodeStartViewModel
     @Environment(\.dismiss) private var dismiss
 
-    init(store: SymptomEpisodeStore) {
+    init(store: LogStore) {
         _model = State(initialValue: EpisodeStartViewModel(store: store))
     }
 

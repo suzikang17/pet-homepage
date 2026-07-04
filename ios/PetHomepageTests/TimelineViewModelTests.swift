@@ -6,7 +6,6 @@ import XCTest
 final class TimelineViewModelTests: XCTestCase {
     private var context: NSManagedObjectContext!
     private var medicationStore: MedicationStore!
-    private var symptomEpisodeStore: SymptomEpisodeStore!
     private var activityStore: ActivityStore!
     private var logStore: LogStore!
 
@@ -15,7 +14,6 @@ final class TimelineViewModelTests: XCTestCase {
         let petStore = PetStore(context: context)
         try petStore.createPet(name: "Sandy", species: "dog")
         medicationStore = MedicationStore(context: context, petStore: petStore)
-        symptomEpisodeStore = SymptomEpisodeStore(context: context, petStore: petStore)
         activityStore = ActivityStore(context: context, petStore: petStore)
         logStore = LogStore(context: context, petStore: petStore)
     }
@@ -23,7 +21,6 @@ final class TimelineViewModelTests: XCTestCase {
     private func makeVM() -> TimelineViewModel {
         TimelineViewModel(
             medicationStore: medicationStore,
-            symptomEpisodeStore: symptomEpisodeStore,
             logStore: logStore
         )
     }
@@ -41,6 +38,20 @@ final class TimelineViewModelTests: XCTestCase {
 
         XCTAssertEqual(vm.items.count, 4)
         XCTAssertEqual(vm.items.map(\.kind), [.vet, .medication, .vaccine, .marker])
+    }
+
+    func testLoadIncludesSymptomEpisodesWithActiveResolvedSubtitle() throws {
+        _ = try logStore.startEpisode(category: .digestive, title: "Loose stool", startedAt: day(1))
+        let resolved = try logStore.startEpisode(category: .skin, title: nil, startedAt: day(2))
+        try logStore.resolveEpisode(resolved, at: day(3))
+
+        let vm = makeVM()
+        vm.load()
+
+        let symptomItems = vm.items.filter { $0.kind == .symptom }
+        XCTAssertEqual(symptomItems.count, 2)
+        XCTAssertEqual(symptomItems.first { $0.title == "Loose stool" }?.subtitle, "Active")
+        XCTAssertEqual(symptomItems.first { $0.title == "Skin" }?.subtitle, "Resolved")
     }
 
     func testFilterRestrictsToOneKind() throws {
@@ -75,7 +86,6 @@ final class TimelineViewModelTests: XCTestCase {
             medicationStore: medicationStore,
             veterinarianStore: VeterinarianStore(context: context, petStore: PetStore(context: context)),
             diaryStore: DiaryStore(context: context, petStore: PetStore(context: context)),
-            symptomEpisodeStore: symptomEpisodeStore,
             symptomEntryStore: SymptomEntryStore(context: context),
             recommendationStore: VetRecommendationStore(context: context),
             activityStore: activityStore,
@@ -188,12 +198,25 @@ final class TimelineViewModelTests: XCTestCase {
 
         let vm = TimelineViewModel(
             medicationStore: MedicationStore(context: context, petStore: petStore),
-            symptomEpisodeStore: SymptomEpisodeStore(context: context, petStore: petStore),
             logStore: logStore
         )
         vm.load()
 
         XCTAssertTrue(vm.items.contains { $0.kind == .activity && $0.title == "Bath" })
         XCTAssertTrue(vm.dueSoon(within: 30).contains { $0.kind == .activity })
+    }
+
+    func testDeleteSymptomEpisodeRemovesIt() async throws {
+        _ = try logStore.startEpisode(category: .digestive, title: "Loose stool", startedAt: day(1))
+
+        let vm = makeVM()
+        vm.load()
+        let item = try XCTUnwrap(vm.items.first { $0.kind == .symptom })
+        await vm.delete(item, using: makeServices(
+            reminderScheduler: MedicationReminderScheduler(scheduler: FakeNotificationScheduler()),
+            dueScheduler: DueReminderScheduler(scheduler: FakeNotificationScheduler())))
+
+        XCTAssertFalse(vm.items.contains { $0.kind == .symptom })
+        XCTAssertEqual(try logStore.episodes().count, 0)
     }
 }

@@ -38,7 +38,7 @@ enum TimelineReference {
     case vet(LogEntry)
     case medication(Medication)
     case marker(LogEntry)
-    case symptom(SymptomEpisode)
+    case symptom(LogEntry)
     case activity(LogEntry)
 }
 
@@ -62,14 +62,11 @@ final class TimelineViewModel {
     var errorMessage: String?
 
     private let medicationStore: MedicationStore
-    private let symptomEpisodeStore: SymptomEpisodeStore
     private let logStore: LogStore
 
     init(medicationStore: MedicationStore,
-         symptomEpisodeStore: SymptomEpisodeStore,
          logStore: LogStore) {
         self.medicationStore = medicationStore
-        self.symptomEpisodeStore = symptomEpisodeStore
         self.logStore = logStore
     }
 
@@ -80,7 +77,7 @@ final class TimelineViewModel {
             out += try logStore.vetVisits().map(TimelineItem.init(vet:))
             out += try medicationStore.medications().map(TimelineItem.init(medication:))
             out += try logStore.markers().map(TimelineItem.init(marker:))
-            out += try symptomEpisodeStore.episodes().map(TimelineItem.init(symptom:))
+            out += try logStore.episodes().map(TimelineItem.init(symptom:))
             out += try logStore.activityLogs().map(TimelineItem.init(activity:))
             items = out.sorted { $0.date > $1.date }
             errorMessage = nil
@@ -125,7 +122,7 @@ final class TimelineViewModel {
         case .marker(let mk):
             try? services.logStore.delete(mk)
         case .symptom(let ep):
-            try? services.symptomEpisodeStore.delete(ep)
+            try? services.logStore.delete(ep)
         case .activity(let log):
             let type = log.activityType
             await services.dueScheduler.cancelActivity(log)
@@ -194,13 +191,13 @@ extension TimelineItem {
         )
     }
 
-    init(symptom ep: SymptomEpisode) {
+    init(symptom ep: LogEntry) {
         self.init(
             id: "symptom:\(ep.id.uuidString)",
             kind: .symptom,
-            date: ep.startedAt,
+            date: ep.performedAt,
             title: ep.title ?? ep.category.displayName,
-            subtitle: ep.statusRaw == EpisodeStatus.active.rawValue ? "Active" : "Resolved",
+            subtitle: ep.status == .active ? "Active" : "Resolved",
             nextDue: nil,
             reference: .symptom(ep)
         )

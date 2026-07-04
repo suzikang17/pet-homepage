@@ -64,7 +64,7 @@ struct PetProfileView: View {
                 if let s = timelineServices { MarkerEditView(logStore: s.logStore) }
             }
             .sheet(isPresented: $showAddSymptom, onDismiss: refresh) {
-                if let s = timelineServices { EpisodeStartView(store: s.symptomEpisodeStore) }
+                if let s = timelineServices { EpisodeStartView(store: s.logStore) }
             }
             .photosPicker(isPresented: $showPhotoPicker, selection: $photoItem, matching: .images)
             .onChange(of: photoItem) { _, item in if let item { loadPhoto(item) } }
@@ -197,7 +197,6 @@ struct PetProfileView: View {
         guard let s = timelineServices else { return }
         let vm = TimelineViewModel(
             medicationStore: s.medicationStore,
-            symptomEpisodeStore: s.symptomEpisodeStore,
             logStore: s.logStore
         )
         vm.load()

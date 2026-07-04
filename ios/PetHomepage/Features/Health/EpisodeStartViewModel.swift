@@ -8,9 +8,9 @@ final class EpisodeStartViewModel {
     var title: String = ""
     var startedAt: Date = Date()
 
-    private let store: SymptomEpisodeStore
+    private let store: LogStore
 
-    init(store: SymptomEpisodeStore) {
+    init(store: LogStore) {
         self.store = store
     }
 
@@ -19,8 +19,8 @@ final class EpisodeStartViewModel {
 
     func start() throws {
         let trimmed = title.trimmingCharacters(in: .whitespaces)
-        try store.start(category: category,
-                        title: trimmed.isEmpty ? nil : trimmed,
-                        startedAt: startedAt)
+        try store.startEpisode(category: category,
+                               title: trimmed.isEmpty ? nil : trimmed,
+                               startedAt: startedAt)
     }
 }
