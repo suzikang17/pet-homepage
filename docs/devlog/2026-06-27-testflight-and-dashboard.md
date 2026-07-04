@@ -1,4 +1,5 @@
 ---
+type: devlog
 title: Shipped to TestFlight + reshaped the app around a unified Timeline
 date: 2026-06-27
 phase: Post-v1 — CI/CD + UX polish
