@@ -138,12 +138,9 @@ struct ContentView: View {
             Color.clear
                 .tabItem { Label("Capture", systemImage: "camera.fill") }
                 .tag(2)
-            DiaryView(logStore: logStore)
-                .tabItem { Label("Diary", systemImage: "book") }
-                .tag(3)
             CareTeamView(store: veterinarianStore)
                 .tabItem { Label("Care Team", systemImage: "stethoscope") }
-                .tag(4)
+                .tag(3)
         }
         .tint(Theme.primary)
         .task {

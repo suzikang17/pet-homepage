@@ -6,7 +6,7 @@ import Observation
 /// date, maybe with a next-one-due." This is the read-side projection over the existing stores
 /// (the data model itself stays five entities for now — see the planned HealthEvent unification).
 enum TimelineKind: String, CaseIterable, Identifiable {
-    case vaccine, vet, medication, marker, symptom, activity
+    case vaccine, vet, medication, marker, symptom, activity, diary
     var id: String { rawValue }
 
     var label: String {
@@ -17,6 +17,7 @@ enum TimelineKind: String, CaseIterable, Identifiable {
         case .marker: "Health"
         case .symptom: "Symptoms"
         case .activity: "Activities"
+        case .diary: "Diary"
         }
     }
 
@@ -28,6 +29,7 @@ enum TimelineKind: String, CaseIterable, Identifiable {
         case .marker: "chart.xyaxis.line"
         case .symptom: "waveform.path.ecg"
         case .activity: "shower"
+        case .diary: "book"
         }
     }
 }
@@ -40,6 +42,7 @@ enum TimelineReference {
     case marker(LogEntry)
     case symptom(LogEntry)
     case activity(LogEntry)
+    case diary(LogEntry)
 }
 
 /// One row in the unified timeline.
@@ -60,6 +63,8 @@ final class TimelineViewModel {
     var items: [TimelineItem] = []
     var filter: TimelineKind?
     var errorMessage: String?
+    /// All photos across diary entries + records, for the Photos view mode grid.
+    var photos: [Photo] = []
 
     private let medicationStore: MedicationStore
     private let logStore: LogStore
@@ -79,7 +84,9 @@ final class TimelineViewModel {
             out += try logStore.markers().map(TimelineItem.init(marker:))
             out += try logStore.episodes().map(TimelineItem.init(symptom:))
             out += try logStore.activityLogs().map(TimelineItem.init(activity:))
+            out += try logStore.diaryEntries().map(TimelineItem.init(diary:))
             items = out.sorted { $0.date > $1.date }
+            photos = (try? logStore.allPhotos()) ?? []
             errorMessage = nil
         } catch {
             errorMessage = String(describing: error)
@@ -141,6 +148,8 @@ final class TimelineViewModel {
             if let type, let newLatest = try? services.logStore.latestLog(of: type) {
                 await services.dueScheduler.syncActivity(newLatest)
             }
+        case .diary(let entry):
+            try? services.logStore.delete(entry)
         }
         load()
     }
@@ -221,6 +230,23 @@ extension TimelineItem {
             subtitle: (log.note?.isEmpty == false) ? log.note : log.activityType?.category.displayName,
             nextDue: log.nextDueAt,
             reference: .activity(log)
+        )
+    }
+
+    init(diary entry: LogEntry) {
+        let trimmedNote = entry.note?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let firstLine = trimmedNote
+            .split(separator: "\n", maxSplits: 1, omittingEmptySubsequences: true)
+            .first.map(String.init)
+        let photoCount = entry.photoArray.count
+        self.init(
+            id: "diary:\(entry.id.uuidString)",
+            kind: .diary,
+            date: entry.performedAt,
+            title: (firstLine?.isEmpty == false) ? firstLine! : "Diary entry",
+            subtitle: photoCount > 0 ? "\(photoCount) photo\(photoCount == 1 ? "" : "s")" : nil,
+            nextDue: nil,
+            reference: .diary(entry)
         )
     }
 }

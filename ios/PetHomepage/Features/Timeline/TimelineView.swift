@@ -1,5 +1,6 @@
 // ios/PetHomepage/Features/Timeline/TimelineView.swift
 import SwiftUI
+import UIKit
 
 /// Everything the Timeline needs to open each record type's existing editor/detail. Built once
 /// in ContentView and shared (Home reuses the read stores for "due soon").
@@ -23,7 +24,16 @@ struct TimelineServices {
 /// One date-sorted stream of every record, with type filters. Tapping a row opens that record's
 /// existing editor; the toolbar "+" adds any type. Replaces the separate Meds/Vaccines/Vet tabs.
 struct TimelineView: View {
+    /// Stream is the date-sorted record list (with type chips); Photos is the all-photos grid
+    /// ported from the retired Diary tab.
+    enum ViewMode: String, CaseIterable, Identifiable {
+        case stream = "Stream"
+        case photos = "Photos"
+        var id: String { rawValue }
+    }
+
     @State private var model: TimelineViewModel
+    @State private var viewMode: ViewMode = .stream
     @State private var editTarget: TimelineItem?
     @State private var addKind: TimelineKind?
     @State private var medDetail: Medication?
@@ -45,13 +55,23 @@ struct TimelineView: View {
                 VStack(spacing: 12) {
                     HeroHeader(
                         title: "Timeline",
-                        subtitle: model.filter?.label ?? "Everything",
+                        subtitle: viewMode == .stream ? (model.filter?.label ?? "Everything") : ViewMode.photos.rawValue,
                         systemImage: "calendar",
                         onSettings: { showActivityTypes = true },
                         settingsSymbol: "slider.horizontal.3"
                     )
-                    chips
-                    content
+                    Picker("View", selection: $viewMode) {
+                        ForEach(ViewMode.allCases) { Text($0.rawValue).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal, 18)
+
+                    if viewMode == .stream {
+                        chips
+                        content
+                    } else {
+                        photoGrid
+                    }
                 }
                 addButton
             }
@@ -102,6 +122,33 @@ struct TimelineView: View {
                 .overlay(Capsule().stroke(Theme.ink.opacity(active ? 0 : 0.08)))
         }
         .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private var photoGrid: some View {
+        if model.photos.isEmpty {
+            ContentUnavailableView(
+                "No photos yet",
+                systemImage: "photo.on.rectangle",
+                description: Text("Photos from diary entries and records show up here.")
+            )
+        } else {
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 4)], spacing: 4) {
+                    ForEach(model.photos) { photo in
+                        if let data = photo.imageData, let ui = UIImage(data: data) {
+                            Image(uiImage: ui).resizable().scaledToFill()
+                                .frame(height: 110)
+                                .frame(maxWidth: .infinity)
+                                .clipped()
+                                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        }
+                    }
+                }
+                .padding(.horizontal, 14)
+            }
+            .scrollContentBackground(.hidden)
+        }
     }
 
     @ViewBuilder
@@ -174,6 +221,7 @@ struct TimelineView: View {
                 Button { showScan = true } label: { Label("Scan a record", systemImage: "sparkles") }
                 Divider()
             }
+            Button { addKind = .diary } label: { Label("Note", systemImage: "square.and.pencil") }
             Button { addKind = .activity } label: { Label("Activity", systemImage: "shower") }
             Button { addKind = .medication } label: { Label("Medication", systemImage: "pills") }
             Button { addKind = .symptom } label: { Label("Symptom", systemImage: "waveform.path.ecg") }
@@ -218,6 +266,8 @@ struct TimelineView: View {
         case .activity(let log):
             ActivityLogEditView(logStore: services.logStore, store: services.activityStore,
                                 dueScheduler: services.dueScheduler, editing: log)
+        case .diary(let entry):
+            DiaryEntryEditView(logStore: services.logStore, editing: entry)
         }
     }
 
@@ -241,6 +291,8 @@ struct TimelineView: View {
         case .activity:
             ActivityLogEditView(logStore: services.logStore, store: services.activityStore,
                                 dueScheduler: services.dueScheduler, editing: nil)
+        case .diary:
+            DiaryEntryEditView(logStore: services.logStore, editing: nil)
         }
     }
 
@@ -252,6 +304,7 @@ struct TimelineView: View {
         case .marker: .pink
         case .symptom: .orange
         case .activity: .cyan
+        case .diary: .brown
         }
     }
 }

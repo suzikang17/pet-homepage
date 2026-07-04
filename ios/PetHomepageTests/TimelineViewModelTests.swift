@@ -208,6 +208,61 @@ final class TimelineViewModelTests: XCTestCase {
         XCTAssertTrue(vm.dueSoon(within: 30).contains { $0.kind == .activity })
     }
 
+    func testDiaryEntriesAppearInStreamWithFirstLineTitleAndPhotoCountSubtitle() throws {
+        _ = try logStore.createDiary(performedAt: day(1), note: "Great walk today\nLots of sniffing")
+        let noPhotos = try logStore.createDiary(performedAt: day(2), note: "")
+        let withPhotos = try logStore.createDiary(performedAt: day(3), note: "Vet trip")
+        _ = try logStore.addPhoto(to: withPhotos, imageData: Data([0x01]))
+        _ = try logStore.addPhoto(to: withPhotos, imageData: Data([0x02]))
+
+        let vm = makeVM()
+        vm.load()
+
+        let diaryItems = vm.items.filter { $0.kind == .diary }
+        XCTAssertEqual(diaryItems.count, 3)
+        XCTAssertEqual(diaryItems.first { $0.date == day(1) }?.title, "Great walk today")
+        XCTAssertNil(diaryItems.first { $0.date == day(1) }?.subtitle)
+        XCTAssertEqual(diaryItems.first { $0.id == "diary:\(noPhotos.id.uuidString)" }?.title, "Diary entry")
+        XCTAssertEqual(diaryItems.first { $0.date == day(3) }?.subtitle, "2 photos")
+        XCTAssertNil(diaryItems.first { $0.date == day(3) }?.nextDue)
+    }
+
+    func testDiaryFilterRestrictsToDiaryKind() throws {
+        _ = try logStore.createDiary(performedAt: day(1), note: "Note")
+        _ = try logStore.logVaccine(name: "Rabies", performedAt: day(1), nextDueAt: nil, lotNumber: nil, administeredBy: nil)
+
+        let vm = makeVM()
+        vm.load()
+        vm.filter = .diary
+
+        XCTAssertEqual(vm.filtered.map(\.kind), [.diary])
+    }
+
+    func testDeleteDiaryEntryRemovesIt() async throws {
+        _ = try logStore.createDiary(performedAt: day(1), note: "Note")
+
+        let vm = makeVM()
+        vm.load()
+        let item = try XCTUnwrap(vm.items.first { $0.kind == .diary })
+        await vm.delete(item, using: makeServices(
+            reminderScheduler: MedicationReminderScheduler(scheduler: FakeNotificationScheduler()),
+            dueScheduler: DueReminderScheduler(scheduler: FakeNotificationScheduler())))
+
+        XCTAssertFalse(vm.items.contains { $0.kind == .diary })
+        XCTAssertEqual(try logStore.diaryEntries().count, 0)
+    }
+
+    func testLoadSurfacesAllPhotosForPhotosViewMode() throws {
+        let entry = try logStore.createDiary(performedAt: day(1), note: "Photo day")
+        _ = try logStore.addPhoto(to: entry, imageData: Data([0x01]))
+        _ = try logStore.addPhoto(to: entry, imageData: Data([0x02]))
+
+        let vm = makeVM()
+        vm.load()
+
+        XCTAssertEqual(vm.photos.count, 2)
+    }
+
     func testDeleteSymptomEpisodeRemovesIt() async throws {
         _ = try logStore.startEpisode(category: .digestive, title: "Loose stool", startedAt: day(1))
 
