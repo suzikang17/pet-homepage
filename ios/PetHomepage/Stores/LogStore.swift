@@ -20,6 +20,7 @@ final class LogStore {
     @discardableResult
     func createDiary(performedAt: Date = Date(), note: String?) throws -> LogEntry {
         let entry = try makeEntry(performedAt: performedAt, note: note)
+        entry.kind = .diary
         try context.save()
         return entry
     }
@@ -27,6 +28,7 @@ final class LogStore {
     @discardableResult
     func logActivity(type: ActivityType, performedAt: Date, note: String?, intervalDays: Int) throws -> LogEntry {
         let entry = try makeEntry(performedAt: performedAt, note: note)
+        entry.kind = .activity
         entry.activityType = type
         entry.intervalDays = Int64(intervalDays)
         entry.nextDueAt = intervalDays > 0 ? calendar.date(byAdding: .day, value: intervalDays, to: performedAt) : nil
@@ -37,6 +39,7 @@ final class LogStore {
     @discardableResult
     func logDose(for medication: Medication, at date: Date = Date(), note: String? = nil) throws -> LogEntry {
         let entry = try makeEntry(performedAt: date, note: note)
+        entry.kind = .dose
         entry.medication = medication
         try context.save()
         return entry
@@ -92,16 +95,16 @@ final class LogStore {
         return try fetch(NSPredicate(format: "pet == %@", pet))
     }
 
-    /// Diary entries = occurrences with no definition reference.
+    /// Diary entries = occurrences explicitly stamped as kind "diary".
     func diaryEntries() throws -> [LogEntry] {
         guard let pet = try petStore.currentPet() else { return [] }
-        return try fetch(NSPredicate(format: "pet == %@ AND activityType == nil AND medication == nil", pet))
+        return try fetch(NSPredicate(format: "pet == %@ AND kindRaw == %@", pet, LogKind.diary.rawValue))
     }
 
-    /// Activity logs = occurrences tied to an ActivityType.
+    /// Activity logs = occurrences explicitly stamped as kind "activity".
     func activityLogs() throws -> [LogEntry] {
         guard let pet = try petStore.currentPet() else { return [] }
-        return try fetch(NSPredicate(format: "pet == %@ AND activityType != nil", pet))
+        return try fetch(NSPredicate(format: "pet == %@ AND kindRaw == %@", pet, LogKind.activity.rawValue))
     }
 
     func logs(of type: ActivityType) throws -> [LogEntry] {
@@ -124,6 +127,21 @@ final class LogStore {
         let request = LogEntry.fetchRequest()
         request.predicate = NSPredicate(format: "medication == %@", medication)
         return try context.count(for: request)
+    }
+
+    // MARK: - Backfill
+
+    /// One-time, idempotent: entries created before kindRaw existed default to "diary" — stamp the
+    /// real kind from the refs. Safe to run every launch.
+    func backfillKindsIfNeeded() throws {
+        let request = LogEntry.fetchRequest()
+        var changed = false
+        for entry in try context.fetch(request) {
+            let expected: LogKind = entry.medication != nil ? .dose : (entry.activityType != nil ? .activity : .diary)
+            // Only correct entries still claiming the default while their refs disagree.
+            if entry.kind == .diary, expected != .diary { entry.kind = expected; changed = true }
+        }
+        if changed { try context.save() }
     }
 
     // MARK: - Photos

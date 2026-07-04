@@ -143,7 +143,10 @@ struct ContentView: View {
                 .tag(4)
         }
         .tint(Theme.primary)
-        .task { try? activityStore.seedDefaultsIfNeeded() }
+        .task {
+            try? activityStore.seedDefaultsIfNeeded()
+            try? logStore.backfillKindsIfNeeded()
+        }
         .onChange(of: selectedTab) { old, new in
             guard new == 2 else { return }
             selectedTab = old

@@ -15,6 +15,7 @@ public class Veterinarian: NSManagedObject {
     @NSManaged public var vetVisits: NSSet?
     @NSManaged public var vaccinations: NSSet?
     @NSManaged public var medications: NSSet?
+    @NSManaged public var logEntries: NSSet?
 }
 
 extension Veterinarian {

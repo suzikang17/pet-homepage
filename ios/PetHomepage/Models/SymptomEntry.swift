@@ -31,6 +31,7 @@ public class SymptomEntry: NSManagedObject {
     @NSManaged public var note: String?
     @NSManaged public var suspectedCause: String?
     @NSManaged public var episode: SymptomEpisode?
+    @NSManaged public var logEntry: LogEntry?
 }
 
 extension SymptomEntry {

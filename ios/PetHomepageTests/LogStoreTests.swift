@@ -77,4 +77,31 @@ final class LogStoreTests: XCTestCase {
         XCTAssertEqual(try s.allEntries().count, 0)
         XCTAssertEqual(try s.diaryEntries().count, 0)
     }
+
+    func testBackfillKindsIfNeededCorrectsEntriesButLeavesDiaryAlone() throws {
+        let med = Medication(context: context)
+        med.id = UUID(); med.drugName = "Apoquel"; med.dosage = "16mg"; med.frequency = "daily"; med.startedAt = Date()
+        med.pet = try petStore.ensurePet()
+
+        let type = ActivityType(context: context)
+        type.id = UUID(); type.name = "Bath"; type.category = .care; type.iconName = "shower"
+        type.defaultIntervalDays = 30; type.sortOrder = 0; type.isArchived = false; type.pet = try petStore.ensurePet()
+
+        let dose = try store.logDose(for: med, at: Date(timeIntervalSince1970: 100), note: nil)
+        let activity = try store.logActivity(type: type, performedAt: Date(timeIntervalSince1970: 200), note: nil, intervalDays: 0)
+        let diary = try store.createDiary(performedAt: Date(timeIntervalSince1970: 300), note: "just a note")
+
+        // Simulate pre-kindRaw rows: every entry still claims the default "diary" even though
+        // dose/activity have their defining refs set.
+        dose.kindRaw = "diary"
+        activity.kindRaw = "diary"
+        diary.kindRaw = "diary"
+        try context.save()
+
+        try store.backfillKindsIfNeeded()
+
+        XCTAssertEqual(dose.kind, .dose)
+        XCTAssertEqual(activity.kind, .activity)
+        XCTAssertEqual(diary.kind, .diary)
+    }
 }

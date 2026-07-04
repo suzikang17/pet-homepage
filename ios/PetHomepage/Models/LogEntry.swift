@@ -1,12 +1,22 @@
 // ios/PetHomepage/Models/LogEntry.swift
 import CoreData
 
-/// The kind of occurrence a LogEntry represents, derived from which definition it references.
-enum LogKind { case diary, activity, dose }
+/// The kind of occurrence a LogEntry represents, stored explicitly in `kindRaw`.
+enum LogKind: String, CaseIterable, Identifiable {
+    case diary
+    case activity
+    case dose
+    case vaccine
+    case vet
+    case marker
+    case symptom
+
+    var id: String { rawValue }
+}
 
 /// A unified occurrence: a timestamped thing that happened, with an optional note + photos and an
-/// optional reference to a definition. No reference = diary; activityType = activity log;
-/// medication = dose log.
+/// optional reference to a definition, plus sparse kind-specific columns (title, value, unit, etc.)
+/// used by the record kinds (vaccine, vet, marker, symptom).
 @objc(LogEntry)
 public class LogEntry: NSManagedObject {
     @NSManaged public var id: UUID
@@ -14,10 +24,26 @@ public class LogEntry: NSManagedObject {
     @NSManaged public var note: String?
     @NSManaged public var intervalDays: Int64
     @NSManaged public var nextDueAt: Date?
+    @NSManaged public var kindRaw: String
+    @NSManaged public var title: String?
+    @NSManaged public var subtypeRaw: String?
+    @NSManaged public var value: Double
+    @NSManaged public var unit: String?
+    @NSManaged public var lotNumber: String?
+    @NSManaged public var administeredBy: String?
+    @NSManaged public var clinicName: String?
+    @NSManaged public var vetName: String?
+    @NSManaged public var diagnosis: String?
+    @NSManaged public var treatmentNotes: String?
+    @NSManaged public var statusRaw: String?
+    @NSManaged public var resolvedAt: Date?
     @NSManaged public var pet: Pet?
     @NSManaged public var activityType: ActivityType?
     @NSManaged public var medication: Medication?
+    @NSManaged public var veterinarian: Veterinarian?
     @NSManaged public var photos: NSSet?
+    @NSManaged public var recommendations: NSSet?
+    @NSManaged public var symptomEntries: NSSet?
 }
 
 extension LogEntry {
@@ -25,10 +51,10 @@ extension LogEntry {
         NSFetchRequest<LogEntry>(entityName: "LogEntry")
     }
 
+    /// Strongly-typed view of `kindRaw`; falls back to `.diary` for unknown values.
     var kind: LogKind {
-        if medication != nil { return .dose }
-        if activityType != nil { return .activity }
-        return .diary
+        get { LogKind(rawValue: kindRaw) ?? .diary }
+        set { kindRaw = newValue.rawValue }
     }
 
     /// This entry's photos, oldest-first.

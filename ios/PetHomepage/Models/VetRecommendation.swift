@@ -11,6 +11,7 @@ public class VetRecommendation: NSManagedObject {
     @NSManaged public var date: Date
     @NSManaged public var text: String
     @NSManaged public var vetVisit: VetVisit?
+    @NSManaged public var logEntry: LogEntry?
 }
 
 extension VetRecommendation {
