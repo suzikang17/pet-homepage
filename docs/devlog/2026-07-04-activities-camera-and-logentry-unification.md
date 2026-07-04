@@ -15,7 +15,8 @@ day: 8
 - **Occurrence unification** (phase 1): DiaryEntry + ActivityLog + DoseLog → one `LogEntry` behind one `LogStore`.
 - **Full unification** (phase 2): Vaccination, VetVisit, HealthMarker, SymptomEpisode also became `LogEntry` kinds (`kindRaw`: diary/activity/dose/vaccine/vet/marker/symptom; sparse optional columns for kind fields). Definitions (Medication, ActivityType) and children (VetRecommendation, SymptomEntry) survived, retargeted. Final model: 8 entities.
 - **Mirror**: activity logs now render on the desktop dashboard; all snapshot reads re-sourced through LogStore with the JSON contract byte-identical.
-- **Multi-pet (in progress)**: active-pet selection in PetStore + per-pet vet-cadence reminder identity + pet names in notification copy landed; switcher UI in flight.
+- **Multi-pet**: active-pet selection behind `PetStore.currentPet()`, avatar menu (Switch/Add/Change photo), per-pet vet-cadence reminder identity, pet names in notification copy, seeding on switch.
+- **Diary merged into Timeline**: diary entries flow into the stream as a filter chip; the photo grid became a Stream|Photos in-tab view mode; Diary tab deleted (4-tab layout: Home · Timeline · 📷 · Care Team).
 - Device bug fixes: camera collapsing (nested-sheet → `.fullScreenCover` + explicit dismiss), Contacts import dropping picks (`CNContactPickerViewController` must be *presented by* a VC, not be a sheet's root).
 
 ## Decisions
@@ -43,6 +44,8 @@ day: 8
 ---
 
 ## Commits
+01fd0f8 feat: merge Diary into Timeline — diary chip, Stream|Photos view mode, 4-tab layout
+7e9a30e feat: pet switcher — avatar menu, switch/add sheets, seeding on switch
 a74f098 feat: per-pet vet-cadence identity + pet names in reminder copy
 956b7f6 feat: active-pet selection in PetStore
 2a7d038 docs: multi-pet design spec
