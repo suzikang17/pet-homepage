@@ -1,0 +1,77 @@
+name: ASC certificates
+# Maintenance: list or clean up signing certificates via the App Store Connect API.
+# Exists because ephemeral CI runners + `-allowProvisioningUpdates` minted a new
+# Apple Development certificate per run until the account hit Apple's cap
+# ("maximum number of certificates"), breaking the TestFlight archive step.
+# Manual-only; uses the same ASC_* secrets as the TestFlight workflow.
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "list = print all certs; revoke-ci-dev = revoke DEVELOPMENT certs created on/after cutoff"
+        type: choice
+        options: [list, revoke-ci-dev]
+        default: list
+      cutoff:
+        description: "ISO date; revoke-ci-dev only touches DEVELOPMENT certs created on/after this"
+        default: "2026-06-27"
+      keep_ids:
+        description: "comma-separated certificate IDs to never revoke"
+        default: "L5PTDF7GUW"
+
+jobs:
+  certs:
+    runs-on: macos-15
+    steps:
+      - name: Run
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          ACTION: ${{ inputs.action }}
+          CUTOFF: ${{ inputs.cutoff }}
+          KEEP_IDS: ${{ inputs.keep_ids }}
+        run: |
+          echo "$ASC_KEY_P8_BASE64" | base64 --decode > key.p8
+          npm install --no-fund --no-audit jsonwebtoken@9 >/dev/null 2>&1
+          node - <<'JS'
+          const jwt = require("jsonwebtoken");
+          const fs = require("fs");
+          const token = jwt.sign(
+            { iss: process.env.ASC_ISSUER_ID, aud: "appstoreconnect-v1",
+              exp: Math.floor(Date.now() / 1000) + 900 },
+            fs.readFileSync("key.p8"),
+            { algorithm: "ES256", header: { kid: process.env.ASC_KEY_ID } });
+          const api = (path, method = "GET") =>
+            fetch("https://api.appstoreconnect.apple.com" + path,
+              { method, headers: { Authorization: "Bearer " + token } });
+
+          (async () => {
+            const res = await api("/v1/certificates?limit=200");
+            if (!res.ok) { console.error("list failed:", res.status, await res.text()); process.exit(1); }
+            const certs = (await res.json()).data
+              .map(c => ({ id: c.id, type: c.attributes.certificateType,
+                           name: c.attributes.displayName || c.attributes.name,
+                           expires: c.attributes.expirationDate }))
+              .sort((a, b) => (a.type + a.expires).localeCompare(b.type + b.expires));
+            console.log(`\n${certs.length} certificates on the account:\n`);
+            for (const c of certs) console.log(`${c.id}  ${c.type.padEnd(24)} expires ${c.expires?.slice(0,10)}  ${c.name}`);
+
+            if (process.env.ACTION !== "revoke-ci-dev") return;
+            // Development certs expire 1 year after creation → derive created = expires - 1y.
+            const keep = new Set(process.env.KEEP_IDS.split(",").map(s => s.trim()).filter(Boolean));
+            const cutoff = new Date(process.env.CUTOFF);
+            const victims = certs.filter(c => {
+              if (c.type !== "DEVELOPMENT" && c.type !== "IOS_DEVELOPMENT") return false;
+              if (keep.has(c.id)) return false;
+              const created = new Date(c.expires); created.setFullYear(created.getFullYear() - 1);
+              return created >= cutoff;
+            });
+            console.log(`\nRevoking ${victims.length} DEVELOPMENT cert(s) created on/after ${process.env.CUTOFF} (keeping: ${[...keep].join(", ") || "none"}):`);
+            for (const c of victims) {
+              const del = await api("/v1/certificates/" + c.id, "DELETE");
+              console.log(`  ${del.status === 204 ? "revoked" : "FAILED " + del.status}  ${c.id}  ${c.name}`);
+            }
+          })();
+          JS
