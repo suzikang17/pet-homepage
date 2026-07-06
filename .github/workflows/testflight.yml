@@ -61,7 +61,12 @@ jobs:
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             CURRENT_PROJECT_VERSION=$GITHUB_RUN_NUMBER \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
             clean archive
+          # CODE_SIGN_IDENTITY=Apple Distribution: sign the archive with the CLOUD-MANAGED
+          # distribution cert (private key held by Apple, reused across runs). Without it,
+          # each ephemeral runner minted a fresh local Apple Development certificate until
+          # the account hit Apple's cap and archives failed ("maximum number of certificates").
 
       - name: Export .ipa
         working-directory: ios
