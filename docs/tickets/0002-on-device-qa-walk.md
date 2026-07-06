@@ -46,3 +46,9 @@ account. Report failures back to the agent session for fixes.
   what unit tests can't see.
 - Known non-bugs: full `xcodebuild test` exits 65 on the sim even when green
   (CloudKit launch crash + retry); not observable on device.
+- **Machine-covered since 2026-07-06** (XCUITest target, 8 tests, `-only-testing:PetHomepageUITests`):
+  the capture review sheet + every tag path (note/activity/marker validation/vaccine
+  handoff with photo), pet switcher add/switch, Timeline Stream|Photos + Diary chip +
+  "+"-menu contents, tab layout. **Still device-only:** real camera behavior, OCR on
+  physical packaging, Contacts import, notification timing/copy, mirror push, CloudKit
+  sync, and the kindRaw backfill against real pre-unification data.
