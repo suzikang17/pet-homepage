@@ -55,6 +55,7 @@ struct PendingPhotoSection: View {
             Image(uiImage: ui).resizable().scaledToFill()
                 .frame(width: 72, height: 72)
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .accessibilityIdentifier("pendingPhotoThumb")
                 .overlay(alignment: .topTrailing) {
                     Button(action: onDelete) {
                         Image(systemName: "xmark.circle.fill")

@@ -57,6 +57,18 @@ targets:
           - "**/.omc/**"
     dependencies:
       - target: PetHomepage
+  PetHomepageUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: PetHomepageUITests
+        excludes:
+          - "**/.omc/**"
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: PetHomepage
 schemes:
   PetHomepage:
     build:
@@ -65,3 +77,4 @@ schemes:
     test:
       targets:
         - PetHomepageTests
+        - PetHomepageUITests

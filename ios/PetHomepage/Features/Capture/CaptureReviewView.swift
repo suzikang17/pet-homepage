@@ -52,6 +52,7 @@ struct CaptureReviewView: View {
                 Section("Reading") {
                     TextField("Value", text: $model.markerValue)
                         .keyboardType(.decimalPad)
+                        .accessibilityIdentifier("markerValueField")
                     let units = model.unitOptions(for: type)
                     if !units.isEmpty {
                         Picker("Unit", selection: $model.markerUnit) {
@@ -115,6 +116,7 @@ struct CaptureReviewView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 6)
         }
+        .accessibilityIdentifier("captureChipsStrip")
     }
 
     /// The "Health marker" chip is a Menu, not a plain button: tapping it lists every `MarkerType`
@@ -143,6 +145,7 @@ struct CaptureReviewView: View {
                 .foregroundStyle(active ? .white : Theme.ink)
                 .overlay(Capsule().stroke(Theme.ink.opacity(active ? 0 : 0.08)))
         }
+        .accessibilityIdentifier("captureMarkerChip")
     }
 
     /// A "Records" chip that hands off to a full editor instead of saving through this sheet —

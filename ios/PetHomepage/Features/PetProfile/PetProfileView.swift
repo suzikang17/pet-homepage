@@ -79,8 +79,11 @@ struct PetProfileView: View {
             // API untouched — it's the only call site, but this is still the smaller diff.
             .confirmationDialog("Pet", isPresented: $showAvatarActions, titleVisibility: .hidden) {
                 Button("Switch pet…") { showPetSwitcher = true }
+                    .accessibilityIdentifier("avatarMenu.switchPet")
                 Button("Add pet…") { showAddPet = true }
+                    .accessibilityIdentifier("avatarMenu.addPet")
                 Button("Change photo…") { showPhotoPicker = true }
+                    .accessibilityIdentifier("avatarMenu.changePhoto")
                 Button("Cancel", role: .cancel) {}
             }
             .sheet(isPresented: $showPetSwitcher) {
