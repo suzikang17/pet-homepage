@@ -12,6 +12,10 @@ name: TestFlight
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+      - ".claude/**"
   workflow_dispatch:
 
 concurrency:
