@@ -136,22 +136,7 @@ struct TimelineView: View {
                 description: Text("Photos from diary entries and records show up here.")
             )
         } else {
-            ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 4)], spacing: 4) {
-                    ForEach(model.photos) { photo in
-                        if let data = photo.imageData, let ui = UIImage(data: data) {
-                            Image(uiImage: ui).resizable().scaledToFill()
-                                .frame(height: 110)
-                                .frame(maxWidth: .infinity)
-                                .clipped()
-                                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                                .accessibilityIdentifier("timelinePhotoCell")
-                        }
-                    }
-                }
-                .padding(.horizontal, 14)
-            }
-            .scrollContentBackground(.hidden)
+            PhotoGalleryView(photos: model.photos)
         }
     }
 
