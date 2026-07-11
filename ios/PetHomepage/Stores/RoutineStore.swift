@@ -218,6 +218,39 @@ final class RoutineStore {
         return try context.fetch(request).first
     }
 
+    // MARK: - Check-off
+
+    /// Completing a slot writes a routine LogEntry with the task's name copied on, so later
+    /// template edits never rewrite what was actually done. Today's check-off stamps `now`
+    /// (the real moment); a past day's stamps the task's scheduled time on that day, keeping
+    /// the entry inside that day's window.
+    @discardableResult
+    func checkOff(_ task: RoutineTask, on day: Date, now: Date = Date()) throws -> LogEntry {
+        let start = calendar.startOfDay(for: day)
+        let performedAt: Date
+        if calendar.isDate(now, inSameDayAs: start) {
+            performedAt = now
+        } else {
+            performedAt = calendar.date(bySettingHour: Int(task.hour), minute: Int(task.minute),
+                                        second: 0, of: start) ?? start
+        }
+        let entry = LogEntry(context: context)
+        entry.id = UUID()
+        entry.performedAt = performedAt
+        entry.kind = .routine
+        entry.title = task.name
+        entry.routineLineageID = task.lineageID
+        entry.pet = try petStore.ensurePet()
+        try context.save()
+        return entry
+    }
+
+    /// Un-checking deletes the completion entry (photos cascade with it).
+    func uncheck(_ completion: LogEntry) throws {
+        context.delete(completion)
+        try context.save()
+    }
+
     /// Time-of-day sort shared by the template list and day slots.
     static func byTime(_ l: RoutineTask, _ r: RoutineTask) -> Bool {
         if l.hour != r.hour { return l.hour < r.hour }
