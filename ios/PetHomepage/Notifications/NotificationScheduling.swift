@@ -3,11 +3,12 @@ import Foundation
 
 /// The category of a scheduled reminder. The raw value is embedded in the
 /// notification request identifier so schedule/cancel are idempotent per (kind, entityID).
-enum ReminderKind: String {
+enum ReminderKind: String, CaseIterable {
     case medication
     case vaccination
     case vetCadence
     case activity
+    case routine
 }
 
 /// A single pending reminder, expressed independently of UserNotifications so
@@ -22,6 +23,10 @@ struct PendingReminder: Equatable {
     let hour: Int
     let minute: Int
     let dateComponents: DateComponents?
+    /// With non-nil dateComponents: false = one-shot on that date (vaccination/vet-cadence),
+    /// true = repeating on those components (weekly routine reminders, components = [weekday]).
+    /// Ignored when dateComponents is nil (always the daily repeating medication trigger).
+    let repeats: Bool
 
     init(kind: ReminderKind,
          entityID: UUID,
@@ -29,7 +34,8 @@ struct PendingReminder: Equatable {
          body: String,
          hour: Int,
          minute: Int,
-         dateComponents: DateComponents? = nil) {
+         dateComponents: DateComponents? = nil,
+         repeats: Bool = false) {
         self.kind = kind
         self.entityID = entityID
         self.title = title
@@ -37,6 +43,7 @@ struct PendingReminder: Equatable {
         self.hour = hour
         self.minute = minute
         self.dateComponents = dateComponents
+        self.repeats = repeats
     }
 }
 
@@ -107,7 +114,9 @@ extension NotificationScheduling {
 }
 
 /// Deterministic request identifier shared by the real and fake schedulers, so
-/// schedule/cancel/replace are idempotent per (kind, entityID). Format: "<kind>-reminder-<uuid>".
+/// schedule/cancel/replace are idempotent per (kind, entityID). Format: "<kind>-reminder-<uuid>",
+/// with a "-w<weekday>" suffix for repeating weekly reminders so one entity's per-weekday
+/// requests coexist instead of replacing each other.
 enum ReminderIdentifier {
     static func prefix(for kind: ReminderKind) -> String {
         "\(kind.rawValue)-reminder-"
@@ -117,11 +126,33 @@ enum ReminderIdentifier {
         prefix(for: kind) + entityID.uuidString
     }
 
+    /// The request ID for a specific reminder. Repeating-weekly reminders get a `-w<weekday>`
+    /// suffix so one task's per-weekday requests coexist instead of replacing each other.
+    static func requestID(for reminder: PendingReminder) -> String {
+        let base = requestID(kind: reminder.kind, entityID: reminder.entityID)
+        if reminder.repeats, let weekday = reminder.dateComponents?.weekday {
+            return base + "-w\(weekday)"
+        }
+        return base
+    }
+
+    /// Every request ID a (kind, entityID) pair could own: the bare ID plus all weekday
+    /// variants. Used by cancel — removing IDs that were never scheduled is harmless.
+    static func requestIDs(kind: ReminderKind, entityID: UUID) -> [String] {
+        let base = requestID(kind: kind, entityID: entityID)
+        return [base] + (1...7).map { "\(base)-w\($0)" }
+    }
+
     static func parse(_ requestID: String) -> (ReminderKind, UUID)? {
-        for kind in [ReminderKind.medication, .vaccination, .vetCadence, .activity] {
+        // Strip an optional "-w<digit>" weekly suffix before parsing the UUID.
+        var body = requestID
+        if let range = body.range(of: #"-w[1-7]$"#, options: .regularExpression) {
+            body.removeSubrange(range)
+        }
+        for kind in ReminderKind.allCases {
             let prefix = prefix(for: kind)
-            if requestID.hasPrefix(prefix),
-               let id = UUID(uuidString: String(requestID.dropFirst(prefix.count))) {
+            if body.hasPrefix(prefix),
+               let id = UUID(uuidString: String(body.dropFirst(prefix.count))) {
                 return (kind, id)
             }
         }
