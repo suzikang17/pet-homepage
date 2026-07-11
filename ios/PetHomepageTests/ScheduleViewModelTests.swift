@@ -82,6 +82,31 @@ final class ScheduleViewModelTests: XCTestCase {
         XCTAssertEqual(model.progress.total, 2)
     }
 
+    func testChangeTimeAppliesToShownDayOnly() throws {
+        model.changeTime(try XCTUnwrap(model.slots.first), hour: 15, minute: 30)
+        let slot = try XCTUnwrap(model.slots.first)
+        XCTAssertEqual(slot.hour, 15)
+        XCTAssertEqual(slot.minute, 30)
+        XCTAssertNotNil(slot.timeOverride)
+        // Tomorrow keeps the template time.
+        model.goToNextDay()
+        XCTAssertEqual(try XCTUnwrap(model.slots.first).hour, 7)
+        XCTAssertNil(try XCTUnwrap(model.slots.first).timeOverride)
+        // And clearing restores today.
+        model.goToToday()
+        model.clearTimeChange(try XCTUnwrap(model.slots.first))
+        XCTAssertEqual(try XCTUnwrap(model.slots.first).hour, 7)
+    }
+
+    func testUpdateCompletionTime() throws {
+        model.checkOff(try XCTUnwrap(model.slots.first))
+        model.updateCompletionTime(try XCTUnwrap(model.slots.first), hour: 6, minute: 45)
+        let completion = try XCTUnwrap(try XCTUnwrap(model.slots.first).completion)
+        XCTAssertEqual(calendar.component(.hour, from: completion.performedAt), 6)
+        XCTAssertEqual(calendar.component(.minute, from: completion.performedAt), 45)
+        XCTAssertTrue(calendar.isDate(completion.performedAt, inSameDayAs: today))
+    }
+
     func testAttachPhoto() throws {
         model.checkOff(try XCTUnwrap(model.slots.first))
         let entry = try XCTUnwrap(model.toastCompletion)

@@ -3,9 +3,23 @@ import PhotosUI
 import SwiftUI
 import UIKit
 
+/// What the shared time-picker sheet is editing: a "this day only" schedule move, or the
+/// recorded time of a completion.
+private enum TimeSheetTarget: Identifiable {
+    case moveTime(RoutineSlot)
+    case editDone(RoutineSlot)
+
+    var id: UUID {
+        switch self {
+        case .moveTime(let slot), .editDone(let slot): slot.id
+        }
+    }
+}
+
 /// The Schedule tab: one day's care checklist at a time (chevrons/Today to move between days),
-/// check-offs with a transient "Add a photo?" toast, per-day skips, one-off tasks, and the
-/// versioned template editor behind the header's manage button.
+/// check-offs with a transient "Add a photo?" toast, per-day skips and time changes
+/// (long-press a row), one-off tasks, and the versioned template editor behind the header's
+/// manage button.
 struct ScheduleView: View {
     @State private var model: ScheduleViewModel
     @State private var showTemplateEditor = false
@@ -16,6 +30,7 @@ struct ScheduleView: View {
     @State private var showLibraryFallback = false
     @State private var libraryItem: PhotosPickerItem?
     @State private var pendingPhoto: Data?
+    @State private var timeSheet: TimeSheetTarget?
 
     private let store: RoutineStore
     private let reminderScheduler: RoutineReminderScheduler
@@ -61,6 +76,22 @@ struct ScheduleView: View {
             .sheet(isPresented: $showOneOffEditor, onDismiss: { model.load() }) {
                 RoutineTaskEditView(store: store, reminderScheduler: reminderScheduler,
                                     petStore: petStore, mode: .oneOff(day: model.day), editing: nil)
+            }
+            .sheet(item: $timeSheet) { target in
+                switch target {
+                case .moveTime(let slot):
+                    TimeAdjustSheet(title: "Change time", subtitle: "This day only",
+                                    systemImage: "clock.arrow.circlepath",
+                                    hour: slot.hour, minute: slot.minute) { hour, minute in
+                        model.changeTime(slot, hour: hour, minute: minute)
+                    }
+                case .editDone(let slot):
+                    TimeAdjustSheet(title: "Time done", subtitle: "When did it happen?",
+                                    systemImage: "clock",
+                                    hour: doneHour(of: slot), minute: doneMinute(of: slot)) { hour, minute in
+                        model.updateCompletionTime(slot, hour: hour, minute: minute)
+                    }
+                }
             }
             .fullScreenCover(isPresented: $showCamera, onDismiss: deliverPendingPhoto) {
                 CameraPicker(
@@ -204,7 +235,13 @@ struct ScheduleView: View {
                     } else if let completion = slot.completion {
                         Text("Done at \(completion.performedAt, format: .dateTime.hour().minute())")
                     } else {
-                        Text(scheduledTime(slot.task), format: .dateTime.hour().minute())
+                        Text(scheduledTime(slot), format: .dateTime.hour().minute())
+                        if slot.timeOverride != nil {
+                            // Marks a "this day only" time change (long-press → reset).
+                            Image(systemName: "clock.arrow.circlepath")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(Theme.primary)
+                        }
                     }
                 }
                 .font(.caption)
@@ -237,11 +274,67 @@ struct ScheduleView: View {
         }
         .padding(.vertical, 4)
         .accessibilityIdentifier("scheduleRow.\(slot.task.name)")
+        .contextMenu { contextActions(for: slot) }
     }
 
-    private func scheduledTime(_ task: RoutineTask) -> Date {
-        Calendar.current.date(bySettingHour: Int(task.hour), minute: Int(task.minute),
+    /// Long-press menu: per-day deviations (time change, skip) on open rows; time/photo/uncheck
+    /// on completed ones. Nothing here ever touches the weekly template.
+    @ViewBuilder
+    private func contextActions(for slot: RoutineSlot) -> some View {
+        if slot.isCompleted {
+            Button {
+                timeSheet = .editDone(slot)
+            } label: {
+                Label("Edit time done", systemImage: "clock")
+            }
+            if slot.completion?.photoArray.isEmpty ?? true {
+                Button {
+                    photoTarget = slot.completion
+                    presentCapture()
+                } label: {
+                    Label("Add a photo", systemImage: "camera")
+                }
+            }
+            Button(role: .destructive) {
+                model.uncheck(slot)
+            } label: {
+                Label("Mark as not done", systemImage: "circle")
+            }
+        } else {
+            if !slot.isSkipped {
+                Button {
+                    timeSheet = .moveTime(slot)
+                } label: {
+                    Label("Change time (this day only)", systemImage: "clock.arrow.circlepath")
+                }
+                if slot.timeOverride != nil {
+                    Button {
+                        model.clearTimeChange(slot)
+                    } label: {
+                        Label("Reset to usual time", systemImage: "arrow.uturn.backward")
+                    }
+                }
+            }
+            Button {
+                model.toggleSkip(slot)
+            } label: {
+                Label(slot.isSkipped ? "Unskip today" : "Skip today",
+                      systemImage: slot.isSkipped ? "arrow.uturn.backward" : "moon.zzz")
+            }
+        }
+    }
+
+    private func scheduledTime(_ slot: RoutineSlot) -> Date {
+        Calendar.current.date(bySettingHour: slot.hour, minute: slot.minute,
                               second: 0, of: model.day) ?? model.day
+    }
+
+    private func doneHour(of slot: RoutineSlot) -> Int {
+        slot.completion.map { Calendar.current.component(.hour, from: $0.performedAt) } ?? 9
+    }
+
+    private func doneMinute(of slot: RoutineSlot) -> Int {
+        slot.completion.map { Calendar.current.component(.minute, from: $0.performedAt) } ?? 0
     }
 
     // MARK: - Photo toast + capture
@@ -302,5 +395,47 @@ struct ScheduleView: View {
         pendingPhoto = nil
         photoTarget = nil
         model.attachPhoto(data, to: target)
+    }
+}
+
+/// Compact hour/minute picker shared by "change time (this day only)" and "edit time done".
+private struct TimeAdjustSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let title: String
+    let subtitle: String
+    let systemImage: String
+    @State private var time: Date
+    let onSave: (Int, Int) -> Void
+
+    init(title: String, subtitle: String, systemImage: String,
+         hour: Int, minute: Int, onSave: @escaping (Int, Int) -> Void) {
+        self.title = title
+        self.subtitle = subtitle
+        self.systemImage = systemImage
+        self.onSave = onSave
+        _time = State(initialValue: Calendar.current.date(bySettingHour: hour, minute: minute,
+                                                          second: 0, of: Date()) ?? Date())
+    }
+
+    var body: some View {
+        BrandFormSheet(
+            title: title,
+            systemImage: systemImage,
+            onCancel: { dismiss() },
+            onConfirm: {
+                let comps = Calendar.current.dateComponents([.hour, .minute], from: time)
+                onSave(comps.hour ?? 9, comps.minute ?? 0)
+                dismiss()
+            }
+        ) {
+            Section(subtitle) {
+                DatePicker("Time", selection: $time, displayedComponents: .hourAndMinute)
+                    .datePickerStyle(.wheel)
+                    .labelsHidden()
+                    .frame(maxWidth: .infinity)
+                    .accessibilityIdentifier("timeAdjustPicker")
+            }
+        }
+        .presentationDetents([.medium])
     }
 }

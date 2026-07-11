@@ -115,6 +115,39 @@ final class ScheduleViewModel {
         }
     }
 
+    // MARK: - Per-day time changes
+
+    /// Moves the slot's time for the shown day only (long-press → "Change time").
+    func changeTime(_ slot: RoutineSlot, hour: Int, minute: Int) {
+        do {
+            try store.overrideTime(slot.task, on: day, hour: hour, minute: minute)
+            load()
+        } catch {
+            errorMessage = String(describing: error)
+        }
+    }
+
+    /// Removes the shown day's time change, restoring the template time.
+    func clearTimeChange(_ slot: RoutineSlot) {
+        do {
+            try store.clearOverrideTime(slot.task, on: day)
+            load()
+        } catch {
+            errorMessage = String(describing: error)
+        }
+    }
+
+    /// Edits when a completed slot was actually done (time-of-day only; the day is pinned).
+    func updateCompletionTime(_ slot: RoutineSlot, hour: Int, minute: Int) {
+        guard let completion = slot.completion else { return }
+        do {
+            try store.updateCompletionTime(completion, hour: hour, minute: minute)
+            load()
+        } catch {
+            errorMessage = String(describing: error)
+        }
+    }
+
     // MARK: - Photo toast
 
     func attachPhoto(_ data: Data, to entry: LogEntry) {
