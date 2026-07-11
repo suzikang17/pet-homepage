@@ -6,7 +6,7 @@ import Observation
 /// date, maybe with a next-one-due." This is the read-side projection over the existing stores
 /// (the data model itself stays five entities for now — see the planned HealthEvent unification).
 enum TimelineKind: String, CaseIterable, Identifiable {
-    case vaccine, vet, medication, marker, symptom, activity, diary
+    case vaccine, vet, medication, marker, symptom, activity, diary, routine
     var id: String { rawValue }
 
     var label: String {
@@ -18,6 +18,7 @@ enum TimelineKind: String, CaseIterable, Identifiable {
         case .symptom: "Symptoms"
         case .activity: "Activities"
         case .diary: "Diary"
+        case .routine: "Routine"
         }
     }
 
@@ -30,6 +31,7 @@ enum TimelineKind: String, CaseIterable, Identifiable {
         case .symptom: "waveform.path.ecg"
         case .activity: "shower"
         case .diary: "book"
+        case .routine: "checklist"
         }
     }
 }
@@ -43,6 +45,7 @@ enum TimelineReference {
     case symptom(LogEntry)
     case activity(LogEntry)
     case diary(LogEntry)
+    case routine(LogEntry)
 }
 
 /// One row in the unified timeline.
@@ -85,6 +88,7 @@ final class TimelineViewModel {
             out += try logStore.episodes().map(TimelineItem.init(symptom:))
             out += try logStore.activityLogs().map(TimelineItem.init(activity:))
             out += try logStore.diaryEntries().map(TimelineItem.init(diary:))
+            out += try logStore.routineEntries().map(TimelineItem.init(routine:))
             items = out.sorted { $0.date > $1.date }
             photos = (try? logStore.allPhotos()) ?? []
             errorMessage = nil
@@ -149,6 +153,8 @@ final class TimelineViewModel {
                 await services.dueScheduler.syncActivity(newLatest)
             }
         case .diary(let entry):
+            try? services.logStore.delete(entry)
+        case .routine(let entry):
             try? services.logStore.delete(entry)
         }
         load()
@@ -230,6 +236,21 @@ extension TimelineItem {
             subtitle: (log.note?.isEmpty == false) ? log.note : log.activityType?.category.displayName,
             nextDue: log.nextDueAt,
             reference: .activity(log)
+        )
+    }
+
+    init(routine entry: LogEntry) {
+        let photoCount = entry.photoArray.count
+        let note = entry.note?.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.init(
+            id: "routine:\(entry.id.uuidString)",
+            kind: .routine,
+            date: entry.performedAt,
+            title: entry.title ?? "Routine",
+            subtitle: (note?.isEmpty == false) ? note
+                : (photoCount > 0 ? "\(photoCount) photo\(photoCount == 1 ? "" : "s")" : nil),
+            nextDue: nil,
+            reference: .routine(entry)
         )
     }
 

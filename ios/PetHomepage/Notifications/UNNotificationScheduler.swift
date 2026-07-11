@@ -27,12 +27,13 @@ final class UNNotificationScheduler: NotificationScheduling {
 
         let trigger: UNCalendarNotificationTrigger
         if let date = reminder.dateComponents {
-            // One-shot reminder on a specific calendar date (vaccination-due / vet-cadence),
-            // fired at the reminder's hour/minute.
+            // repeats == false: one-shot on a specific calendar date (vaccination-due /
+            // vet-cadence). repeats == true: repeating on the given components (weekly routine
+            // reminders, components = [weekday]). Fired at the reminder's hour/minute either way.
             var components = date
             components.hour = reminder.hour
             components.minute = reminder.minute
-            trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+            trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: reminder.repeats)
         } else {
             // Daily repeating reminder (medications).
             var components = DateComponents()
@@ -41,22 +42,25 @@ final class UNNotificationScheduler: NotificationScheduling {
             trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
         }
 
-        let id = ReminderIdentifier.requestID(kind: reminder.kind, entityID: reminder.entityID)
+        let id = ReminderIdentifier.requestID(for: reminder)
         center.removePendingNotificationRequests(withIdentifiers: [id]) // replace
         let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
         try? await center.add(request)
     }
 
     func cancel(kind: ReminderKind, entityID: UUID) async {
-        let id = ReminderIdentifier.requestID(kind: kind, entityID: entityID)
-        center.removePendingNotificationRequests(withIdentifiers: [id])
+        // Clear the bare ID plus every weekday variant — removing IDs that were never
+        // scheduled is harmless.
+        center.removePendingNotificationRequests(
+            withIdentifiers: ReminderIdentifier.requestIDs(kind: kind, entityID: entityID))
     }
 
     func pendingIDs(kind: ReminderKind) async -> [UUID] {
         let requests = await center.pendingNotificationRequests()
+        var seen = Set<UUID>()
         return requests.compactMap { request in
             guard let (parsedKind, id) = ReminderIdentifier.parse(request.identifier),
-                  parsedKind == kind else { return nil }
+                  parsedKind == kind, seen.insert(id).inserted else { return nil }
             return id
         }
     }

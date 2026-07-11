@@ -109,6 +109,12 @@ final class LogStore {
         return try fetch(NSPredicate(format: "pet == %@ AND kindRaw == %@", pet, LogKind.activity.rawValue))
     }
 
+    /// Routine completions = occurrences explicitly stamped as kind "routine".
+    func routineEntries() throws -> [LogEntry] {
+        guard let pet = try petStore.currentPet() else { return [] }
+        return try fetch(NSPredicate(format: "pet == %@ AND kindRaw == %@", pet, LogKind.routine.rawValue))
+    }
+
     func logs(of type: ActivityType) throws -> [LogEntry] {
         try fetch(NSPredicate(format: "activityType == %@", type))
     }

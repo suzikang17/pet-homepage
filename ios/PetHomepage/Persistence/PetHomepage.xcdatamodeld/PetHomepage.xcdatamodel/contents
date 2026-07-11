@@ -13,6 +13,8 @@
         <relationship name="photos" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Photo" inverseName="pet" inverseEntity="Photo"/>
         <relationship name="activityTypes" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ActivityType" inverseName="pet" inverseEntity="ActivityType"/>
         <relationship name="logEntries" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="LogEntry" inverseName="pet" inverseEntity="LogEntry"/>
+        <relationship name="routineTasks" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="RoutineTask" inverseName="pet" inverseEntity="RoutineTask"/>
+        <relationship name="routineSkips" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="RoutineSkip" inverseName="pet" inverseEntity="RoutineSkip"/>
     </entity>
     <entity name="Medication" representedClassName="Medication" syncable="YES" codeGenerationType="none">
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
@@ -96,6 +98,7 @@
         <attribute name="statusRaw" optional="YES" attributeType="String"/>
         <attribute name="value" optional="YES" attributeType="Double" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="resolvedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="routineLineageID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="logEntries" inverseEntity="Pet"/>
         <relationship name="activityType" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ActivityType" inverseName="logEntries" inverseEntity="ActivityType"/>
         <relationship name="medication" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Medication" inverseName="logEntries" inverseEntity="Medication"/>
@@ -103,5 +106,26 @@
         <relationship name="veterinarian" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Veterinarian" inverseName="logEntries" inverseEntity="Veterinarian"/>
         <relationship name="recommendations" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="VetRecommendation" inverseName="logEntry" inverseEntity="VetRecommendation"/>
         <relationship name="symptomEntries" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="SymptomEntry" inverseName="logEntry" inverseEntity="SymptomEntry"/>
+    </entity>
+    <entity name="RoutineTask" representedClassName="RoutineTask" syncable="YES" codeGenerationType="none">
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="lineageID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="name" optional="NO" attributeType="String" defaultValueString=""/>
+        <attribute name="categoryRaw" optional="NO" attributeType="String" defaultValueString="other"/>
+        <attribute name="iconName" optional="NO" attributeType="String" defaultValueString="pawprint"/>
+        <attribute name="hour" optional="YES" attributeType="Integer 64" defaultValueString="9" usesScalarValueType="YES"/>
+        <attribute name="minute" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="weekdayMask" optional="YES" attributeType="Integer 64" defaultValueString="127" usesScalarValueType="YES"/>
+        <attribute name="effectiveFrom" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="effectiveUntil" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="isOneOff" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="sortOrder" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="routineTasks" inverseEntity="Pet"/>
+    </entity>
+    <entity name="RoutineSkip" representedClassName="RoutineSkip" syncable="YES" codeGenerationType="none">
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="taskLineageID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="routineSkips" inverseEntity="Pet"/>
     </entity>
 </model>
