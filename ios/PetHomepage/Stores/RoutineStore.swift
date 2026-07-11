@@ -251,6 +251,33 @@ final class RoutineStore {
         try context.save()
     }
 
+    // MARK: - Seeding
+
+    /// The starter routine, pre-seeded so the Schedule tab works with zero setup. Training is
+    /// deliberately Tue+Thu so the day-of-week feature is visible from minute one.
+    static let defaultSeeds: [(name: String, category: ActivityCategory, iconName: String,
+                               hour: Int, minute: Int, weekdayMask: Int64)] = [
+        ("Breakfast", .feeding, "fork.knife", 7, 0, Weekdays.all),
+        ("Morning walk", .play, "figure.walk", 8, 0, Weekdays.all),
+        ("Training", .training, "graduationcap", 17, 0, Weekdays.mask(of: [3, 5])),
+        ("Dinner", .feeding, "fork.knife", 18, 0, Weekdays.all),
+        ("Wind down", .care, "moon.stars", 21, 0, Weekdays.all),
+    ]
+
+    /// Seeds any default tasks that don't already exist. De-dupes by case-insensitive name
+    /// against ALL rows for the pet — including closed versions and rows synced in via CloudKit —
+    /// so re-running never double-seeds and never resurrects a task the user deleted.
+    func seedDefaultsIfNeeded() throws {
+        guard let pet = try petStore.currentPet() else { return }
+        let request = RoutineTask.fetchRequest()
+        request.predicate = NSPredicate(format: "pet == %@", pet)
+        let existingNames = Set(try context.fetch(request).map { $0.name.lowercased() })
+        for seed in Self.defaultSeeds where !existingNames.contains(seed.name.lowercased()) {
+            try createTask(name: seed.name, category: seed.category, iconName: seed.iconName,
+                           hour: seed.hour, minute: seed.minute, weekdayMask: seed.weekdayMask)
+        }
+    }
+
     /// Time-of-day sort shared by the template list and day slots.
     static func byTime(_ l: RoutineTask, _ r: RoutineTask) -> Bool {
         if l.hour != r.hour { return l.hour < r.hour }
