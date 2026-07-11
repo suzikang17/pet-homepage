@@ -13,6 +13,8 @@ public class Pet: NSManagedObject {
     @NSManaged public var medications: NSSet?
     @NSManaged public var veterinarians: NSSet?
     @NSManaged public var photos: NSSet?
+    @NSManaged public var routineTasks: NSSet?
+    @NSManaged public var routineSkips: NSSet?
 }
 
 extension Pet {

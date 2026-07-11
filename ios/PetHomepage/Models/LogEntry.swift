@@ -10,6 +10,7 @@ enum LogKind: String, CaseIterable, Identifiable {
     case vet
     case marker
     case symptom
+    case routine
 
     var id: String { rawValue }
 }
@@ -37,6 +38,7 @@ public class LogEntry: NSManagedObject {
     @NSManaged public var treatmentNotes: String?
     @NSManaged public var statusRaw: String?
     @NSManaged public var resolvedAt: Date?
+    @NSManaged public var routineLineageID: UUID?
     @NSManaged public var pet: Pet?
     @NSManaged public var activityType: ActivityType?
     @NSManaged public var medication: Medication?
