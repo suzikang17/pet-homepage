@@ -9,6 +9,10 @@ enum ReminderKind: String, CaseIterable {
     case vetCadence
     case activity
     case routine
+    /// A one-shot "snooze 30 min" re-fire of a routine reminder. Its own kind so scheduling a
+    /// snooze can never replace the task's repeating trigger (they'd share an identifier
+    /// otherwise), and so routine re-syncs (cancelAll(.routine)) leave pending snoozes alone.
+    case routineSnooze
 }
 
 /// A single pending reminder, expressed independently of UserNotifications so

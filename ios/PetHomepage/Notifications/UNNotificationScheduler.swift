@@ -24,6 +24,11 @@ final class UNNotificationScheduler: NotificationScheduling {
         content.title = reminder.title
         content.body = reminder.body
         content.sound = .default
+        // Routine reminders (and their snoozed re-fires) carry the actionable category:
+        // Mark as done / Skip today / Snooze 30 min, handled by RoutineNotificationResponder.
+        if reminder.kind == .routine || reminder.kind == .routineSnooze {
+            content.categoryIdentifier = RoutineNotificationAction.categoryID
+        }
 
         let trigger: UNCalendarNotificationTrigger
         if let date = reminder.dateComponents {

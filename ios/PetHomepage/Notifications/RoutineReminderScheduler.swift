@@ -62,8 +62,11 @@ final class RoutineReminderScheduler {
         }
     }
 
+    /// Cancels the task's triggers AND any pending snoozed re-fire — a snooze must not outlive
+    /// its deleted task.
     func cancelTask(_ task: RoutineTask) async {
         await scheduler.cancel(kind: .routine, entityID: task.id)
+        await scheduler.cancel(kind: .routineSnooze, entityID: task.id)
     }
 
     /// Full re-sync (app start / pet switch): clears the whole kind, then schedules the given
