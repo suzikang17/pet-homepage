@@ -29,7 +29,9 @@ final class FakeNotificationScheduler: NotificationScheduling {
     }
 
     func pendingIDs(kind: ReminderKind) async -> [UUID] {
-        scheduled.filter { $0.kind == kind }.map(\.entityID)
+        // Dedupe like the real adapter: a routine task's per-weekday reminders share one entityID.
+        var seen = Set<UUID>()
+        return scheduled.filter { $0.kind == kind && seen.insert($0.entityID).inserted }.map(\.entityID)
     }
 
     func cancelAll(kind: ReminderKind) async {
