@@ -141,7 +141,7 @@ struct PetProfileView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)
-        .background(Color.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     // MARK: - Quick actions
@@ -172,7 +172,7 @@ struct PetProfileView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 13)
-        .background(Color.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     // MARK: - Upcoming + Recent

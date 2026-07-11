@@ -2,16 +2,22 @@
 // Bold & distinctive design system: an electric-violet brand with rounded, heavy
 // type, gradient hero headers, and soft elevated cards. Shared across every screen.
 import SwiftUI
+import UIKit
 
 enum Theme {
-    // Brand palette
+    // Brand palette. The violet/coral brand colors read well on both appearances; the
+    // neutrals (bg/card/ink/inkSoft) are adaptive so dark mode gets a navy-violet dark
+    // surface instead of near-black text on system-dark fills.
     static let primary = Color(hex: 0x6C4CF1)   // electric indigo-violet
     static let primary2 = Color(hex: 0x9B5CF6)  // lighter violet (gradient end)
     static let accent = Color(hex: 0xFF6B5C)    // warm coral
-    static let bg = Color(hex: 0xF4F3FA)         // app background
-    static let card = Color.white
-    static let ink = Color(hex: 0x16142A)        // near-black navy
-    static let inkSoft = Color(hex: 0x6E6A86)    // secondary text
+    static let bg = Color(light: 0xF4F3FA, dark: 0x14121F)      // app background
+    static let card = Color(light: 0xFFFFFF, dark: 0x211E33)    // elevated card surface
+    static let ink = Color(light: 0x16142A, dark: 0xEEECF8)     // primary text
+    static let inkSoft = Color(light: 0x6E6A86, dark: 0x9E9AB8) // secondary text
+    /// Shadow tint: always the dark navy. (Shadows must NOT track `ink` — an adaptive ink
+    /// would render light-colored "glow" shadows in dark mode.)
+    static let shadow = Color(hex: 0x16142A)
 
     // Status colors
     static let ok = Color(hex: 0x12B886)
@@ -37,6 +43,17 @@ extension Color {
             blue: Double(hex & 0xFF) / 255,
             opacity: alpha
         )
+    }
+
+    /// A dynamic color that resolves to `light` or `dark` per the current appearance.
+    init(light: UInt, dark: UInt) {
+        self.init(uiColor: UIColor { trait in
+            let hex = trait.userInterfaceStyle == .dark ? dark : light
+            return UIColor(red: CGFloat((hex >> 16) & 0xFF) / 255,
+                           green: CGFloat((hex >> 8) & 0xFF) / 255,
+                           blue: CGFloat(hex & 0xFF) / 255,
+                           alpha: 1)
+        })
     }
 }
 
@@ -178,7 +195,7 @@ struct HeroHeader: View {
                 .foregroundStyle(Theme.primary)
                 .frame(width: 42, height: 42)
                 .background(.white, in: Circle())
-                .shadow(color: Theme.ink.opacity(0.18), radius: 8, y: 3)
+                .shadow(color: Theme.shadow.opacity(0.18), radius: 8, y: 3)
         }
     }
 }
@@ -190,7 +207,7 @@ struct BrandCard<Content: View>: View {
         content
             .padding(18)
             .background(Theme.card, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-            .shadow(color: Theme.ink.opacity(0.06), radius: 14, y: 6)
+            .shadow(color: Theme.shadow.opacity(0.06), radius: 14, y: 6)
     }
 }
 
@@ -308,7 +325,7 @@ extension View {
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Theme.card, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .shadow(color: Theme.ink.opacity(0.05), radius: 10, y: 4)
+            .shadow(color: Theme.shadow.opacity(0.05), radius: 10, y: 4)
             .listRowInsets(EdgeInsets(top: 5, leading: 18, bottom: 5, trailing: 18))
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)

@@ -128,8 +128,8 @@ struct ScheduleView: View {
                 .font(.system(size: 15, weight: .bold))
                 .foregroundStyle(Theme.primary)
                 .frame(width: 38, height: 38)
-                .background(Color.white, in: Circle())
-                .shadow(color: Theme.ink.opacity(0.06), radius: 6, y: 2)
+                .background(Theme.card, in: Circle())
+                .shadow(color: Theme.shadow.opacity(0.06), radius: 6, y: 2)
         }
         .accessibilityIdentifier(id)
     }

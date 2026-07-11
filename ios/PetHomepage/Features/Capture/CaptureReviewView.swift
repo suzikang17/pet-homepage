@@ -141,7 +141,7 @@ struct CaptureReviewView: View {
                 .font(.subheadline.weight(.semibold))
                 .padding(.horizontal, 14)
                 .padding(.vertical, 7)
-                .background(active ? Theme.accent : Color.white, in: Capsule())
+                .background(active ? Theme.accent : Theme.card, in: Capsule())
                 .foregroundStyle(active ? .white : Theme.ink)
                 .overlay(Capsule().stroke(Theme.ink.opacity(active ? 0 : 0.08)))
         }
@@ -160,7 +160,7 @@ struct CaptureReviewView: View {
                 .font(.subheadline.weight(.semibold))
                 .padding(.horizontal, 14)
                 .padding(.vertical, 7)
-                .background(Color.white, in: Capsule())
+                .background(Theme.card, in: Capsule())
                 .foregroundStyle(Theme.ink)
                 .overlay(Capsule().stroke(Theme.accent.opacity(0.4)))
         }
@@ -180,7 +180,7 @@ struct CaptureReviewView: View {
                 .font(.subheadline.weight(.semibold))
                 .padding(.horizontal, 14)
                 .padding(.vertical, 7)
-                .background(active ? Theme.primary : Color.white, in: Capsule())
+                .background(active ? Theme.primary : Theme.card, in: Capsule())
                 .foregroundStyle(active ? .white : Theme.ink)
                 .overlay(Capsule().stroke(Theme.ink.opacity(active ? 0 : 0.08)))
         }

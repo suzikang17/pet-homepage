@@ -19,6 +19,7 @@ struct RoutineTemplateView: View {
             ForEach(tasks) { task in
                 Button { editTarget = task } label: { row(task) }
                     .buttonStyle(.plain)
+                    .listRowBackground(Theme.card)
                     .swipeActions(edge: .trailing) {
                         Button(role: .destructive) {
                             Task {
@@ -32,6 +33,9 @@ struct RoutineTemplateView: View {
                     }
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(Theme.bg)
+        .tint(Theme.primary)
         .navigationTitle("Edit routine")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
