@@ -53,6 +53,8 @@ struct ContentView: View {
         let dueScheduler = DueReminderScheduler(scheduler: UNNotificationScheduler())
         let symptomEntryStore = SymptomEntryStore(context: context)
         let activityStore = ActivityStore(context: context, petStore: petStore)
+        let routineStore = RoutineStore(context: context, petStore: petStore)
+        let routineReminderScheduler = RoutineReminderScheduler(scheduler: UNNotificationScheduler())
         let veterinarianStore = VeterinarianStore(context: context, petStore: petStore)
         let diaryStore = DiaryStore(context: context, petStore: petStore)
         let logStore = LogStore(context: context, petStore: petStore)
@@ -143,14 +145,25 @@ struct ContentView: View {
             Color.clear
                 .tabItem { Label("Capture", systemImage: "camera.fill") }
                 .tag(2)
+            ScheduleView(store: routineStore, logStore: logStore,
+                         reminderScheduler: routineReminderScheduler, petStore: petStore)
+                .tabItem { Label("Schedule", systemImage: "checklist") }
+                .tag(3)
             CareTeamView(store: veterinarianStore)
                 .tabItem { Label("Care Team", systemImage: "stethoscope") }
-                .tag(3)
+                .tag(4)
         }
         .tint(Theme.primary)
         .task {
             try? activityStore.seedDefaultsIfNeeded()
             try? logStore.backfillKindsIfNeeded()
+            try? routineStore.seedDefaultsIfNeeded()
+            // Re-sync routine reminders on every launch: template edits made on another device
+            // (CloudKit) otherwise leave this device's notifications stale.
+            if let tasks = try? routineStore.currentTasks() {
+                let petName = try? petStore.currentPet()?.name
+                await routineReminderScheduler.syncAll(tasks: tasks, petName: petName ?? nil)
+            }
         }
         .onChange(of: selectedTab) { old, new in
             guard new == 2 else { return }
