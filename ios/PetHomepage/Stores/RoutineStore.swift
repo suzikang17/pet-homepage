@@ -1,6 +1,18 @@
 // ios/PetHomepage/Stores/RoutineStore.swift
 import CoreData
 
+/// One row of a day's checklist: the template task in effect that day plus its per-day state.
+/// Identity is the lineageID — stable across template versions, unique within a day.
+struct RoutineSlot: Identifiable {
+    let task: RoutineTask
+    let completion: LogEntry?
+    let skip: RoutineSkip?
+
+    var id: UUID { task.lineageID }
+    var isCompleted: Bool { completion != nil }
+    var isSkipped: Bool { skip != nil }
+}
+
 /// The versioned weekly care template + per-day deviations, pet-scoped. A day's checklist is
 /// COMPUTED from the template rows in effect on that date (see slots(for:)) — days are never
 /// materialized, so CloudKit sync can't double-create them. Only deviations are stored:
@@ -137,6 +149,73 @@ final class RoutineStore {
         task.pet = try petStore.ensurePet()
         try context.save()
         return task
+    }
+
+    // MARK: - Day computation
+
+    /// The checklist for `day`, computed from template rows in effect on that date (weekday
+    /// match + effective window), overlaid with that day's completions and skips. Pure read.
+    func slots(for day: Date) throws -> [RoutineSlot] {
+        guard let pet = try petStore.currentPet() else { return [] }
+        let start = calendar.startOfDay(for: day)
+        guard let end = calendar.date(byAdding: .day, value: 1, to: start) else { return [] }
+        let weekday = calendar.component(.weekday, from: start)
+
+        let taskRequest = RoutineTask.fetchRequest()
+        taskRequest.predicate = NSPredicate(
+            format: "pet == %@ AND effectiveFrom <= %@ AND (effectiveUntil == nil OR effectiveUntil > %@)",
+            pet, start as NSDate, start as NSDate)
+        let tasks = try context.fetch(taskRequest)
+            .filter { Weekdays.contains($0.weekdayMask, weekday: weekday) }
+            .sorted(by: Self.byTime)
+
+        let completionRequest = LogEntry.fetchRequest()
+        completionRequest.predicate = NSPredicate(
+            format: "pet == %@ AND kindRaw == %@ AND performedAt >= %@ AND performedAt < %@",
+            pet, LogKind.routine.rawValue, start as NSDate, end as NSDate)
+        var completions: [UUID: LogEntry] = [:]
+        for entry in try context.fetch(completionRequest) {
+            if let lineage = entry.routineLineageID { completions[lineage] = entry }
+        }
+
+        let skipRequest = RoutineSkip.fetchRequest()
+        skipRequest.predicate = NSPredicate(format: "pet == %@ AND date == %@", pet, start as NSDate)
+        var skips: [UUID: RoutineSkip] = [:]
+        for skip in try context.fetch(skipRequest) {
+            skips[skip.taskLineageID] = skip
+        }
+
+        return tasks.map {
+            RoutineSlot(task: $0, completion: completions[$0.lineageID], skip: skips[$0.lineageID])
+        }
+    }
+
+    // MARK: - Skips
+
+    /// Marks the task's lineage as deliberately skipped on `day`. Idempotent.
+    func skip(_ task: RoutineTask, on day: Date) throws {
+        guard try skipRecord(lineageID: task.lineageID, on: day) == nil else { return }
+        let skip = RoutineSkip(context: context)
+        skip.id = UUID()
+        skip.date = calendar.startOfDay(for: day)
+        skip.taskLineageID = task.lineageID
+        skip.pet = try petStore.ensurePet()
+        try context.save()
+    }
+
+    func unskip(_ task: RoutineTask, on day: Date) throws {
+        guard let record = try skipRecord(lineageID: task.lineageID, on: day) else { return }
+        context.delete(record)
+        try context.save()
+    }
+
+    private func skipRecord(lineageID: UUID, on day: Date) throws -> RoutineSkip? {
+        let start = calendar.startOfDay(for: day)
+        let request = RoutineSkip.fetchRequest()
+        request.predicate = NSPredicate(format: "taskLineageID == %@ AND date == %@",
+                                        lineageID as CVarArg, start as NSDate)
+        request.fetchLimit = 1
+        return try context.fetch(request).first
     }
 
     /// Time-of-day sort shared by the template list and day slots.
