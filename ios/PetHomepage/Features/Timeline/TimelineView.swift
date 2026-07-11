@@ -273,6 +273,10 @@ struct TimelineView: View {
                                 dueScheduler: services.dueScheduler, editing: log)
         case .diary(let entry):
             DiaryEntryEditView(logStore: services.logStore, editing: entry)
+        case .routine(let entry):
+            // Routine completions reuse the diary editor for note/photo edits: updateDiary only
+            // touches performedAt/note, never kindRaw, so the entry stays kind routine.
+            DiaryEntryEditView(logStore: services.logStore, editing: entry)
         }
     }
 
@@ -298,6 +302,10 @@ struct TimelineView: View {
                                 dueScheduler: services.dueScheduler, editing: nil)
         case .diary:
             DiaryEntryEditView(logStore: services.logStore, editing: nil)
+        case .routine:
+            // Routine completions are created by checking off tasks in the Schedule tab —
+            // never from the Timeline's add menu (which has no Routine entry).
+            EmptyView()
         }
     }
 
@@ -310,6 +318,7 @@ struct TimelineView: View {
         case .symptom: .orange
         case .activity: .cyan
         case .diary: .brown
+        case .routine: .mint
         }
     }
 }
