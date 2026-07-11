@@ -15,6 +15,7 @@ public class Pet: NSManagedObject {
     @NSManaged public var photos: NSSet?
     @NSManaged public var routineTasks: NSSet?
     @NSManaged public var routineSkips: NSSet?
+    @NSManaged public var routineOverrides: NSSet?
 }
 
 extension Pet {

@@ -7,10 +7,24 @@ struct RoutineSlot: Identifiable {
     let task: RoutineTask
     let completion: LogEntry?
     let skip: RoutineSkip?
+    /// A "this day only" time change; nil = the template time applies.
+    let timeOverride: RoutineOverride?
+
+    init(task: RoutineTask, completion: LogEntry?, skip: RoutineSkip?,
+         timeOverride: RoutineOverride? = nil) {
+        self.task = task
+        self.completion = completion
+        self.skip = skip
+        self.timeOverride = timeOverride
+    }
 
     var id: UUID { task.lineageID }
     var isCompleted: Bool { completion != nil }
     var isSkipped: Bool { skip != nil }
+
+    /// The time this slot is due on its day — the override's when one exists, else the template's.
+    var hour: Int { timeOverride.map { Int($0.hour) } ?? Int(task.hour) }
+    var minute: Int { timeOverride.map { Int($0.minute) } ?? Int(task.minute) }
 }
 
 /// The versioned weekly care template + per-day deviations, pet-scoped. A day's checklist is
@@ -167,7 +181,6 @@ final class RoutineStore {
             pet, start as NSDate, start as NSDate)
         let tasks = try context.fetch(taskRequest)
             .filter { Weekdays.contains($0.weekdayMask, weekday: weekday) }
-            .sorted(by: Self.byTime)
 
         let completionRequest = LogEntry.fetchRequest()
         completionRequest.predicate = NSPredicate(
@@ -185,21 +198,38 @@ final class RoutineStore {
             skips[skip.taskLineageID] = skip
         }
 
-        return tasks.map {
-            RoutineSlot(task: $0, completion: completions[$0.lineageID], skip: skips[$0.lineageID])
+        let overrideRequest = RoutineOverride.fetchRequest()
+        overrideRequest.predicate = NSPredicate(format: "pet == %@ AND date == %@", pet, start as NSDate)
+        var overrides: [UUID: RoutineOverride] = [:]
+        for override in try context.fetch(overrideRequest) {
+            overrides[override.taskLineageID] = override
         }
+
+        // Sort by each slot's EFFECTIVE time (a "this day only" override moves the row).
+        return tasks
+            .map {
+                RoutineSlot(task: $0, completion: completions[$0.lineageID],
+                            skip: skips[$0.lineageID], timeOverride: overrides[$0.lineageID])
+            }
+            .sorted { l, r in
+                if l.hour != r.hour { return l.hour < r.hour }
+                if l.minute != r.minute { return l.minute < r.minute }
+                if l.task.sortOrder != r.task.sortOrder { return l.task.sortOrder < r.task.sortOrder }
+                return l.task.name < r.task.name
+            }
     }
 
     // MARK: - Skips
 
-    /// Marks the task's lineage as deliberately skipped on `day`. Idempotent.
+    /// Marks the task's lineage as deliberately skipped on `day`. Idempotent. Attaches to the
+    /// task's own pet (not the active pet) so notification actions work for any pet's task.
     func skip(_ task: RoutineTask, on day: Date) throws {
         guard try skipRecord(lineageID: task.lineageID, on: day) == nil else { return }
         let skip = RoutineSkip(context: context)
         skip.id = UUID()
         skip.date = calendar.startOfDay(for: day)
         skip.taskLineageID = task.lineageID
-        skip.pet = try petStore.ensurePet()
+        skip.pet = try task.pet ?? petStore.ensurePet()
         try context.save()
     }
 
@@ -212,6 +242,41 @@ final class RoutineStore {
     private func skipRecord(lineageID: UUID, on day: Date) throws -> RoutineSkip? {
         let start = calendar.startOfDay(for: day)
         let request = RoutineSkip.fetchRequest()
+        request.predicate = NSPredicate(format: "taskLineageID == %@ AND date == %@",
+                                        lineageID as CVarArg, start as NSDate)
+        request.fetchLimit = 1
+        return try context.fetch(request).first
+    }
+
+    // MARK: - Time overrides ("this day only")
+
+    /// Moves the task to a different time on `day` only. Upserts: overriding twice replaces
+    /// the previous override. The template and every other day are untouched.
+    func overrideTime(_ task: RoutineTask, on day: Date, hour: Int, minute: Int) throws {
+        let record = try overrideRecord(lineageID: task.lineageID, on: day) ?? {
+            let fresh = RoutineOverride(context: context)
+            fresh.id = UUID()
+            fresh.date = calendar.startOfDay(for: day)
+            fresh.taskLineageID = task.lineageID
+            fresh.pet = task.pet
+            return fresh
+        }()
+        if record.pet == nil { record.pet = try petStore.ensurePet() }
+        record.hour = Int64(hour)
+        record.minute = Int64(minute)
+        try context.save()
+    }
+
+    /// Removes the day's time change, restoring the template time.
+    func clearOverrideTime(_ task: RoutineTask, on day: Date) throws {
+        guard let record = try overrideRecord(lineageID: task.lineageID, on: day) else { return }
+        context.delete(record)
+        try context.save()
+    }
+
+    private func overrideRecord(lineageID: UUID, on day: Date) throws -> RoutineOverride? {
+        let start = calendar.startOfDay(for: day)
+        let request = RoutineOverride.fetchRequest()
         request.predicate = NSPredicate(format: "taskLineageID == %@ AND date == %@",
                                         lineageID as CVarArg, start as NSDate)
         request.fetchLimit = 1
@@ -231,7 +296,12 @@ final class RoutineStore {
         if calendar.isDate(now, inSameDayAs: start) {
             performedAt = now
         } else {
-            performedAt = calendar.date(bySettingHour: Int(task.hour), minute: Int(task.minute),
+            // Past-day check-off stamps the day's effective time — the override's if that day
+            // had a "this day only" time change, else the template's.
+            let override = try overrideRecord(lineageID: task.lineageID, on: start)
+            let hour = override.map { Int($0.hour) } ?? Int(task.hour)
+            let minute = override.map { Int($0.minute) } ?? Int(task.minute)
+            performedAt = calendar.date(bySettingHour: hour, minute: minute,
                                         second: 0, of: start) ?? start
         }
         let entry = LogEntry(context: context)
@@ -240,9 +310,33 @@ final class RoutineStore {
         entry.kind = .routine
         entry.title = task.name
         entry.routineLineageID = task.lineageID
-        entry.pet = try petStore.ensurePet()
+        // The task's own pet, not the active pet: a notification action can complete a
+        // non-active pet's task.
+        entry.pet = try task.pet ?? petStore.ensurePet()
         try context.save()
         return entry
+    }
+
+    /// The completion entry for this task on `day`, if any. Pet-independent (keyed by lineage),
+    /// so notification actions can dedupe without relying on the active-pet scope.
+    func completion(of task: RoutineTask, on day: Date) throws -> LogEntry? {
+        let start = calendar.startOfDay(for: day)
+        guard let end = calendar.date(byAdding: .day, value: 1, to: start) else { return nil }
+        let request = LogEntry.fetchRequest()
+        request.predicate = NSPredicate(
+            format: "kindRaw == %@ AND routineLineageID == %@ AND performedAt >= %@ AND performedAt < %@",
+            LogKind.routine.rawValue, task.lineageID as CVarArg, start as NSDate, end as NSDate)
+        request.fetchLimit = 1
+        return try context.fetch(request).first
+    }
+
+    /// Moves a completion within its day (the "I actually did this at 7:40" edit). The day is
+    /// pinned — only the time-of-day changes, so the entry stays on its slot.
+    func updateCompletionTime(_ completion: LogEntry, hour: Int, minute: Int) throws {
+        let day = calendar.startOfDay(for: completion.performedAt)
+        completion.performedAt = calendar.date(bySettingHour: hour, minute: minute,
+                                               second: 0, of: day) ?? completion.performedAt
+        try context.save()
     }
 
     /// Un-checking deletes the completion entry (photos cascade with it).
