@@ -48,6 +48,11 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
         # Required for the "Pair a device" QR scanner (VisionKit DataScannerViewController).
         INFOPLIST_KEY_NSCameraUsageDescription: "Take photos to attach to your pet's records and scan the pairing QR code shown on your dashboard."
+        # Walk auto-detection (Settings → Walk detection). When-In-Use covers the home-location
+        # picker; Always powers the home geofence that starts/ends walk logging in background.
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Detect when a walk starts so the app can offer to log it."
+        INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription: "End the walk automatically the moment you arrive back home, even when the app is closed."
+        INFOPLIST_KEY_NSMotionUsageDescription: "Recognize walking so short trips to the car don't trigger walk prompts."
   PetHomepageTests:
     type: bundle.unit-test
     platform: iOS
