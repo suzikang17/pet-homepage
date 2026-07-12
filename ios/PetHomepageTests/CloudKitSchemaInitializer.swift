@@ -6,21 +6,32 @@ import XCTest
 
 /// Manual tool, not a test of app behavior: pushes the complete Core Data model into the
 /// CloudKit **Development** schema (all entities, all attributes — no lazy per-record
-/// creation). Run it from Xcode whenever the model changes, then deploy Development →
-/// Production in the CloudKit Console.
+/// creation). After a green run, deploy Development → Production in the CloudKit Console.
 ///
-/// How to run: Product → Scheme → Edit Scheme… → Test → Arguments → Environment Variables →
-/// add CK_SCHEMA_INIT = 1, then run just this test (⌘U or the diamond in the gutter).
-/// Without that variable it self-skips, so CI never touches the schema.
+/// Runs automatically on any developer Mac (just run the test, no scheme setup); it
+/// self-skips on CI (GitHub Actions sets CI=true) so automation never touches the schema.
+/// initializeCloudKitSchema is idempotent — re-running is always safe.
+///
+/// Requirements on the Mac: Xcode signed into the team's Apple ID
+/// (Xcode → Settings → Accounts) and network access. A real push takes several seconds;
+/// an instant finish means it skipped or failed — read the message.
 final class CloudKitSchemaInitializer: XCTestCase {
     func testPushDevelopmentSchema() throws {
-        guard ProcessInfo.processInfo.environment["CK_SCHEMA_INIT"] == "1" else {
-            throw XCTSkip("Schema push is manual-only: set CK_SCHEMA_INIT=1 in the test scheme.")
-        }
+        try XCTSkipIf(ProcessInfo.processInfo.environment["CI"] != nil,
+                      "Schema push runs only on a developer machine, never CI")
         let controller = PersistenceController()
         let container = try XCTUnwrap(
             controller.container as? NSPersistentCloudKitContainer,
             "Expected the real CloudKit-backed container")
-        try container.initializeCloudKitSchema(options: [])
+        do {
+            try container.initializeCloudKitSchema(options: [])
+            print("✅ CloudKit Development schema pushed for iCloud.pet.homepage — now deploy to Production in the CloudKit Console")
+        } catch {
+            XCTFail("""
+            ❌ CloudKit schema push FAILED: \(error)
+            Usual causes: Xcode not signed into the team Apple ID (Xcode → Settings → \
+            Accounts), or no network. Fix and re-run this test.
+            """)
+        }
     }
 }
