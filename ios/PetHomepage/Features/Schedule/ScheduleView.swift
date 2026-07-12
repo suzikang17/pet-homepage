@@ -44,7 +44,10 @@ struct ScheduleView: View {
         self.reminderScheduler = reminderScheduler
         self.petStore = petStore
         _model = State(initialValue: ScheduleViewModel(store: store, logStore: logStore))
-        _walkModel = State(initialValue: WalkSessionModel(sessions: walkSessions))
+        _walkModel = State(initialValue: WalkSessionModel(sessions: walkSessions, petName: {
+            if let pet = try? petStore.currentPet(), let pet { return pet.name }
+            return "Your pet"
+        }))
     }
 
     var body: some View {

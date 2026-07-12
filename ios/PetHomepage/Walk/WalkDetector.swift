@@ -131,6 +131,7 @@ final class WalkDetector: NSObject {
     private func autoEnd(at endDate: Date) {
         guard let session = sessions.active,
               let entry = try? sessions.end(at: endDate) else { return }
+        WalkLiveActivityController.sync(active: nil, petName: "")
 
         let content = UNMutableNotificationContent()
         let minutes = entry.durationMinutes ?? 0

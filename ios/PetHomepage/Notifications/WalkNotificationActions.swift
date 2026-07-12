@@ -97,6 +97,9 @@ final class WalkActionHandler {
 
     func handle(actionID: String, requestID: String) {
         guard let parsed = WalkRequestID.parse(requestID) else { return }
+        defer {
+            WalkLiveActivityController.sync(active: sessions.active, petName: currentPetName())
+        }
         switch (actionID, parsed) {
         case let (WalkNotificationAction.start, .detectedActivity(typeID, exitedAt)):
             guard sessions.active == nil else { return }
@@ -112,6 +115,13 @@ final class WalkActionHandler {
         default:
             break // plain tap opens the app
         }
+    }
+
+    private func currentPetName() -> String {
+        if let pet = try? PetStore(context: context, defaults: defaults).currentPet(), let pet {
+            return pet.name
+        }
+        return "Your pet"
     }
 
     /// Deletes the auto-ended entry and re-opens the session with its original start, so an

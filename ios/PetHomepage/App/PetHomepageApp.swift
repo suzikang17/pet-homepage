@@ -52,6 +52,7 @@ struct PetHomepageApp: App {
                     // A walk session forgotten for 4+ hours is saved open-ended; tell the
                     // user so they can fill in the end time.
                     if let entry = try? walkSessions.expireIfStale() {
+                        WalkLiveActivityController.sync(active: nil, petName: "")
                         let content = UNMutableNotificationContent()
                         content.title = "Walk never ended"
                         content.body = "A walk was left running — it's saved without an end time. Tap to fix."

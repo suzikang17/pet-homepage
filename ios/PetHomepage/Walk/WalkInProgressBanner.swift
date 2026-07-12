@@ -6,10 +6,12 @@ import SwiftUI
 @Observable
 final class WalkSessionModel {
     private let sessions: WalkSessionStore
+    private let petName: () -> String
     private(set) var active: WalkSession?
 
-    init(sessions: WalkSessionStore) {
+    init(sessions: WalkSessionStore, petName: @escaping () -> String = { "Your pet" }) {
         self.sessions = sessions
+        self.petName = petName
         refresh()
     }
 
@@ -20,16 +22,19 @@ final class WalkSessionModel {
     func startRoutine(taskID: UUID) {
         _ = try? sessions.startRoutine(taskID: taskID, source: .manual)
         refresh()
+        WalkLiveActivityController.sync(active: active, petName: petName())
     }
 
     func end() {
         _ = try? sessions.end()
         refresh()
+        WalkLiveActivityController.sync(active: active, petName: petName())
     }
 
     func cancel() {
         sessions.cancel()
         refresh()
+        WalkLiveActivityController.sync(active: active, petName: petName())
     }
 }
 

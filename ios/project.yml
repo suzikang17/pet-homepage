@@ -18,6 +18,11 @@ targets:
       - path: PetHomepage
         excludes:
           - "**/.omc/**"
+      # Shared with the widget extension: the ActivityAttributes both sides encode/decode.
+      - path: PetHomepageWidgets/WalkActivityAttributes.swift
+    dependencies:
+      - target: PetHomepageWidgets
+        embed: true
     entitlements:
       path: PetHomepage/PetHomepage.entitlements
       properties:
@@ -53,6 +58,29 @@ targets:
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Detect when a walk starts so the app can offer to log it."
         INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription: "End the walk automatically the moment you arrive back home, even when the app is closed."
         INFOPLIST_KEY_NSMotionUsageDescription: "Recognize walking so short trips to the car don't trigger walk prompts."
+        # Lock-screen walk timer (WalkLiveActivityWidget in the PetHomepageWidgets extension).
+        INFOPLIST_KEY_NSSupportsLiveActivities: "YES"
+  PetHomepageWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: PetHomepageWidgets
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: pet.homepage.PetHomepage.Widgets
+        DEVELOPMENT_TEAM: X5C7XC8SAV
+        CODE_SIGN_STYLE: Automatic
+        # XcodeGen writes this target's Info.plist from the `info` block below; the
+        # project-wide GENERATE_INFOPLIST_FILE=YES must not also synthesize one.
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: YES
+    info:
+      path: PetHomepageWidgets/Info.plist
+      properties:
+        CFBundleDisplayName: "Pet Homepage"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+
   PetHomepageTests:
     type: bundle.unit-test
     platform: iOS
