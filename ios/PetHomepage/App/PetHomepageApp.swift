@@ -17,13 +17,17 @@ struct PetHomepageApp: App {
         }
         persistence = controller
 
-        // Actionable routine reminders: register the Done/Skip/Snooze category and route
-        // notification responses into the store (works from the lock screen, app closed).
-        let handler = RoutineActionHandler(context: controller.container.viewContext,
+        // Actionable reminders: register the routine + walk categories and route notification
+        // responses into the stores (works from the lock screen, app closed).
+        let context = controller.container.viewContext
+        let handler = RoutineActionHandler(context: context,
                                            scheduler: UNNotificationScheduler())
-        notificationResponder = RoutineNotificationResponder(handler: handler)
+        let walkHandler = WalkActionHandler(sessions: WalkSessionStore(context: context),
+                                            context: context)
+        notificationResponder = RoutineNotificationResponder(handler: handler,
+                                                             walkHandler: walkHandler)
         UNUserNotificationCenter.current().delegate = notificationResponder
-        RoutineNotificationAction.registerCategories()
+        NotificationBootstrap.registerCategories()
     }
 
     var body: some Scene {

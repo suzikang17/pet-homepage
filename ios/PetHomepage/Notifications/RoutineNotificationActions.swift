@@ -11,16 +11,15 @@ enum RoutineNotificationAction {
     static let skip = "routineSkipToday"
     static let snooze = "routineSnooze30"
 
-    /// Registers the category with the system. Call once at launch, before any routine
-    /// notification can be delivered.
-    static func registerCategories(center: UNUserNotificationCenter = .current()) {
+    /// The routine category. Registered together with the walk ones by
+    /// NotificationBootstrap.registerCategories (setNotificationCategories replaces the set).
+    static func categories() -> Set<UNNotificationCategory> {
         let doneAction = UNNotificationAction(identifier: done, title: "Mark as done")
         let skipAction = UNNotificationAction(identifier: skip, title: "Skip today")
         let snoozeAction = UNNotificationAction(identifier: snooze, title: "Snooze 30 min")
-        let category = UNNotificationCategory(identifier: categoryID,
-                                              actions: [doneAction, skipAction, snoozeAction],
-                                              intentIdentifiers: [])
-        center.setNotificationCategories([category])
+        return [UNNotificationCategory(identifier: categoryID,
+                                       actions: [doneAction, skipAction, snoozeAction],
+                                       intentIdentifiers: [])]
     }
 }
 
@@ -101,19 +100,25 @@ final class RoutineActionHandler {
 }
 
 /// Thin UNUserNotificationCenterDelegate: extracts plain identifiers from the response and
-/// delegates to RoutineActionHandler. Also lets reminders present as banners while the app
-/// is foregrounded (the default is to silently swallow them).
+/// delegates to the routine or walk handler by requestID prefix. Also lets reminders present
+/// as banners while the app is foregrounded (the default is to silently swallow them).
 final class RoutineNotificationResponder: NSObject, UNUserNotificationCenterDelegate {
     private let handler: RoutineActionHandler
+    private let walkHandler: WalkActionHandler?
 
-    init(handler: RoutineActionHandler) {
+    init(handler: RoutineActionHandler, walkHandler: WalkActionHandler? = nil) {
         self.handler = handler
+        self.walkHandler = walkHandler
     }
 
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 didReceive response: UNNotificationResponse) async {
-        await handler.handle(actionID: response.actionIdentifier,
-                             requestID: response.notification.request.identifier)
+        let requestID = response.notification.request.identifier
+        if requestID.hasPrefix("walk-") {
+            walkHandler?.handle(actionID: response.actionIdentifier, requestID: requestID)
+            return
+        }
+        await handler.handle(actionID: response.actionIdentifier, requestID: requestID)
     }
 
     func userNotificationCenter(_ center: UNUserNotificationCenter,
