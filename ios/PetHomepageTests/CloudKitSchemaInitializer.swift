@@ -12,25 +12,39 @@ import XCTest
 /// self-skips on CI (GitHub Actions sets CI=true) so automation never touches the schema.
 /// initializeCloudKitSchema is idempotent — re-running is always safe.
 ///
-/// Requirements on the Mac: Xcode signed into the team's Apple ID
-/// (Xcode → Settings → Accounts) and network access. A real push takes several seconds;
-/// an instant finish means it skipped or failed — read the message.
+/// Implementation notes: unit tests execute inside the host app, which has already opened
+/// the real store with CloudKit mirroring — opening that same file again is illegal
+/// ("another instance actively syncing in this process"). So this builds a scratch
+/// container: the app's already-loaded model (never load a second copy — ambiguous-entity
+/// crashes) against a throwaway store URL. Schema init only needs the model, not the data.
 final class CloudKitSchemaInitializer: XCTestCase {
     func testPushDevelopmentSchema() throws {
         try XCTSkipIf(ProcessInfo.processInfo.environment["CI"] != nil,
                       "Schema push runs only on a developer machine, never CI")
-        let controller = PersistenceController()
-        let container = try XCTUnwrap(
-            controller.container as? NSPersistentCloudKitContainer,
-            "Expected the real CloudKit-backed container")
+
+        let model = Pet.entity().managedObjectModel
+        let container = NSPersistentCloudKitContainer(name: "PetHomepage",
+                                                      managedObjectModel: model)
+        let scratchURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ck-schema-init-\(UUID().uuidString).sqlite")
+        let description = NSPersistentStoreDescription(url: scratchURL)
+        description.cloudKitContainerOptions =
+            NSPersistentCloudKitContainerOptions(containerIdentifier: "iCloud.pet.homepage")
+        description.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
+        container.persistentStoreDescriptions = [description]
+
+        var loadError: Error?
+        container.loadPersistentStores { _, error in loadError = error }
+        XCTAssertNil(loadError, "Scratch store failed to load: \(String(describing: loadError))")
+
         do {
             try container.initializeCloudKitSchema(options: [])
             print("✅ CloudKit Development schema pushed for iCloud.pet.homepage — now deploy to Production in the CloudKit Console")
         } catch {
             XCTFail("""
             ❌ CloudKit schema push FAILED: \(error)
-            Usual causes: Xcode not signed into the team Apple ID (Xcode → Settings → \
-            Accounts), or no network. Fix and re-run this test.
+            If this mentions authentication: sign Xcode into the team Apple ID \
+            (Xcode → Settings → Accounts) and re-run.
             """)
         }
     }
