@@ -6,7 +6,7 @@
   --soft: oklch(96% 0.012 240);
   --ink: oklch(20% 0.05 250);
   --ink-2: oklch(38% 0.04 245);
-  --ink-3: oklch(56% 0.03 240);
+  --ink-3: oklch(50% 0.03 240);
   --ink-4: oklch(72% 0.02 240);
   --rule: oklch(91% 0.015 240);
   --rule-2: oklch(95% 0.01 240);
@@ -14,11 +14,11 @@
   --blue-2: oklch(58% 0.16 245);
   --blue-bg: oklch(95% 0.04 245);
   --blue-bg-2: oklch(92% 0.06 245);
-  --green: oklch(55% 0.13 160);
+  --green: oklch(48% 0.13 160);
   --green-bg: oklch(95% 0.05 160);
-  --orange: oklch(64% 0.16 50);
+  --orange: oklch(56% 0.15 50);
   --orange-bg: oklch(96% 0.05 60);
-  --red: oklch(58% 0.2 25);
+  --red: oklch(54% 0.19 25);
   --red-bg: oklch(96% 0.04 25);
 }
 
