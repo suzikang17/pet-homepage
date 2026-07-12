@@ -26,7 +26,17 @@ struct ActivityLogEditView: View {
                 }
             }
             Section {
-                DatePicker("Performed", selection: $model.performedAt, displayedComponents: .date)
+                DatePicker("Started", selection: $model.performedAt,
+                           displayedComponents: [.date, .hourAndMinute])
+                Toggle("Add end time", isOn: $model.hasEndTime)
+                if model.hasEndTime {
+                    DatePicker("Ended", selection: $model.endedAt,
+                               in: model.performedAt...,
+                               displayedComponents: [.date, .hourAndMinute])
+                    if let minutes = model.durationMinutes {
+                        LabeledContent("Duration", value: "\(minutes) min")
+                    }
+                }
                 TextField("Note", text: $model.note)
             }
             Section {

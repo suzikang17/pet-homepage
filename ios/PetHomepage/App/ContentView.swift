@@ -58,6 +58,7 @@ struct ContentView: View {
         let veterinarianStore = VeterinarianStore(context: context, petStore: petStore)
         let diaryStore = DiaryStore(context: context, petStore: petStore)
         let logStore = LogStore(context: context, petStore: petStore)
+        let walkSessions = WalkSessionStore(context: context)
 
         // Web integration bridge: build the mirror push client from the user-entered endpoint
         // + token (Settings). Blank endpoint falls back to the build-time Convex .site default.
@@ -146,7 +147,8 @@ struct ContentView: View {
                 .tabItem { Label("Capture", systemImage: "camera.fill") }
                 .tag(2)
             ScheduleView(store: routineStore, logStore: logStore,
-                         reminderScheduler: routineReminderScheduler, petStore: petStore)
+                         reminderScheduler: routineReminderScheduler, petStore: petStore,
+                         walkSessions: walkSessions)
                 .tabItem { Label("Schedule", systemImage: "checklist") }
                 .tag(3)
             CareTeamView(store: veterinarianStore)

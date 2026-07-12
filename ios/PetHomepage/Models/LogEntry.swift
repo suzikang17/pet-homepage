@@ -38,6 +38,7 @@ public class LogEntry: NSManagedObject {
     @NSManaged public var treatmentNotes: String?
     @NSManaged public var statusRaw: String?
     @NSManaged public var resolvedAt: Date?
+    @NSManaged public var endedAt: Date?
     @NSManaged public var routineLineageID: UUID?
     @NSManaged public var pet: Pet?
     @NSManaged public var activityType: ActivityType?
@@ -62,6 +63,12 @@ extension LogEntry {
     /// This entry's photos, oldest-first.
     var photoArray: [Photo] {
         (photos as? Set<Photo> ?? []).sorted { $0.createdAt < $1.createdAt }
+    }
+
+    /// Whole minutes between start and end, when this entry is a span.
+    var durationMinutes: Int? {
+        guard let endedAt else { return nil }
+        return Int(endedAt.timeIntervalSince(performedAt) / 60)
     }
 }
 

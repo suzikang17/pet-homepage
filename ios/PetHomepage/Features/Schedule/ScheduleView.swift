@@ -35,13 +35,18 @@ struct ScheduleView: View {
     private let store: RoutineStore
     private let reminderScheduler: RoutineReminderScheduler
     private let petStore: PetStore
+    @State private var walkModel: WalkSessionModel
 
     init(store: RoutineStore, logStore: LogStore,
-         reminderScheduler: RoutineReminderScheduler, petStore: PetStore) {
+         reminderScheduler: RoutineReminderScheduler, petStore: PetStore,
+         walkSessions: WalkSessionStore) {
         self.store = store
         self.reminderScheduler = reminderScheduler
         self.petStore = petStore
         _model = State(initialValue: ScheduleViewModel(store: store, logStore: logStore))
+        _walkModel = State(initialValue: WalkSessionModel(sessions: walkSessions, petName: {
+            (try? petStore.currentPet())?.name ?? "Your pet"
+        }))
     }
 
     var body: some View {
@@ -57,6 +62,8 @@ struct ScheduleView: View {
                         settingsSymbol: "slider.horizontal.3"
                     )
                     dayBar
+                    WalkInProgressBanner(model: walkModel)
+                        .padding(.horizontal, 16)
                     content
                 }
                 if let completion = model.toastCompletion {
@@ -66,7 +73,11 @@ struct ScheduleView: View {
             .background(Theme.bg)
             .ignoresSafeArea(edges: .top)
             .toolbar(.hidden, for: .navigationBar)
-            .onAppear { model.load() }
+            .onAppear {
+                // Sessions can start/end outside this view (notification actions, auto-end).
+                walkModel.refresh()
+                model.load()
+            }
             .sheet(isPresented: $showTemplateEditor, onDismiss: { model.load() }) {
                 NavigationStack {
                     RoutineTemplateView(store: store, reminderScheduler: reminderScheduler,
@@ -233,7 +244,11 @@ struct ScheduleView: View {
                     if slot.isSkipped {
                         Text("Skipped")
                     } else if let completion = slot.completion {
-                        Text("Done at \(completion.performedAt, format: .dateTime.hour().minute())")
+                        if completion.endedAt != nil {
+                            Text("Done \(WalkFormatting.spanLabel(start: completion.performedAt, end: completion.endedAt))")
+                        } else {
+                            Text("Done at \(completion.performedAt, format: .dateTime.hour().minute())")
+                        }
                     } else {
                         Text(scheduledTime(slot), format: .dateTime.hour().minute())
                         if slot.timeOverride != nil {
@@ -302,6 +317,14 @@ struct ScheduleView: View {
             }
         } else {
             if !slot.isSkipped {
+                // Live session start: records real start/end instead of a single done-time.
+                if model.isToday, walkModel.active == nil {
+                    Button {
+                        walkModel.startRoutine(taskID: slot.task.id)
+                    } label: {
+                        Label("Start now", systemImage: "play.circle")
+                    }
+                }
                 Button {
                     timeSheet = .moveTime(slot)
                 } label: {

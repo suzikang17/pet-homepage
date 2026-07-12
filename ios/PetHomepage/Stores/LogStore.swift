@@ -1,6 +1,8 @@
 // ios/PetHomepage/Stores/LogStore.swift
 import CoreData
 
+enum LogStoreError: Error { case endBeforeStart }
+
 /// Unified store for all logged occurrences (diary entries, activity logs, dose logs), pet-scoped.
 /// Replaces the occurrence roles of DiaryStore/ActivityStore/DoseLogStore. Definitions
 /// (ActivityType, Medication) live in their own stores. Reminder scheduling stays in the ViewModels.
@@ -28,10 +30,13 @@ final class LogStore {
     }
 
     @discardableResult
-    func logActivity(type: ActivityType, performedAt: Date, note: String?, intervalDays: Int) throws -> LogEntry {
+    func logActivity(type: ActivityType, performedAt: Date, endedAt: Date? = nil,
+                     note: String?, intervalDays: Int) throws -> LogEntry {
+        if let endedAt, endedAt < performedAt { throw LogStoreError.endBeforeStart }
         let entry = try makeEntry(performedAt: performedAt, note: note)
         entry.kind = .activity
         entry.activityType = type
+        entry.endedAt = endedAt
         entry.intervalDays = Int64(intervalDays)
         entry.nextDueAt = intervalDays > 0 ? calendar.date(byAdding: .day, value: intervalDays, to: performedAt) : nil
         try context.save()
@@ -66,9 +71,12 @@ final class LogStore {
         try context.save()
     }
 
-    func updateActivity(_ entry: LogEntry, type: ActivityType, performedAt: Date, note: String?, intervalDays: Int) throws {
+    func updateActivity(_ entry: LogEntry, type: ActivityType, performedAt: Date,
+                        endedAt: Date? = nil, note: String?, intervalDays: Int) throws {
+        if let endedAt, endedAt < performedAt { throw LogStoreError.endBeforeStart }
         entry.activityType = type
         entry.performedAt = performedAt
+        entry.endedAt = endedAt
         let trimmed = note?.trimmingCharacters(in: .whitespacesAndNewlines)
         entry.note = (trimmed?.isEmpty == false) ? trimmed : nil
         entry.intervalDays = Int64(intervalDays)

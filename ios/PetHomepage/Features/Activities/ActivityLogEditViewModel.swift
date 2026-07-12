@@ -7,6 +7,8 @@ final class ActivityLogEditViewModel {
     var availableTypes: [ActivityType] = []
     var selectedType: ActivityType?
     var performedAt: Date = Date()
+    var hasEndTime: Bool = false
+    var endedAt: Date = Date()
     var note: String = ""
     var hasCadence: Bool = false
     var intervalDays: Int = 0
@@ -31,6 +33,8 @@ final class ActivityLogEditViewModel {
         if let log = editing {
             selectedType = log.activityType
             performedAt = log.performedAt
+            hasEndTime = log.endedAt != nil
+            endedAt = log.endedAt ?? log.performedAt
             note = log.note ?? ""
             intervalDays = Int(log.intervalDays)
             hasCadence = log.intervalDays > 0
@@ -41,6 +45,17 @@ final class ActivityLogEditViewModel {
     }
 
     var isValid: Bool { selectedType != nil }
+
+    /// Whole minutes of the drafted span; nil while "Add end time" is off.
+    var durationMinutes: Int? {
+        guard hasEndTime else { return nil }
+        return max(0, Int(endedAt.timeIntervalSince(performedAt) / 60))
+    }
+
+    /// The end passed to the store: clamped so a start edited past the end can't crash the save.
+    private var effectiveEndedAt: Date? {
+        hasEndTime ? max(endedAt, performedAt) : nil
+    }
 
     /// Adopt a type and pre-fill cadence from its default.
     func selectType(_ type: ActivityType) {
@@ -81,10 +96,14 @@ final class ActivityLogEditViewModel {
 
         let log: LogEntry
         if let existing = editing {
-            try logStore.updateActivity(existing, type: type, performedAt: performedAt, note: noteOrNil, intervalDays: interval)
+            try logStore.updateActivity(existing, type: type, performedAt: performedAt,
+                                        endedAt: effectiveEndedAt, note: noteOrNil,
+                                        intervalDays: interval)
             log = existing
         } else {
-            log = try logStore.logActivity(type: type, performedAt: performedAt, note: noteOrNil, intervalDays: interval)
+            log = try logStore.logActivity(type: type, performedAt: performedAt,
+                                           endedAt: effectiveEndedAt, note: noteOrNil,
+                                           intervalDays: interval)
         }
 
         for data in pendingPhotos {

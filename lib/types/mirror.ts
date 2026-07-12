@@ -91,6 +91,8 @@ export type MirrorSnapshot = {
     category: string
     icon: string
     performed_at: string
+    /** Present when the activity was logged as a span (schema v5+). */
+    ended_at?: string
     note?: string
     interval_days: number
     next_due_at?: string

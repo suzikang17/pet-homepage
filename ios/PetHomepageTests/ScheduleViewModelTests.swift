@@ -83,19 +83,25 @@ final class ScheduleViewModelTests: XCTestCase {
     }
 
     func testChangeTimeAppliesToShownDayOnly() throws {
-        model.changeTime(try XCTUnwrap(model.slots.first), hour: 15, minute: 30)
-        let slot = try XCTUnwrap(model.slots.first)
-        XCTAssertEqual(slot.hour, 15)
-        XCTAssertEqual(slot.minute, 30)
-        XCTAssertNotNil(slot.timeOverride)
+        // Track Breakfast by identity: a time override re-sorts the day (7:00 → 15:30 moves
+        // it after Walk), so positional .first would grab the wrong slot.
+        func breakfast() throws -> RoutineSlot {
+            try XCTUnwrap(model.slots.first { $0.task.name == "Breakfast" })
+        }
+        model.changeTime(try breakfast(), hour: 15, minute: 30)
+        let changed = try breakfast()
+        XCTAssertEqual(changed.hour, 15)
+        XCTAssertEqual(changed.minute, 30)
+        XCTAssertNotNil(changed.timeOverride)
+        XCTAssertEqual(model.slots.map(\.task.name), ["Walk", "Breakfast"])
         // Tomorrow keeps the template time.
         model.goToNextDay()
-        XCTAssertEqual(try XCTUnwrap(model.slots.first).hour, 7)
-        XCTAssertNil(try XCTUnwrap(model.slots.first).timeOverride)
+        XCTAssertEqual(try breakfast().hour, 7)
+        XCTAssertNil(try breakfast().timeOverride)
         // And clearing restores today.
         model.goToToday()
-        model.clearTimeChange(try XCTUnwrap(model.slots.first))
-        XCTAssertEqual(try XCTUnwrap(model.slots.first).hour, 7)
+        model.clearTimeChange(try breakfast())
+        XCTAssertEqual(try breakfast().hour, 7)
     }
 
     func testUpdateCompletionTime() throws {
