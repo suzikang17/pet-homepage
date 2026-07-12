@@ -35,7 +35,6 @@ struct WalkLiveActivityWidget: Widget {
                     .multilineTextAlignment(.trailing)
             }
             .padding(14)
-            .activityBackgroundTint(Color(.systemBackground))
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
