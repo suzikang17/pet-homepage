@@ -69,6 +69,69 @@ body {
   letter-spacing: 0.01em;
 }
 
+/* ─── Focus & motion ─── */
+:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* ─── Forms ─── */
+.ob-label {
+  display: block;
+  font-size: 13px; font-weight: 500;
+  color: var(--ink-2);
+  margin-bottom: 6px;
+}
+.ob-input {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-family: inherit; font-size: 15px;
+  color: var(--ink);
+  transition: border-color 120ms, box-shadow 120ms;
+}
+.ob-input::placeholder { color: var(--ink-2); opacity: 0.75; }
+.ob-input:hover { border-color: var(--ink-4); }
+.ob-input:focus-visible {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-bg-2);
+}
+
+/* ─── Buttons ─── */
+.btn, .btn-quiet, .btn-danger {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 16px; border-radius: 10px;
+  font-family: inherit; font-size: 14px; font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms, color 120ms;
+}
+.btn {
+  background: var(--blue); color: white; border: 1px solid transparent;
+}
+.btn:hover { background: var(--blue-2); }
+.btn-quiet {
+  background: var(--paper); color: var(--ink);
+  border: 1px solid var(--rule);
+}
+.btn-quiet:hover { border-color: var(--ink-3); }
+.btn-danger {
+  background: var(--paper); color: var(--red);
+  border: 1px solid var(--rule);
+}
+.btn-danger:hover { border-color: var(--red); background: var(--red-bg); }
+.btn:disabled, .btn-quiet:disabled, .btn-danger:disabled {
+  opacity: 0.55; cursor: default;
+}
+.btn.sm, .btn-quiet.sm, .btn-danger.sm { padding: 7px 12px; font-size: 13px; border-radius: 8px; }
+
 /* ─── Top bar ─── */
 .topbar {
   display: flex; align-items: center; justify-content: space-between;

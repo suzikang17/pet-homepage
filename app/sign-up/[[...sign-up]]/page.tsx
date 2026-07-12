@@ -45,20 +45,21 @@ export default function SignUpPage() {
           <p style={{ color: 'var(--ink-3)', fontSize: 14, margin: 0 }}>Then set up your pet&apos;s profile.</p>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <input name="email" type="email" placeholder="Email" required className="ob-input" style={{ width: '100%' }} />
-          <input name="password" type="password" placeholder="Password" required className="ob-input" style={{ width: '100%' }} />
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <label htmlFor="email" className="ob-label">Email</label>
+            <input id="email" name="email" type="email" autoComplete="email" placeholder="you@example.com" required className="ob-input" style={{ width: '100%' }} />
+          </div>
+          <div>
+            <label htmlFor="password" className="ob-label">Password</label>
+            <input id="password" name="password" type="password" autoComplete="new-password" required className="ob-input" style={{ width: '100%' }} />
+          </div>
           {error && (
-            <div style={{ fontSize: 13, color: 'var(--red)', padding: '8px 12px', background: 'var(--red-bg)', borderRadius: 8 }}>
+            <div role="alert" style={{ fontSize: 13, color: 'var(--red)', padding: '8px 12px', background: 'var(--red-bg)', borderRadius: 8 }}>
               {error}
             </div>
           )}
-          <button type="submit" disabled={loading} style={{
-            padding: '12px', borderRadius: 10, border: 'none',
-            background: 'var(--blue)', color: 'white',
-            fontSize: 14, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer',
-            opacity: loading ? 0.7 : 1, marginTop: 4,
-          }}>
+          <button type="submit" disabled={loading} className="btn" style={{ width: '100%', padding: 12, marginTop: 4 }}>
             {loading ? 'Creating account…' : 'Create account'}
           </button>
         </form>
