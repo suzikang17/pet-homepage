@@ -228,12 +228,15 @@ extension TimelineItem {
     }
 
     init(activity log: LogEntry) {
+        let base = (log.note?.isEmpty == false) ? log.note : log.activityType?.category.displayName
+        let duration = log.durationMinutes.map { "\($0) min" }
+        let combined = [duration, base].compactMap { $0 }.joined(separator: " · ")
         self.init(
             id: "activity:\(log.id.uuidString)",
             kind: .activity,
             date: log.performedAt,
             title: log.activityType?.name ?? "Activity",
-            subtitle: (log.note?.isEmpty == false) ? log.note : log.activityType?.category.displayName,
+            subtitle: combined.isEmpty ? nil : combined,
             nextDue: log.nextDueAt,
             reference: .activity(log)
         )
@@ -242,13 +245,16 @@ extension TimelineItem {
     init(routine entry: LogEntry) {
         let photoCount = entry.photoArray.count
         let note = entry.note?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let base = (note?.isEmpty == false) ? note
+            : (photoCount > 0 ? "\(photoCount) photo\(photoCount == 1 ? "" : "s")" : nil)
+        let duration = entry.durationMinutes.map { "\($0) min" }
+        let combined = [duration, base].compactMap { $0 }.joined(separator: " · ")
         self.init(
             id: "routine:\(entry.id.uuidString)",
             kind: .routine,
             date: entry.performedAt,
             title: entry.title ?? "Routine",
-            subtitle: (note?.isEmpty == false) ? note
-                : (photoCount > 0 ? "\(photoCount) photo\(photoCount == 1 ? "" : "s")" : nil),
+            subtitle: combined.isEmpty ? nil : combined,
             nextDue: nil,
             reference: .routine(entry)
         )

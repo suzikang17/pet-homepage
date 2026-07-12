@@ -233,7 +233,11 @@ struct ScheduleView: View {
                     if slot.isSkipped {
                         Text("Skipped")
                     } else if let completion = slot.completion {
-                        Text("Done at \(completion.performedAt, format: .dateTime.hour().minute())")
+                        if completion.endedAt != nil {
+                            Text("Done \(WalkFormatting.spanLabel(start: completion.performedAt, end: completion.endedAt))")
+                        } else {
+                            Text("Done at \(completion.performedAt, format: .dateTime.hour().minute())")
+                        }
                     } else {
                         Text(scheduledTime(slot), format: .dateTime.hour().minute())
                         if slot.timeOverride != nil {
