@@ -19,8 +19,10 @@ import XCTest
 /// crashes) against a throwaway store URL. Schema init only needs the model, not the data.
 final class CloudKitSchemaInitializer: XCTestCase {
     func testPushDevelopmentSchema() throws {
-        try XCTSkipIf(ProcessInfo.processInfo.environment["CI"] != nil,
-                      "Schema push runs only on a developer machine, never CI")
+        let env = ProcessInfo.processInfo.environment
+        // Skips on ordinary CI runs; the dedicated cloudkit-schema workflow opts in explicitly.
+        try XCTSkipIf(env["CI"] != nil && env["CK_SCHEMA_FORCE"] == nil,
+                      "Schema push runs only on a developer machine or the schema workflow")
 
         let model = Pet.entity().managedObjectModel
         let container = NSPersistentCloudKitContainer(name: "PetHomepage",
