@@ -118,7 +118,8 @@ final class WalkActionHandler {
     }
 
     private func currentPetName() -> String {
-        if let pet = try? PetStore(context: context, defaults: defaults).currentPet(), let pet {
+        // try? flattens the throwing Optional return (SE-0230), so one binding suffices.
+        if let pet = try? PetStore(context: context, defaults: defaults).currentPet() {
             return pet.name
         }
         return "Your pet"
