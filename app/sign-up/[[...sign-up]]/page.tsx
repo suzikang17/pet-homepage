@@ -1,8 +1,8 @@
 'use client'
 import { useAuthActions } from '@convex-dev/auth/react'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
 export default function SignUpPage() {
   const { signIn } = useAuthActions()
@@ -26,47 +26,111 @@ export default function SignUpPage() {
   }
 
   return (
-    <div style={{
-      minHeight: '100dvh', display: 'grid', placeItems: 'center',
-      background: 'var(--bg)', padding: '24px',
-    }}>
-      <div style={{
-        width: '100%', maxWidth: 400,
-        background: 'var(--paper)', border: '1px solid var(--rule)',
-        borderRadius: 16, padding: '36px 32px',
-      }}>
+    <div
+      style={{
+        minHeight: '100dvh',
+        display: 'grid',
+        placeItems: 'center',
+        background: 'var(--bg)',
+        padding: '24px',
+      }}
+    >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 400,
+          background: 'var(--paper)',
+          border: '1px solid var(--rule)',
+          borderRadius: 16,
+          padding: '36px 32px',
+        }}
+      >
         <div style={{ marginBottom: 28 }}>
-          <div style={{
-            width: 40, height: 40, borderRadius: 10, background: 'var(--blue)', color: 'white',
-            display: 'grid', placeItems: 'center', fontFamily: 'var(--font-display), serif',
-            fontSize: 22, fontStyle: 'italic', marginBottom: 16,
-          }}>h</div>
-          <h1 className="serif" style={{ fontSize: 24, margin: '0 0 6px' }}>Create your account.</h1>
-          <p style={{ color: 'var(--ink-3)', fontSize: 14, margin: 0 }}>Then set up your pet&apos;s profile.</p>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: 'var(--blue)',
+              color: 'white',
+              display: 'grid',
+              placeItems: 'center',
+              fontFamily: 'var(--font-display), serif',
+              fontSize: 22,
+              fontStyle: 'italic',
+              marginBottom: 16,
+            }}
+          >
+            h
+          </div>
+          <h1 className="serif" style={{ fontSize: 24, margin: '0 0 6px' }}>
+            Create your account.
+          </h1>
+          <p style={{ color: 'var(--ink-3)', fontSize: 14, margin: 0 }}>
+            Then set up your pet&apos;s profile.
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
-            <label htmlFor="email" className="ob-label">Email</label>
-            <input id="email" name="email" type="email" autoComplete="email" placeholder="you@example.com" required className="ob-input" style={{ width: '100%' }} />
+            <label htmlFor="email" className="ob-label">
+              Email
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              required
+              className="ob-input"
+              style={{ width: '100%' }}
+            />
           </div>
           <div>
-            <label htmlFor="password" className="ob-label">Password</label>
-            <input id="password" name="password" type="password" autoComplete="new-password" required className="ob-input" style={{ width: '100%' }} />
+            <label htmlFor="password" className="ob-label">
+              Password
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="new-password"
+              required
+              className="ob-input"
+              style={{ width: '100%' }}
+            />
           </div>
           {error && (
-            <div role="alert" style={{ fontSize: 13, color: 'var(--red)', padding: '8px 12px', background: 'var(--red-bg)', borderRadius: 8 }}>
+            <div
+              role="alert"
+              style={{
+                fontSize: 13,
+                color: 'var(--red)',
+                padding: '8px 12px',
+                background: 'var(--red-bg)',
+                borderRadius: 8,
+              }}
+            >
               {error}
             </div>
           )}
-          <button type="submit" disabled={loading} className="btn" style={{ width: '100%', padding: 12, marginTop: 4 }}>
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn"
+            style={{ width: '100%', padding: 12, marginTop: 4 }}
+          >
             {loading ? 'Creating account…' : 'Create account'}
           </button>
         </form>
 
         <div style={{ marginTop: 20, textAlign: 'center', fontSize: 13, color: 'var(--ink-3)' }}>
           Already have an account?{' '}
-          <Link href="/sign-in" style={{ color: 'var(--blue)', textDecoration: 'none', fontWeight: 500 }}>
+          <Link
+            href="/sign-in"
+            style={{ color: 'var(--blue)', textDecoration: 'none', fontWeight: 500 }}
+          >
             Sign in
           </Link>
         </div>

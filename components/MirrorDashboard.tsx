@@ -1,360 +1,144 @@
 'use client'
-import { useQuery } from 'convex/react'
+import { useAuthActions } from '@convex-dev/auth/react'
+import { useMutation, useQuery } from 'convex/react'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { DevicesPanel, type PairState } from '@/components/mirror/DevicesPanel'
+import { SnapshotFooter, SnapshotView } from '@/components/mirror/SnapshotView'
 import { api } from '@/convex/_generated/api'
+import type { Id } from '@/convex/_generated/dataModel'
+import type { MirrorSnapshot } from '@/lib/types/mirror'
 
-// Read-only desktop dashboard rendering the pet health-record snapshot the iOS
-// app mirrors to Convex (see ios/PetHomepage/Mirror/MirrorSnapshot.swift for the
-// contract). Auth-gated by middleware.ts; useQuery returns the signed-in user's
-// own mirror or null.
-
-type Snapshot = {
-  schema_version: number
-  generated_at: string
-  pet: {
-    id: string
-    name: string
-    species: string
-    breed?: string
-    dob?: string
-    adoption_date?: string
-  }
-  medications: Array<{
-    id: string
-    drug_name: string
-    dosage: string
-    frequency: string
-    schedule_time: string
-    started_at: string
-    ended_at?: string
-    refill_due_at?: string
-    dose_logs: Array<{ id: string; given_at: string }>
-    veterinarian?: string
-  }>
-  vaccinations: Array<{
-    id: string
-    vaccine_name: string
-    administered_at?: string
-    next_due_at?: string
-    lot_number?: string
-    administered_by?: string
-    veterinarian?: string
-  }>
-  vet_visits: Array<{
-    id: string
-    occurred_at: string
-    clinic_name?: string
-    vet_name?: string
-    reason?: string
-    diagnosis?: string
-    treatment_notes?: string
-    next_visit_date?: string
-    recommendations: Array<{ id: string; date: string; text: string }>
-    veterinarian?: string
-  }>
-  unlinked_recommendations: Array<{ id: string; date: string; text: string }>
-  health_markers: Array<{
-    id: string
-    marker_type: string
-    value: number
-    unit?: string
-    recorded_at: string
-  }>
-  symptom_episodes: Array<{
-    id: string
-    category: string
-    title?: string
-    started_at: string
-    resolved_at?: string
-    status: string
-    entries: Array<{
-      id: string
-      date: string
-      severity: string
-      note?: string
-      suspected_cause?: string
-    }>
-  }>
-  care_team?: Array<{
-    id: string
-    name: string
-    clinic?: string
-    phone?: string
-    email?: string
-    address?: string
-    website?: string
-    notes?: string
-  }>
-  diary?: Array<{
-    id: string
-    date: string
-    note?: string
-    photo_count: number
-  }>
-  activity_logs?: Array<{
-    id: string
-    type_name: string
-    category: string
-    icon: string
-    performed_at: string
-    note?: string
-    interval_days: number
-    next_due_at?: string
-  }>
-}
-
-function fmt(iso?: string): string {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  return Number.isNaN(d.getTime())
-    ? '—'
-    : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-}
-
-function Section({
-  title,
-  count,
-  children,
-}: {
-  title: string
-  count: number
-  children: React.ReactNode
-}) {
-  return (
-    <section style={{ marginBottom: 28 }}>
-      <h2
-        style={{
-          fontSize: 13,
-          fontWeight: 700,
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
-          color: '#6b7280',
-          margin: '0 0 10px',
-        }}
-      >
-        {title} <span style={{ color: '#9ca3af', fontWeight: 500 }}>({count})</span>
-      </h2>
-      {count === 0 ? (
-        <div style={card({ color: '#9ca3af', textAlign: 'center' })}>Nothing logged</div>
-      ) : (
-        children
-      )}
-    </section>
-  )
-}
-
-function card(extra: React.CSSProperties = {}): React.CSSProperties {
-  return {
-    background: '#ffffff',
-    border: '1px solid #e5e7eb',
-    borderRadius: 12,
-    padding: '14px 16px',
-    marginBottom: 10,
-    fontSize: 14,
-    color: '#111827',
-    ...extra,
-  }
-}
-
-const meta: React.CSSProperties = { fontSize: 12, color: '#6b7280', marginTop: 2 }
+// Dashboard container: fetches the signed-in user's mirror + device tokens from
+// Convex and renders the read-only record (SnapshotView) with pairing management
+// (DevicesPanel). Presentation lives in those two components so /dev/preview can
+// render them from fixtures.
 
 export function MirrorDashboard() {
   const mirror = useQuery(api.mirror.get)
+  const tokens = useQuery(api.mirrorTokens.listMirrorTokens)
+  const mint = useMutation(api.mirrorTokens.mintMirrorToken)
+  const revoke = useMutation(api.mirrorTokens.revokeMirrorToken)
+  const createPair = useMutation(api.pairing.createPairingCode)
+  const { signOut } = useAuthActions()
+  const router = useRouter()
 
-  if (mirror === undefined) {
-    return (
-      <Shell>
-        <p style={{ color: '#6b7280' }}>Loading…</p>
-      </Shell>
-    )
-  }
-  if (mirror === null) {
-    return (
-      <Shell>
-        <div style={card({ textAlign: 'center', padding: '40px 20px', color: '#6b7280' })}>
-          <p style={{ fontSize: 16, fontWeight: 600, color: '#111827', margin: '0 0 6px' }}>
-            No mirror yet
-          </p>
-          <p style={{ margin: 0 }}>
-            Turn on “Mirror to web” in the app’s Settings to see your pet’s record here.
-          </p>
-        </div>
-      </Shell>
-    )
+  const [freshToken, setFreshToken] = useState<string | null>(null)
+  const [mintBusy, setMintBusy] = useState(false)
+  const [pair, setPair] = useState<PairState | null>(null)
+  const [pairBusy, setPairBusy] = useState(false)
+
+  async function handleMint(label: string) {
+    setMintBusy(true)
+    try {
+      const { rawToken } = await mint({ label: label.trim() || undefined })
+      setFreshToken(rawToken)
+    } finally {
+      setMintBusy(false)
+    }
   }
 
-  const snap = mirror.snapshot as Snapshot
+  async function handlePair() {
+    setPairBusy(true)
+    try {
+      const p = await createPair()
+      setPair({
+        ...p,
+        // Fall back to the build-time site URL if the server env didn't return one.
+        endpoint: p.endpoint || process.env.NEXT_PUBLIC_CONVEX_SITE_URL || '',
+      })
+    } finally {
+      setPairBusy(false)
+    }
+  }
+
+  const devices = (
+    <DevicesPanel
+      tokens={tokens}
+      pair={pair}
+      pairBusy={pairBusy}
+      freshToken={freshToken}
+      mintBusy={mintBusy}
+      prominent={mirror === null}
+      onPair={handlePair}
+      onMint={handleMint}
+      onRevoke={(tokenId) => revoke({ tokenId: tokenId as Id<'mirrorTokens'> })}
+    />
+  )
 
   return (
-    <Shell>
-      <header style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0, color: '#111827' }}>
-          {snap.pet.name}
-        </h1>
-        <p style={meta}>
-          {[snap.pet.species, snap.pet.breed].filter(Boolean).join(' · ')}
-          {snap.pet.dob ? ` · born ${fmt(snap.pet.dob)}` : ''}
-        </p>
-        <p style={meta}>
-          Last synced {fmt(mirror.updatedAt ? new Date(mirror.updatedAt).toISOString() : undefined)}
-        </p>
-      </header>
-
-      <Section title="Diary" count={snap.diary?.length ?? 0}>
-        {(snap.diary ?? []).map((e) => (
-          <div key={e.id} style={card()}>
-            <strong>{fmt(e.date)}</strong>
-            {e.photo_count > 0 && (
-              <span style={{ color: '#6b7280' }}>
-                {' '}
-                · {e.photo_count} photo{e.photo_count === 1 ? '' : 's'}
-              </span>
-            )}
-            {e.note && <div style={meta}>{e.note}</div>}
-          </div>
-        ))}
-      </Section>
-
-      <Section title="Activities" count={snap.activity_logs?.length ?? 0}>
-        {(snap.activity_logs ?? []).map((a) => (
-          <div key={a.id} style={card()}>
-            <strong>{a.type_name}</strong>
-            <span style={{ color: '#6b7280' }}> · {fmt(a.performed_at)}</span>
-            <div style={meta}>
-              {a.category}
-              {a.next_due_at ? ` · next due ${fmt(a.next_due_at)}` : ''}
+    <>
+      <Topbar
+        onSignOut={async () => {
+          await signOut()
+          router.replace('/sign-in')
+        }}
+      />
+      <main className="page-rec">
+        {mirror === undefined ? (
+          <LoadingSkeleton />
+        ) : mirror === null ? (
+          <div className="onboard">
+            <div className="brand-mark" aria-hidden>
+              h
             </div>
-            {a.note && <div style={meta}>{a.note}</div>}
+            <h1>Bring your pet’s record here.</h1>
+            <p>
+              Pair your iPhone and the app will mirror your pet’s health record — medications,
+              vaccinations, visits and diary — to this page, read-only.
+            </p>
+            <div style={{ textAlign: 'left' }}>{devices}</div>
           </div>
-        ))}
-      </Section>
-
-      <Section title="Care team" count={snap.care_team?.length ?? 0}>
-        {(snap.care_team ?? []).map((vet) => (
-          <div key={vet.id} style={card()}>
-            <strong>{vet.name}</strong>
-            {vet.clinic && <span style={{ color: '#6b7280' }}> · {vet.clinic}</span>}
-            <div style={meta}>
-              {[vet.phone, vet.email, vet.website].filter(Boolean).join(' · ') || '—'}
-              {vet.address ? ` · ${vet.address}` : ''}
-            </div>
-            {vet.notes && <div style={meta}>{vet.notes}</div>}
-          </div>
-        ))}
-      </Section>
-
-      <Section title="Medications" count={snap.medications.length}>
-        {snap.medications.map((m) => {
-          const last = m.dose_logs
-            .map((d) => d.given_at)
-            .sort()
-            .at(-1)
-          return (
-            <div key={m.id} style={card()}>
-              <strong>{m.drug_name}</strong>{' '}
-              {m.dosage && <span style={{ color: '#6b7280' }}>· {m.dosage}</span>}
-              <div style={meta}>
-                {m.frequency} · last given {fmt(last)} · {m.dose_logs.length} dose(s)
-                {m.veterinarian ? ` · ${m.veterinarian}` : ''}
-                {m.refill_due_at ? ` · refill ${fmt(m.refill_due_at)}` : ''}
-                {m.ended_at ? ' · ended' : ''}
+        ) : (
+          <>
+            <SnapshotView
+              snapshot={mirror.snapshot as MirrorSnapshot}
+              updatedAt={mirror.updatedAt}
+            />
+            <section>
+              <div className="section-h">
+                <h2>Devices</h2>
+                <span className="sh-aside">phones allowed to sync this record</span>
               </div>
-            </div>
-          )
-        })}
-      </Section>
-
-      <Section title="Vaccinations" count={snap.vaccinations.length}>
-        {snap.vaccinations.map((v) => (
-          <div key={v.id} style={card()}>
-            <strong>{v.vaccine_name}</strong>
-            <div style={meta}>
-              given {fmt(v.administered_at)} · next due {fmt(v.next_due_at)}
-              {v.administered_by ? ` · by ${v.administered_by}` : ''}
-              {v.veterinarian ? ` · ${v.veterinarian}` : ''}
-            </div>
-          </div>
-        ))}
-      </Section>
-
-      <Section title="Vet visits" count={snap.vet_visits.length}>
-        {snap.vet_visits.map((vv) => (
-          <div key={vv.id} style={card()}>
-            <strong>{fmt(vv.occurred_at)}</strong>
-            {vv.clinic_name && <span style={{ color: '#6b7280' }}> · {vv.clinic_name}</span>}
-            <div style={meta}>
-              {[vv.reason, vv.diagnosis].filter(Boolean).join(' · ') || 'Visit'}
-              {vv.veterinarian ? ` · ${vv.veterinarian}` : ''}
-              {vv.next_visit_date ? ` · next ${fmt(vv.next_visit_date)}` : ''}
-            </div>
-            {vv.recommendations.length > 0 && (
-              <ul style={{ margin: '8px 0 0', paddingLeft: 18, color: '#374151', fontSize: 13 }}>
-                {vv.recommendations.map((r) => (
-                  <li key={r.id}>
-                    {r.text} <span style={{ color: '#9ca3af' }}>({fmt(r.date)})</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        ))}
-      </Section>
-
-      <Section title="Health markers" count={snap.health_markers.length}>
-        {snap.health_markers.map((hm) => (
-          <div key={hm.id} style={card()}>
-            <strong>{hm.marker_type}</strong>: {hm.value}
-            {hm.unit ? ` ${hm.unit}` : ''}
-            <div style={meta}>{fmt(hm.recorded_at)}</div>
-          </div>
-        ))}
-      </Section>
-
-      <Section title="Symptoms" count={snap.symptom_episodes.length}>
-        {snap.symptom_episodes.map((ep) => (
-          <div key={ep.id} style={card()}>
-            <strong>{ep.title || ep.category}</strong>
-            <span
-              style={{
-                color: ep.status === 'resolved' ? '#059669' : '#d97706',
-                fontSize: 12,
-                marginLeft: 8,
-              }}
-            >
-              {ep.status}
-            </span>
-            <div style={meta}>
-              {ep.category} · started {fmt(ep.started_at)}
-              {ep.resolved_at ? ` · resolved ${fmt(ep.resolved_at)}` : ''}
-            </div>
-            {ep.entries.length > 0 && (
-              <ul style={{ margin: '8px 0 0', paddingLeft: 18, color: '#374151', fontSize: 13 }}>
-                {ep.entries.map((e) => (
-                  <li key={e.id}>
-                    {fmt(e.date)} — {e.severity}
-                    {e.note ? `: ${e.note}` : ''}
-                    {e.suspected_cause ? ` (cause: ${e.suspected_cause})` : ''}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        ))}
-      </Section>
-    </Shell>
+              {devices}
+            </section>
+            <SnapshotFooter snapshot={mirror.snapshot as MirrorSnapshot} />
+          </>
+        )}
+      </main>
+    </>
   )
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Topbar({ onSignOut }: { onSignOut: () => void }) {
   return (
-    <main
-      style={{
-        maxWidth: 720,
-        margin: '0 auto',
-        padding: '40px 20px',
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-      }}
-    >
-      {children}
-    </main>
+    <div className="topbar">
+      <div className="brand">
+        <div className="brand-mark" aria-hidden>
+          h
+        </div>
+        <div className="brand-text">
+          <div className="brand-name">Homepage</div>
+          <div className="brand-url">homepage.pet</div>
+        </div>
+      </div>
+      <nav className="nav">
+        <button type="button" className="btn-quiet sm" onClick={onSignOut}>
+          Sign out
+        </button>
+      </nav>
+    </div>
+  )
+}
+
+function LoadingSkeleton() {
+  return (
+    <div role="status" aria-busy="true" aria-label="Loading your pet’s record">
+      <div className="skel" style={{ height: 54, width: 240, marginBottom: 12 }} />
+      <div className="skel" style={{ height: 16, width: 320, marginBottom: 40 }} />
+      <div className="skel" style={{ height: 96, marginBottom: 12 }} />
+      <div className="skel" style={{ height: 96, marginBottom: 40 }} />
+      <div className="skel" style={{ height: 220 }} />
+    </div>
   )
 }
