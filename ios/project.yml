@@ -60,6 +60,9 @@ targets:
         INFOPLIST_KEY_NSMotionUsageDescription: "Recognize walking so short trips to the car don't trigger walk prompts."
         # Lock-screen walk timer (WalkLiveActivityWidget in the PetHomepageWidgets extension).
         INFOPLIST_KEY_NSSupportsLiveActivities: "YES"
+        # CloudKit sync pushes silent change notifications; without this mode other devices
+        # only catch up when the app is foregrounded (CloudKit logs it as a client bug).
+        INFOPLIST_KEY_UIBackgroundModes: "remote-notification"
   PetHomepageWidgets:
     type: app-extension
     platform: iOS
