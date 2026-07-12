@@ -141,6 +141,7 @@ final class SnapshotBuilder {
                 category: type.categoryRaw,
                 icon: type.iconName,
                 performedAt: log.performedAt,
+                endedAt: log.endedAt,
                 note: log.note,
                 intervalDays: Int(log.intervalDays),
                 nextDueAt: log.nextDueAt

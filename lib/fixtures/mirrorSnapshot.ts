@@ -212,6 +212,15 @@ export const fixtureSnapshot: MirrorSnapshot = {
       interval_days: 7,
       next_due_at: d(4),
     },
+    {
+      id: 'act-4',
+      type_name: 'Walk',
+      category: 'Training',
+      icon: 'figure.walk',
+      performed_at: d(-1),
+      ended_at: new Date(new Date(d(-1)).getTime() + 32 * 60_000).toISOString(),
+      interval_days: 0,
+    },
   ],
 }
 

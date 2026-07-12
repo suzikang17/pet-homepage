@@ -38,7 +38,8 @@ struct MirrorSnapshot: Codable, Equatable {
     /// v2 added `care_team` + a `veterinarian` (name) on medications/vaccinations/vet_visits.
     /// v3 added `diary` (entries with a photo_count; photo binaries stay on-device).
     /// v4 added `activity_logs` (flat, denormalized LogEntry occurrences with an activityType).
-    static let currentSchemaVersion = 4
+    /// v5 added optional `activity_logs[].ended_at` (walk-session spans).
+    static let currentSchemaVersion = 5
 
     /// Shared encoder: ISO-8601 dates, snake_case already handled by explicit CodingKeys.
     static let encoder: JSONEncoder = {
@@ -187,6 +188,7 @@ struct ActivityLogSnapshot: Codable, Equatable {
     var category: String
     var icon: String
     var performedAt: Date
+    var endedAt: Date?
     var note: String?
     var intervalDays: Int
     var nextDueAt: Date?
@@ -197,6 +199,7 @@ struct ActivityLogSnapshot: Codable, Equatable {
         case category
         case icon
         case performedAt = "performed_at"
+        case endedAt = "ended_at"
         case note
         case intervalDays = "interval_days"
         case nextDueAt = "next_due_at"

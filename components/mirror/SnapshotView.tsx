@@ -29,6 +29,13 @@ function daysUntil(iso: string | undefined, now: Date): number | null {
   return d ? Math.round((d.getTime() - now.getTime()) / DAY) : null
 }
 
+function durationMinutes(startIso?: string, endIso?: string): number | null {
+  const start = parse(startIso)
+  const end = parse(endIso)
+  if (!start || !end) return null
+  return Math.max(0, Math.round((end.getTime() - start.getTime()) / 60_000))
+}
+
 type DueStatus = 'over' | 'soon' | 'ok' | 'none'
 
 function dueStatus(iso: string | undefined, now: Date, soonDays: number): DueStatus {
@@ -412,6 +419,9 @@ export function SnapshotView({
                       <div className="n">{a.type_name}</div>
                       <div className="s">
                         {a.category} · last {fmt(a.performed_at)}
+                        {durationMinutes(a.performed_at, a.ended_at) !== null
+                          ? ` · ${durationMinutes(a.performed_at, a.ended_at)} min`
+                          : ''}
                         {a.note ? ` · ${a.note}` : ''}
                       </div>
                     </div>
