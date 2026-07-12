@@ -290,7 +290,8 @@ final class RoutineStore {
     /// (the real moment); a past day's stamps the task's scheduled time on that day, keeping
     /// the entry inside that day's window.
     @discardableResult
-    func checkOff(_ task: RoutineTask, on day: Date, now: Date = Date()) throws -> LogEntry {
+    func checkOff(_ task: RoutineTask, on day: Date, now: Date = Date(),
+                  startedAt: Date? = nil, endedAt: Date? = nil) throws -> LogEntry {
         let start = calendar.startOfDay(for: day)
         let performedAt: Date
         if calendar.isDate(now, inSameDayAs: start) {
@@ -306,7 +307,9 @@ final class RoutineStore {
         }
         let entry = LogEntry(context: context)
         entry.id = UUID()
-        entry.performedAt = performedAt
+        // A walk session supplies the real start; endedAt is stored only when it's a valid span.
+        entry.performedAt = startedAt ?? performedAt
+        if let endedAt, endedAt >= entry.performedAt { entry.endedAt = endedAt }
         entry.kind = .routine
         entry.title = task.name
         entry.routineLineageID = task.lineageID
