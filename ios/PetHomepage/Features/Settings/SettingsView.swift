@@ -117,6 +117,28 @@ struct SettingsView: View {
 
                     BrandCard {
                         VStack(alignment: .leading, spacing: 14) {
+                            BrandCardTitle("Walk detection")
+                            NavigationLink {
+                                WalkDetectionSettingsView()
+                            } label: {
+                                HStack {
+                                    Label("Auto-detect walks", systemImage: "figure.walk.motion")
+                                        .font(Theme.body().weight(.semibold))
+                                        .foregroundStyle(Theme.ink)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption.weight(.bold))
+                                        .foregroundStyle(Theme.inkSoft)
+                                }
+                            }
+                            Text("Get a prompt when a walk starts and log it automatically when you're back home.")
+                                .font(.footnote).foregroundStyle(Theme.inkSoft)
+                        }
+                    }
+                    .padding(.horizontal, 18)
+
+                    BrandCard {
+                        VStack(alignment: .leading, spacing: 14) {
                             BrandCardTitle("AI record extraction")
                             field {
                                 TextField("Endpoint URL", text: $extractEndpoint,

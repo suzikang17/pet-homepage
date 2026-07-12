@@ -37,7 +37,12 @@ final class WalkDetector: NSObject {
         self.calendar = calendar
         super.init()
         locationManager.delegate = self
+        // Settings screens post this when home/rule/type change; re-arm accordingly.
+        NotificationCenter.default.addObserver(self, selector: #selector(settingsChanged),
+                                               name: .walkSettingsChanged, object: nil)
     }
+
+    @objc private func settingsChanged() { refreshMonitoring() }
 
     /// (Re)arms the home geofence. Call at launch and whenever settings change. Monitoring
     /// requires Always authorization and a configured home; otherwise any existing region is
