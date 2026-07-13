@@ -84,6 +84,46 @@ final class WalkSessionStoreTests: XCTestCase {
         XCTAssertNil(try store.end())
     }
 
+    func testEndActivitySessionAttachesToOpenWalkSlot() throws {
+        // A detected walk that started as a plain activity session (prompt missed the slot)
+        // must still complete a nearby open walk slot when it ends.
+        let calendar = Calendar.current
+        let petStore = PetStore(context: context, defaults: defaults)
+        let routineStore = RoutineStore(context: context, petStore: petStore, calendar: calendar)
+        let weekAgo = calendar.date(byAdding: .day, value: -7, to: Date())!
+        let task = try routineStore.createTask(name: "Evening walk", category: .training,
+                                               iconName: "figure.walk", hour: 17, minute: 30,
+                                               weekdayMask: Weekdays.all, from: weekAgo)
+
+        let start = calendar.date(bySettingHour: 17, minute: 0, second: 0, of: Date())!
+        let end = start.addingTimeInterval(35 * 60)
+        _ = try makeStore(now: start).startActivity(typeID: walkType.id, source: .detected)
+        let entry = try XCTUnwrap(makeStore(now: end).end(at: end))
+
+        XCTAssertEqual(entry.kind, .routine)
+        XCTAssertEqual(entry.routineLineageID, task.lineageID)
+        XCTAssertEqual(entry.performedAt, start)
+        XCTAssertEqual(entry.endedAt, end)
+        XCTAssertNotNil(try routineStore.completion(of: task, on: end))
+    }
+
+    func testEndActivitySessionIgnoresFarAwaySlot() throws {
+        // Slot at 6:00, walk ends at noon — outside the attach window: stays a plain activity.
+        let calendar = Calendar.current
+        let petStore = PetStore(context: context, defaults: defaults)
+        let routineStore = RoutineStore(context: context, petStore: petStore, calendar: calendar)
+        let weekAgo = calendar.date(byAdding: .day, value: -7, to: Date())!
+        _ = try routineStore.createTask(name: "Morning walk", category: .training,
+                                        iconName: "figure.walk", hour: 6, minute: 0,
+                                        weekdayMask: Weekdays.all, from: weekAgo)
+
+        let start = calendar.date(bySettingHour: 11, minute: 30, second: 0, of: Date())!
+        let end = start.addingTimeInterval(30 * 60)
+        _ = try makeStore(now: start).startActivity(typeID: walkType.id, source: .detected)
+        let entry = try XCTUnwrap(makeStore(now: end).end(at: end))
+        XCTAssertEqual(entry.kind, .activity)
+    }
+
     func testEndRoutineSessionChecksOffSlot() throws {
         let task = RoutineTask(context: context)
         task.id = UUID()

@@ -79,6 +79,15 @@ final class WalkSessionStore {
     private func writeEntry(for session: WalkSession, endedAt: Date?) throws -> LogEntry {
         let petStore = PetStore(context: context, defaults: defaults)
         if let typeID = session.activityTypeID {
+            // Reconcile with the schedule at END time too: prompt-time attachment can miss
+            // (slot outside the window when the walk began, spontaneous walk near a slot).
+            // If an open walk-like slot sits near this walk, completing it IS the walk.
+            if let endedAt,
+               let slotTask = openWalkSlot(near: endedAt) ?? openWalkSlot(near: session.startedAt) {
+                let store = RoutineStore(context: context, petStore: petStore, calendar: calendar)
+                return try store.checkOff(slotTask, on: endedAt, now: endedAt,
+                                          startedAt: session.startedAt, endedAt: endedAt)
+            }
             let request = ActivityType.fetchRequest()
             request.predicate = NSPredicate(format: "id == %@", typeID as CVarArg)
             request.fetchLimit = 1
@@ -111,6 +120,13 @@ final class WalkSessionStore {
                                       startedAt: session.startedAt, endedAt: endedAt)
         }
         throw WalkSessionError.unknownReference
+    }
+
+    private func openWalkSlot(near date: Date) -> RoutineTask? {
+        (try? WalkSlotFinder.openWalkSlot(
+            near: date,
+            withinMinutes: WalkDetectionTuning.default.slotAttachWindowMinutes,
+            context: context, defaults: defaults, calendar: calendar)) ?? nil
     }
 
     private func clear() { defaults.removeObject(forKey: Self.key) }

@@ -25,6 +25,8 @@ struct RoutineTemplateView: View {
                             Task {
                                 await reminderScheduler.cancelTask(task)
                                 try? store.endTask(task)
+                                await RoutineReminderPlanner.resync(context: store.context,
+                                                                    using: reminderScheduler)
                                 reload()
                             }
                         } label: {

@@ -12,6 +12,9 @@ final class ScheduleViewModel {
     var errorMessage: String?
     /// The completion that just happened; non-nil arms the "Add a photo?" toast.
     private(set) var toastCompletion: LogEntry?
+    /// Fired after any mutation that changes what should remind (check-off, skip, time
+    /// change) — the view hooks this to resync pending notifications.
+    var onDayStateChanged: (() -> Void)?
 
     private let store: RoutineStore
     private let logStore: LogStore
@@ -96,6 +99,7 @@ final class ScheduleViewModel {
         do {
             toastCompletion = try store.checkOff(slot.task, on: day, now: now())
             load()
+            onDayStateChanged?()
         } catch {
             errorMessage = String(describing: error)
         }
@@ -107,6 +111,7 @@ final class ScheduleViewModel {
             if toastCompletion?.id == completion.id { toastCompletion = nil }
             try store.uncheck(completion)
             load()
+            onDayStateChanged?()
         } catch {
             errorMessage = String(describing: error)
         }
@@ -120,6 +125,7 @@ final class ScheduleViewModel {
                 try store.skip(slot.task, on: day)
             }
             load()
+            onDayStateChanged?()
         } catch {
             errorMessage = String(describing: error)
         }
@@ -132,6 +138,7 @@ final class ScheduleViewModel {
         do {
             try store.overrideTime(slot.task, on: day, hour: hour, minute: minute)
             load()
+            onDayStateChanged?()
         } catch {
             errorMessage = String(describing: error)
         }
@@ -142,6 +149,7 @@ final class ScheduleViewModel {
         do {
             try store.clearOverrideTime(slot.task, on: day)
             load()
+            onDayStateChanged?()
         } catch {
             errorMessage = String(describing: error)
         }

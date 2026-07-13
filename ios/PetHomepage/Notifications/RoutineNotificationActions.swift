@@ -58,13 +58,25 @@ final class RoutineActionHandler {
             if (try? store.completion(of: task, on: now())) == nil {
                 _ = try? store.checkOff(task, on: now(), now: now())
             }
+            await resyncReminders()
         case RoutineNotificationAction.skip:
             try? store.skip(task, on: now()) // idempotent
+            await resyncReminders()
         case RoutineNotificationAction.snooze:
             await scheduleSnooze(for: task)
         default:
             break // plain tap (UNNotificationDefaultActionIdentifier) just opens the app
         }
+    }
+
+    /// Day state changed from a notification action (possibly with the app never opened) —
+    /// re-derive the pending occurrences so nothing stale fires later.
+    private func resyncReminders() async {
+        await RoutineReminderPlanner.resync(
+            context: context,
+            using: RoutineReminderScheduler(scheduler: scheduler, calendar: calendar),
+            calendar: calendar,
+            now: now())
     }
 
     private func fetchTask(_ id: UUID) -> RoutineTask? {

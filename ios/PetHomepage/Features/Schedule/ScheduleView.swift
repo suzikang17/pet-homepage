@@ -77,6 +77,13 @@ struct ScheduleView: View {
                 // Sessions can start/end outside this view (notification actions, auto-end).
                 walkModel.refresh()
                 model.load()
+                // Any check-off/skip/time-change must silence or move its pending reminder.
+                model.onDayStateChanged = {
+                    Task {
+                        await RoutineReminderPlanner.resync(context: store.context,
+                                                            using: reminderScheduler)
+                    }
+                }
             }
             .sheet(isPresented: $showTemplateEditor, onDismiss: { model.load() }) {
                 NavigationStack {

@@ -16,7 +16,7 @@ enum WalkSlotFinder {
         let window = TimeInterval(withinMinutes * 60)
 
         var best: (task: RoutineTask, distance: TimeInterval)?
-        for slot in slots where !slot.isCompleted && !slot.isSkipped {
+        for slot in slots where !slot.isCompleted && !slot.isSkipped && isWalkLike(slot.task) {
             guard let slotTime = calendar.date(bySettingHour: slot.hour, minute: slot.minute,
                                                second: 0, of: date) else { continue }
             let distance = abs(slotTime.timeIntervalSince(date))
@@ -26,5 +26,12 @@ enum WalkSlotFinder {
             }
         }
         return best?.task
+    }
+
+    /// A walk should only ever complete a walk-shaped slot — never Breakfast just because
+    /// it's the nearest open row.
+    private static func isWalkLike(_ task: RoutineTask) -> Bool {
+        task.category == .play || task.category == .training
+            || task.name.localizedCaseInsensitiveContains("walk")
     }
 }
