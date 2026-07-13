@@ -8,7 +8,7 @@ final class CaptureFlowTests: UITestCase {
     /// "Note only" tag creates a diary entry, visible under Timeline's Diary filter.
     func testCaptureNoteOnlySave() {
         let app = launchApp(extra: ["--uitest-stub-camera"])
-        app.tabBars.buttons["Capture"].tap()
+        openCapture()
 
         let save = app.buttons["sheet.save"]
         XCTAssertTrue(save.waitForExistence(timeout: 5))
@@ -23,7 +23,7 @@ final class CaptureFlowTests: UITestCase {
     /// a diary entry.
     func testCaptureTagActivity() {
         let app = launchApp(extra: ["--uitest-stub-camera"])
-        app.tabBars.buttons["Capture"].tap()
+        openCapture()
 
         let bathChip = app.buttons["Bath"]
         XCTAssertTrue(bathChip.waitForExistence(timeout: 5))
@@ -39,7 +39,7 @@ final class CaptureFlowTests: UITestCase {
     /// number enables it, and the saved reading shows up under Timeline's Health filter.
     func testCaptureMarkerValidation() {
         let app = launchApp(extra: ["--uitest-stub-camera"])
-        app.tabBars.buttons["Capture"].tap()
+        openCapture()
 
         let markerChip = app.buttons["captureMarkerChip"]
         XCTAssertTrue(markerChip.waitForExistence(timeout: 5))
@@ -70,7 +70,7 @@ final class CaptureFlowTests: UITestCase {
     /// appears with the captured photo already staged as a pending photo.
     func testCaptureVaccineHandoff() {
         let app = launchApp(extra: ["--uitest-stub-camera"])
-        app.tabBars.buttons["Capture"].tap()
+        openCapture()
 
         let vaccineChip = app.buttons["Vaccine"]
         XCTAssertTrue(vaccineChip.waitForExistence(timeout: 5))

@@ -104,6 +104,20 @@ final class ScheduleViewModelTests: XCTestCase {
         XCTAssertEqual(try breakfast().hour, 7)
     }
 
+    func testDoneSlotsSortFirstByCompletionTimeThenOpenThenSkipped() throws {
+        // Fixture: Breakfast 7:00 and Walk 8:00, both open. Checking off Walk moves it to
+        // the top (journal of what happened), Breakfast stays below in scheduled order.
+        let walk = try XCTUnwrap(model.slots.first { $0.task.name == "Walk" })
+        model.checkOff(walk)
+        XCTAssertEqual(model.slots.map(\.task.name), ["Walk", "Breakfast"])
+
+        // Skipped slots sink to the bottom.
+        let breakfast = try XCTUnwrap(model.slots.first { $0.task.name == "Breakfast" })
+        model.toggleSkip(breakfast)
+        XCTAssertEqual(model.slots.map(\.task.name), ["Walk", "Breakfast"])
+        XCTAssertTrue(try XCTUnwrap(model.slots.last).isSkipped)
+    }
+
     func testUpdateCompletionTime() throws {
         model.checkOff(try XCTUnwrap(model.slots.first))
         model.updateCompletionTime(try XCTUnwrap(model.slots.first), hour: 6, minute: 45)

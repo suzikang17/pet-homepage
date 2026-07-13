@@ -220,9 +220,14 @@ struct ScheduleView: View {
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 }
             } label: {
-                Image(systemName: slot.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 26, weight: .semibold))
-                    .foregroundStyle(slot.isCompleted ? Theme.ok : Theme.inkSoft.opacity(0.5))
+                // Completed reads as a quiet receipt; the open circle is the loud, inviting tap.
+                Image(systemName: slot.isCompleted ? "checkmark.circle" : "circle")
+                    .font(.system(size: slot.isCompleted ? 20 : 26,
+                                  weight: slot.isCompleted ? .medium : .semibold))
+                    .foregroundStyle(slot.isCompleted
+                                     ? Theme.inkSoft.opacity(0.6)
+                                     : Theme.primary.opacity(0.45))
+                    .frame(width: 26)
             }
             .buttonStyle(.plain)
             .disabled(model.isFuture || slot.isSkipped)
@@ -237,7 +242,7 @@ struct ScheduleView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(slot.task.name)
-                    .font(.body.weight(.semibold))
+                    .font(.body.weight(slot.isCompleted ? .regular : .semibold))
                     .foregroundStyle(slot.isSkipped ? Theme.inkSoft : Theme.ink)
                     .strikethrough(slot.isSkipped)
                 HStack(spacing: 5) {
@@ -287,6 +292,8 @@ struct ScheduleView: View {
                 }
             }
         }
+        // Done rows recede so the remaining work is visually loudest.
+        .opacity(slot.isCompleted ? 0.55 : 1)
         .padding(.vertical, 4)
         .accessibilityIdentifier("scheduleRow.\(slot.task.name)")
         .contextMenu { contextActions(for: slot) }

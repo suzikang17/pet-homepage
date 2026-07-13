@@ -40,9 +40,12 @@ struct TimelineView: View {
     @State private var showActivityTypes = false
     @State private var showScan = false
     private let services: TimelineServices
+    /// Opens the capture flow (camera / stub / library fallback), owned by ContentView.
+    private let onCapture: (() -> Void)?
 
-    init(services: TimelineServices) {
+    init(services: TimelineServices, onCapture: (() -> Void)? = nil) {
         self.services = services
+        self.onCapture = onCapture
         _model = State(initialValue: TimelineViewModel(
             medicationStore: services.medicationStore,
             logStore: services.logStore
@@ -206,8 +209,14 @@ struct TimelineView: View {
     /// Floating add button — bottom-trailing so it's in easy thumb reach.
     private var addButton: some View {
         Menu {
+            if let onCapture {
+                Button { onCapture() } label: { Label("Take photo", systemImage: "camera") }
+            }
             if services.extractionService != nil && services.ingestionService != nil {
                 Button { showScan = true } label: { Label("Scan a record", systemImage: "sparkles") }
+            }
+            if onCapture != nil
+                || (services.extractionService != nil && services.ingestionService != nil) {
                 Divider()
             }
             Button { addKind = .diary } label: { Label("Note", systemImage: "square.and.pencil") }
