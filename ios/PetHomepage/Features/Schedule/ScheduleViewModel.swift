@@ -53,7 +53,17 @@ final class ScheduleViewModel {
 
     func load() {
         do {
-            slots = try store.slots(for: day)
+            let computed = try store.slots(for: day)
+            // Journal ordering: what happened (by completion time) above what's left
+            // (scheduled order), deliberately-skipped slots last. Presentation-only —
+            // RoutineStore.slots(for:) stays in scheduled order for its other consumers.
+            let done = computed.filter(\.isCompleted).sorted {
+                ($0.completion?.performedAt ?? .distantPast)
+                    < ($1.completion?.performedAt ?? .distantPast)
+            }
+            let open = computed.filter { !$0.isCompleted && !$0.isSkipped }
+            let skipped = computed.filter { !$0.isCompleted && $0.isSkipped }
+            slots = done + open + skipped
             errorMessage = nil
         } catch {
             errorMessage = String(describing: error)

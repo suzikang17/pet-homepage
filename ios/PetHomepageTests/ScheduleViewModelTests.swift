@@ -74,11 +74,16 @@ final class ScheduleViewModelTests: XCTestCase {
     }
 
     func testToggleSkipExcludesFromProgress() throws {
-        model.toggleSkip(try XCTUnwrap(model.slots.first))
-        XCTAssertTrue(try XCTUnwrap(model.slots.first).isSkipped)
+        // Track Breakfast by identity: skipped slots sink to the bottom of the list.
+        func breakfast() throws -> RoutineSlot {
+            try XCTUnwrap(model.slots.first { $0.task.name == "Breakfast" })
+        }
+        model.toggleSkip(try breakfast())
+        XCTAssertTrue(try breakfast().isSkipped)
+        XCTAssertEqual(model.slots.last?.task.name, "Breakfast") // sank below open slots
         XCTAssertEqual(model.progress.total, 1) // skipped slot out of the denominator
-        model.toggleSkip(try XCTUnwrap(model.slots.first))
-        XCTAssertFalse(try XCTUnwrap(model.slots.first).isSkipped)
+        model.toggleSkip(try breakfast())
+        XCTAssertFalse(try breakfast().isSkipped)
         XCTAssertEqual(model.progress.total, 2)
     }
 
@@ -102,6 +107,20 @@ final class ScheduleViewModelTests: XCTestCase {
         model.goToToday()
         model.clearTimeChange(try breakfast())
         XCTAssertEqual(try breakfast().hour, 7)
+    }
+
+    func testDoneSlotsSortFirstByCompletionTimeThenOpenThenSkipped() throws {
+        // Fixture: Breakfast 7:00 and Walk 8:00, both open. Checking off Walk moves it to
+        // the top (journal of what happened), Breakfast stays below in scheduled order.
+        let walk = try XCTUnwrap(model.slots.first { $0.task.name == "Walk" })
+        model.checkOff(walk)
+        XCTAssertEqual(model.slots.map(\.task.name), ["Walk", "Breakfast"])
+
+        // Skipped slots sink to the bottom.
+        let breakfast = try XCTUnwrap(model.slots.first { $0.task.name == "Breakfast" })
+        model.toggleSkip(breakfast)
+        XCTAssertEqual(model.slots.map(\.task.name), ["Walk", "Breakfast"])
+        XCTAssertTrue(try XCTUnwrap(model.slots.last).isSkipped)
     }
 
     func testUpdateCompletionTime() throws {

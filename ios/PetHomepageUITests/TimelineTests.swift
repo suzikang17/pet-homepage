@@ -6,7 +6,7 @@ final class TimelineTests: UITestCase {
     /// same record back as a list row.
     func testTimelineStreamPhotosToggle() {
         let app = launchApp(extra: ["--uitest-stub-camera"])
-        app.tabBars.buttons["Capture"].tap()
+        openCapture()
         let save = app.buttons["sheet.save"]
         XCTAssertTrue(save.waitForExistence(timeout: 5))
         save.tap()
@@ -26,7 +26,7 @@ final class TimelineTests: UITestCase {
     /// returns to the grid.
     func testPhotoCellOpensFullScreenViewer() {
         let app = launchApp(extra: ["--uitest-stub-camera"])
-        app.tabBars.buttons["Capture"].tap()
+        openCapture()
         let save = app.buttons["sheet.save"]
         XCTAssertTrue(save.waitForExistence(timeout: 5))
         save.tap()

@@ -28,6 +28,18 @@ class UITestCase: XCTestCase {
         return app
     }
 
+    /// Opens the capture flow via its home: the Timeline tab's + menu → "Take photo".
+    /// (The former Capture pseudo-tab was removed.)
+    func openCapture() {
+        app.tabBars.buttons["Timeline"].tap()
+        let add = app.buttons["timelineAddButton"]
+        XCTAssertTrue(add.waitForExistence(timeout: 5), "timeline add button missing")
+        add.tap()
+        let takePhoto = app.buttons["Take photo"]
+        XCTAssertTrue(takePhoto.waitForExistence(timeout: 5), "Take photo menu entry missing")
+        takePhoto.tap()
+    }
+
     /// Taps a chip inside a horizontal chip strip, swiping the strip left first when the chip is
     /// currently off-screen (trailing chips like Diary/Activities aren't tappable until the
     /// strip scrolls). Uses frame math, not `isHittable` — hittability queries throw

@@ -45,6 +45,22 @@ struct ContentView: View {
     @State private var pendingHandoff: HandoffPresentation?
     @State private var activeHandoff: HandoffPresentation?
 
+    /// Opens the capture flow from the Timeline + menu: staged stub photo under
+    /// `--uitest-stub-camera`, the camera when available, else the photo-library picker.
+    private func startCapture() {
+        if UITestSupport.stubCamera {
+            if let jpeg = UITestSupport.stubPhotoJPEG() {
+                capturedPhoto = CapturedPhoto(data: jpeg)
+            }
+            return
+        }
+        if CameraPicker.isAvailable {
+            showCamera = true
+        } else {
+            showLibraryFallback = true
+        }
+    }
+
     var body: some View {
         let petStore = PetStore(context: context)
         let medicationStore = MedicationStore(context: context, petStore: petStore)
@@ -140,12 +156,9 @@ struct ContentView: View {
                            timelineServices: timelineServices)
                 .tabItem { Label("Home", systemImage: "house") }
                 .tag(0)
-            TimelineView(services: timelineServices)
+            TimelineView(services: timelineServices, onCapture: { startCapture() })
                 .tabItem { Label("Timeline", systemImage: "calendar") }
                 .tag(1)
-            Color.clear
-                .tabItem { Label("Capture", systemImage: "camera.fill") }
-                .tag(2)
             ScheduleView(store: routineStore, logStore: logStore,
                          reminderScheduler: routineReminderScheduler, petStore: petStore,
                          walkSessions: walkSessions)
@@ -165,23 +178,6 @@ struct ContentView: View {
             if let tasks = try? routineStore.currentTasks() {
                 let petName = try? petStore.currentPet()?.name
                 await routineReminderScheduler.syncAll(tasks: tasks, petName: petName ?? nil)
-            }
-        }
-        .onChange(of: selectedTab) { old, new in
-            guard new == 2 else { return }
-            selectedTab = old
-            // `--uitest-stub-camera`: skip the real camera/library picker entirely and land
-            // straight on the review-and-tag sheet with a generated photo already staged.
-            if UITestSupport.stubCamera {
-                if let jpeg = UITestSupport.stubPhotoJPEG() {
-                    capturedPhoto = CapturedPhoto(data: jpeg)
-                }
-                return
-            }
-            if CameraPicker.isAvailable {
-                showCamera = true
-            } else {
-                showLibraryFallback = true
             }
         }
         .fullScreenCover(isPresented: $showCamera, onDismiss: {
