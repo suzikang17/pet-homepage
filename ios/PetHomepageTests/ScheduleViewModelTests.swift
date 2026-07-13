@@ -74,11 +74,16 @@ final class ScheduleViewModelTests: XCTestCase {
     }
 
     func testToggleSkipExcludesFromProgress() throws {
-        model.toggleSkip(try XCTUnwrap(model.slots.first))
-        XCTAssertTrue(try XCTUnwrap(model.slots.first).isSkipped)
+        // Track Breakfast by identity: skipped slots sink to the bottom of the list.
+        func breakfast() throws -> RoutineSlot {
+            try XCTUnwrap(model.slots.first { $0.task.name == "Breakfast" })
+        }
+        model.toggleSkip(try breakfast())
+        XCTAssertTrue(try breakfast().isSkipped)
+        XCTAssertEqual(model.slots.last?.task.name, "Breakfast") // sank below open slots
         XCTAssertEqual(model.progress.total, 1) // skipped slot out of the denominator
-        model.toggleSkip(try XCTUnwrap(model.slots.first))
-        XCTAssertFalse(try XCTUnwrap(model.slots.first).isSkipped)
+        model.toggleSkip(try breakfast())
+        XCTAssertFalse(try breakfast().isSkipped)
         XCTAssertEqual(model.progress.total, 2)
     }
 
