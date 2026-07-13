@@ -31,12 +31,24 @@ final class ReminderIdentifierWeekdayTests: XCTestCase {
         XCTAssertNil(ReminderIdentifier.parse("routine-reminder-not-a-uuid-w5"))
     }
 
-    func testRequestIDsForCancelCoverBaseAndAllWeekdays() {
-        let ids = ReminderIdentifier.requestIDs(kind: .routine, entityID: id)
-        XCTAssertEqual(ids.count, 8)
-        XCTAssertTrue(ids.contains("routine-reminder-\(id.uuidString)"))
-        XCTAssertTrue(ids.contains("routine-reminder-\(id.uuidString)-w1"))
-        XCTAssertTrue(ids.contains("routine-reminder-\(id.uuidString)-w7"))
+    func testRoutineOccurrenceRequestIDsCarryDaySuffix() throws {
+        let occurrence = PendingReminder(kind: .routine, entityID: id, title: "Walk", body: "b",
+                                         hour: 17, minute: 30,
+                                         dateComponents: DateComponents(year: 2026, month: 7, day: 13),
+                                         repeats: false)
+        XCTAssertEqual(ReminderIdentifier.requestID(for: occurrence),
+                       "routine-reminder-\(id.uuidString)-d20260713")
+        let (kind, parsed) = try XCTUnwrap(
+            ReminderIdentifier.parse("routine-reminder-\(id.uuidString)-d20260713"))
+        XCTAssertEqual(kind, .routine)
+        XCTAssertEqual(parsed, id)
+        // Non-routine one-shots (vaccination-due etc.) keep the bare replace-per-entity ID.
+        let vaccine = PendingReminder(kind: .vaccination, entityID: id, title: "t", body: "b",
+                                      hour: 9, minute: 0,
+                                      dateComponents: DateComponents(year: 2026, month: 7, day: 13),
+                                      repeats: false)
+        XCTAssertEqual(ReminderIdentifier.requestID(for: vaccine),
+                       "vaccination-reminder-\(id.uuidString)")
     }
 
     func testFakeSchedulerKeepsPerWeekdayReminders() async {

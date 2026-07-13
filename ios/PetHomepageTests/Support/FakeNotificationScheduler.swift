@@ -15,12 +15,10 @@ final class FakeNotificationScheduler: NotificationScheduling {
     }
 
     func schedule(_ reminder: PendingReminder) async {
-        // Replace key includes the weekly weekday (matches the real adapter's per-request-ID
-        // replace). Existing kinds never set a weekday, so their semantics are unchanged.
-        scheduled.removeAll {
-            $0.kind == reminder.kind && $0.entityID == reminder.entityID
-                && $0.dateComponents?.weekday == reminder.dateComponents?.weekday
-        }
+        // Replace key mirrors the real adapter exactly: the full request identifier, which
+        // carries the weekly-weekday or routine per-day suffix when present.
+        let id = ReminderIdentifier.requestID(for: reminder)
+        scheduled.removeAll { ReminderIdentifier.requestID(for: $0) == id }
         scheduled.append(reminder)
     }
 

@@ -131,26 +131,27 @@ enum ReminderIdentifier {
     }
 
     /// The request ID for a specific reminder. Repeating-weekly reminders get a `-w<weekday>`
-    /// suffix so one task's per-weekday requests coexist instead of replacing each other.
+    /// suffix; routine per-day one-shot occurrences get a `-d<yyyyMMdd>` suffix — either way
+    /// one entity's requests coexist instead of replacing each other.
     static func requestID(for reminder: PendingReminder) -> String {
         let base = requestID(kind: reminder.kind, entityID: reminder.entityID)
         if reminder.repeats, let weekday = reminder.dateComponents?.weekday {
             return base + "-w\(weekday)"
         }
+        if reminder.kind == .routine, !reminder.repeats,
+           let year = reminder.dateComponents?.year,
+           let month = reminder.dateComponents?.month,
+           let day = reminder.dateComponents?.day {
+            return base + String(format: "-d%04d%02d%02d", year, month, day)
+        }
         return base
     }
 
-    /// Every request ID a (kind, entityID) pair could own: the bare ID plus all weekday
-    /// variants. Used by cancel — removing IDs that were never scheduled is harmless.
-    static func requestIDs(kind: ReminderKind, entityID: UUID) -> [String] {
-        let base = requestID(kind: kind, entityID: entityID)
-        return [base] + (1...7).map { "\(base)-w\($0)" }
-    }
-
     static func parse(_ requestID: String) -> (ReminderKind, UUID)? {
-        // Strip an optional "-w<digit>" weekly suffix before parsing the UUID.
+        // Strip an optional weekly ("-w<digit>") or per-day ("-d<yyyyMMdd>") suffix before
+        // parsing the UUID.
         var body = requestID
-        if let range = body.range(of: #"-w[1-7]$"#, options: .regularExpression) {
+        if let range = body.range(of: #"-(w[1-7]|d[0-9]{8})$"#, options: .regularExpression) {
             body.removeSubrange(range)
         }
         for kind in ReminderKind.allCases {

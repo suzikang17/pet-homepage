@@ -173,12 +173,9 @@ struct ContentView: View {
             try? activityStore.seedDefaultsIfNeeded()
             try? logStore.backfillKindsIfNeeded()
             try? routineStore.seedDefaultsIfNeeded()
-            // Re-sync routine reminders on every launch: template edits made on another device
-            // (CloudKit) otherwise leave this device's notifications stale.
-            if let tasks = try? routineStore.currentTasks() {
-                let petName = try? petStore.currentPet()?.name
-                await routineReminderScheduler.syncAll(tasks: tasks, petName: petName ?? nil)
-            }
+            // Re-sync routine reminders on every launch: completions/skips/overrides (and
+            // template edits synced from another device) all change what should fire.
+            await RoutineReminderPlanner.resync(context: context, using: routineReminderScheduler)
         }
         .fullScreenCover(isPresented: $showCamera, onDismiss: {
             if let data = pendingPhoto {

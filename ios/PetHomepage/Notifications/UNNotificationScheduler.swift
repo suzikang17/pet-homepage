@@ -54,10 +54,12 @@ final class UNNotificationScheduler: NotificationScheduling {
     }
 
     func cancel(kind: ReminderKind, entityID: UUID) async {
-        // Clear the bare ID plus every weekday variant — removing IDs that were never
-        // scheduled is harmless.
-        center.removePendingNotificationRequests(
-            withIdentifiers: ReminderIdentifier.requestIDs(kind: kind, entityID: entityID))
+        // Prefix match clears the bare ID plus any weekday-/day-suffixed variants — the day
+        // variants can't be enumerated, so filter the actual pending set.
+        let base = ReminderIdentifier.requestID(kind: kind, entityID: entityID)
+        let requests = await center.pendingNotificationRequests()
+        let ids = requests.map(\.identifier).filter { $0 == base || $0.hasPrefix(base + "-") }
+        center.removePendingNotificationRequests(withIdentifiers: ids)
     }
 
     func pendingIDs(kind: ReminderKind) async -> [UUID] {

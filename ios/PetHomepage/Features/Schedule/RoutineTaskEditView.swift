@@ -120,13 +120,15 @@ struct RoutineTaskEditView: View {
                 saved = try store.createTask(name: trimmed, category: category, iconName: icon,
                                              hour: hour, minute: minute, weekdayMask: weekdayMask)
             }
-            let petName = try? petStore.currentPet()?.name
             Task {
-                // A versioned edit moves reminders from the closed row to its successor.
+                // A versioned edit moves reminders from the closed row to its successor; the
+                // old row's pending snooze must not survive it. The full resync then
+                // re-derives every occurrence (including `saved`'s) from day state.
                 if let old = editing, old.id != saved.id {
                     await reminderScheduler.cancelTask(old)
                 }
-                await reminderScheduler.syncTask(saved, petName: petName ?? nil)
+                await RoutineReminderPlanner.resync(context: store.context,
+                                                    using: reminderScheduler)
             }
             dismiss()
         } catch {
