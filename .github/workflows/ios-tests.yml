@@ -40,7 +40,10 @@ jobs:
         run: |
           DEST=$(xcrun simctl list devices available | grep -Eo "iPhone [0-9]+[^(]*" | head -1 | xargs)
           echo "Using simulator: ${DEST:-iPhone 16}"
-          xcodebuild test \
+          # TEST_RUNNER_ vars reach the simulator test process (prefix stripped): the shell's
+          # CI=true does NOT propagate there, and CloudKitSchemaInitializer must skip on CI
+          # (unsigned test host has no iCloud entitlement — CloudKit crashes the process).
+          TEST_RUNNER_CI=true xcodebuild test \
             -scheme PetHomepage \
             -destination "platform=iOS Simulator,name=${DEST:-iPhone 16}" \
             -only-testing:PetHomepageTests \
