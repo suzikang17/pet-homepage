@@ -84,6 +84,29 @@ final class WalkSessionStoreTests: XCTestCase {
         XCTAssertNil(try store.end())
     }
 
+    func testTitleForSessionNamesItsSlotOrActivity() throws {
+        let store = makeStore(now: Date())
+        let activitySession = try store.startActivity(typeID: walkType.id, source: .manual)
+        XCTAssertEqual(store.title(for: activitySession), "Walk")
+        store.cancel()
+
+        let task = RoutineTask(context: context)
+        task.id = UUID()
+        task.lineageID = UUID()
+        task.name = "Evening walk"
+        task.categoryRaw = ActivityCategory.training.rawValue
+        task.iconName = "figure.walk"
+        task.hour = 17
+        task.minute = 30
+        task.weekdayMask = Weekdays.all
+        task.effectiveFrom = Date(timeIntervalSince1970: 0)
+        task.isOneOff = false
+        try context.save()
+        let routineSession = try store.startRoutine(taskID: task.id, source: .manual)
+        XCTAssertEqual(store.title(for: routineSession), "Evening walk")
+        store.cancel()
+    }
+
     func testEndActivitySessionAttachesToOpenWalkSlot() throws {
         // A detected walk that started as a plain activity session (prompt missed the slot)
         // must still complete a nearby open walk slot when it ends.
