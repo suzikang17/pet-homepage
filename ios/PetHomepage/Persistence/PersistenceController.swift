@@ -23,7 +23,16 @@ struct PersistenceController {
         if inMemory {
             // Plain container with an in-memory store — no CloudKit in tests.
             container = NSPersistentContainer(name: "PetHomepage", managedObjectModel: Self.model)
-            container.persistentStoreDescriptions.first?.url = URL(fileURLWithPath: "/dev/null")
+            // Each test stack gets its OWN store. Every in-memory container previously shared
+            // the "/dev/null" URL, so concurrently-alive stacks (one per test class) merged
+            // each other's change notifications through the shared model and intermittently
+            // crashed Core Data's change processing ("attempt to insert nil" inside
+            // NSManagedObjectContextObjectsDidChangeNotification).
+            let description = NSPersistentStoreDescription()
+            description.type = NSInMemoryStoreType
+            description.url = URL(fileURLWithPath: "/dev/null")
+                .appendingPathComponent(UUID().uuidString)
+            container.persistentStoreDescriptions = [description]
         } else {
             container = NSPersistentCloudKitContainer(name: "PetHomepage", managedObjectModel: Self.model)
             if let description = container.persistentStoreDescriptions.first {
@@ -38,7 +47,9 @@ struct PersistenceController {
                 fatalError("Unresolved Core Data error \(error), \(error.userInfo)")
             }
         }
-        container.viewContext.automaticallyMergesChangesFromParent = true
+        // Merging from the parent coordinator matters only for the real (CloudKit-backed)
+        // stack; on isolated in-memory test stores it just invites cross-stack churn.
+        container.viewContext.automaticallyMergesChangesFromParent = !inMemory
         container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
     }
 }
