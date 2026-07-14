@@ -44,6 +44,8 @@ struct HomeLocationStore {
         nonmutating set { defaults.set(newValue?.uuidString, forKey: Self.typeKey) }
     }
 
-    /// Detection can run only once a home location and a default walk type are chosen.
-    var isConfigured: Bool { homeCoordinate != nil && defaultActivityTypeID != nil }
+    /// Home is the only thing the user must choose — the activity a detected walk logs as is
+    /// resolved automatically (see WalkActivityResolver), so a half-finished setup can't
+    /// silently disarm detection.
+    var isConfigured: Bool { homeCoordinate != nil }
 }

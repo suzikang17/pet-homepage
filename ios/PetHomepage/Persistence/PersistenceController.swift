@@ -21,9 +21,19 @@ struct PersistenceController {
 
     init(inMemory: Bool = false) {
         if inMemory {
-            // Plain container with an in-memory store — no CloudKit in tests.
+            // Plain container with a throwaway store — no CloudKit in tests.
             container = NSPersistentContainer(name: "PetHomepage", managedObjectModel: Self.model)
-            container.persistentStoreDescriptions.first?.url = URL(fileURLWithPath: "/dev/null")
+            // Each test stack gets its OWN store file. Every in-memory container previously
+            // shared the "/dev/null" URL, so concurrently-alive stacks (one per test class)
+            // merged each other's change notifications through the shared model and
+            // intermittently crashed Core Data's change processing ("attempt to insert nil"
+            // inside NSManagedObjectContextObjectsDidChangeNotification). A unique temp-dir
+            // SQLite file isolates them while keeping SQLite's exact fetch semantics — an
+            // NSInMemoryStoreType store does NOT (its predicate/sort behavior differs).
+            let description = NSPersistentStoreDescription(
+                url: FileManager.default.temporaryDirectory
+                    .appendingPathComponent("PetHomepageTests-\(UUID().uuidString).sqlite"))
+            container.persistentStoreDescriptions = [description]
         } else {
             container = NSPersistentCloudKitContainer(name: "PetHomepage", managedObjectModel: Self.model)
             if let description = container.persistentStoreDescriptions.first {

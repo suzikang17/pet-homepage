@@ -33,6 +33,9 @@ struct ScheduleView: View {
     @State private var timeSheet: TimeSheetTarget?
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("walk.setupCardDismissed") private var walkSetupDismissed = false
+    /// Mirrors HomeLocationStore's key so the card disappears the moment home is set —
+    /// reading the store inside `body` wouldn't re-render on the write.
+    @AppStorage("walk.homeLat") private var walkHomeLat: Double = .nan
     @State private var showWalkSetup = false
 
     private let store: RoutineStore
@@ -67,7 +70,7 @@ struct ScheduleView: View {
                     dayBar
                     // Auto-detect setup nudge: only while a walk slot exists but detection
                     // was never configured, and never after "Not now".
-                    if !walkSetupDismissed, !HomeLocationStore().isConfigured,
+                    if !walkSetupDismissed, walkHomeLat.isNaN,
                        model.slots.contains(where: { $0.task.isWalk }) {
                         WalkSetupCard(onSetUp: { showWalkSetup = true },
                                       onDismiss: { walkSetupDismissed = true })

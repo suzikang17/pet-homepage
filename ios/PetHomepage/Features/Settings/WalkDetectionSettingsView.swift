@@ -85,8 +85,10 @@ struct WalkDetectionSettingsView: View {
                 BrandCard {
                     VStack(alignment: .leading, spacing: 14) {
                         BrandCardTitle("Detected walks")
+                        // Optional: resolved automatically (walk-named type, or one created)
+                        // when left alone — an unmade choice must never disarm detection.
                         Picker("Log as", selection: $defaultTypeID) {
-                            Text("Choose an activity…").tag(UUID?.none)
+                            Text("Automatic").tag(UUID?.none)
                             ForEach(activityTypes) { type in
                                 Label(type.name, systemImage: type.iconName)
                                     .tag(UUID?.some(type.id))
@@ -126,11 +128,14 @@ struct WalkDetectionSettingsView: View {
                                 showAlwaysExplainer = true
                             }
                             .buttonStyle(PrimaryButtonStyle())
+                            // iOS shows the Always upgrade prompt only once per install — if
+                            // it was answered (or never appeared), the button can't bring it
+                            // back and only Settings can. Say so instead of looking broken.
+                            Text("Nothing happened? iOS only offers that choice once. Open Settings → Privacy → Location Services → Pet Homepage and pick **Always**.")
+                                .font(.footnote).foregroundStyle(Theme.inkSoft)
+                            settingsLink
                         case .denied, .restricted:
-                            Link("Open Settings to allow location",
-                                 destination: URL(string: UIApplication.openSettingsURLString)!)
-                                .font(Theme.body().weight(.semibold))
-                                .foregroundStyle(Theme.primary)
+                            settingsLink
                         default:
                             EmptyView()
                         }
@@ -161,6 +166,12 @@ struct WalkDetectionSettingsView: View {
         } message: {
             Text("“Always” access lets the walk end itself the moment you're home, even with the app closed. That's all it's used for.")
         }
+    }
+
+    private var settingsLink: some View {
+        Link("Open Settings", destination: URL(string: UIApplication.openSettingsURLString)!)
+            .font(Theme.body().weight(.semibold))
+            .foregroundStyle(Theme.primary)
     }
 
     private var permissionStatus: some View {

@@ -25,11 +25,13 @@ final class HomeLocationStoreTests: XCTestCase {
         XCTAssertNil(store.homeCoordinate)
     }
 
-    func testConfiguredNeedsBothHomeAndType() {
-        store.homeCoordinate = (latitude: 37.77, longitude: -122.43)
+    /// Home alone arms detection — the activity a detected walk logs as is resolved
+    /// automatically (WalkActivityResolver), so an unmade choice can't silently disarm it.
+    func testConfiguredNeedsHomeOnly() {
         XCTAssertFalse(store.isConfigured)
-        store.defaultActivityTypeID = UUID()
+        store.homeCoordinate = (latitude: 37.77, longitude: -122.43)
         XCTAssertTrue(store.isConfigured)
+        XCTAssertNil(store.defaultActivityTypeID)
     }
 
     func testPromptRulePersists() {

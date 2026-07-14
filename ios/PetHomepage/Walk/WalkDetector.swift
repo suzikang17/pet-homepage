@@ -110,7 +110,8 @@ final class WalkDetector: NSObject {
         let requestID: WalkRequestID
         if let slotTask {
             requestID = .detectedRoutine(taskID: slotTask.id, exitedAt: exitedAt)
-        } else if let typeID = home.defaultActivityTypeID {
+        } else if let typeID = WalkActivityResolver.resolve(context: context, home: home,
+                                                            defaults: defaults) {
             requestID = .detectedActivity(typeID: typeID, exitedAt: exitedAt)
         } else {
             return
