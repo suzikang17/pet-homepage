@@ -47,7 +47,8 @@ struct PhotoGalleryView: View {
                             .tracking(1.4)
                             .foregroundStyle(Theme.inkSoft)
                             .padding(.leading, 6)
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 8)],
+                        // Two big cells per phone width — the photos are the point of this view.
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 8)],
                                   spacing: 8) {
                             ForEach(section.items, id: \.photo.id) { item in
                                 cell(item.photo, index: item.index)
@@ -74,7 +75,7 @@ struct PhotoGalleryView: View {
                 Image(uiImage: ui)
                     .resizable()
                     .scaledToFill()
-                    .frame(height: 128)
+                    .frame(height: 190)
                     .frame(maxWidth: .infinity)
                     .clipped()
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))

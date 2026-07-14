@@ -61,6 +61,26 @@ struct TimelineItem: Identifiable {
 
 /// Aggregates the five record stores into one date-sorted stream, plus the "due soon" slice the
 /// Home tab surfaces. Read-only — editing is delegated back to each type's existing editor.
+/// One day's worth of timeline items — the stream is sectioned by day so rows can show a
+/// time instead of repeating the date on every line.
+struct TimelineDayGroup: Identifiable {
+    let day: Date
+    var items: [TimelineItem]
+
+    var id: Date { day }
+
+    /// "Today" / "Yesterday" / "Mon, Jul 13" — relative for the two days people think in.
+    func title(calendar: Calendar = .current, now: Date = Date()) -> String {
+        if calendar.isDate(day, inSameDayAs: now) { return "Today" }
+        if let yesterday = calendar.date(byAdding: .day, value: -1, to: now),
+           calendar.isDate(day, inSameDayAs: yesterday) { return "Yesterday" }
+        if calendar.isDate(day, equalTo: now, toGranularity: .year) {
+            return day.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())
+        }
+        return day.formatted(.dateTime.month(.abbreviated).day().year())
+    }
+}
+
 @Observable
 final class TimelineViewModel {
     var items: [TimelineItem] = []
@@ -101,6 +121,21 @@ final class TimelineViewModel {
     var filtered: [TimelineItem] {
         guard let filter else { return items }
         return items.filter { $0.kind == filter }
+    }
+
+    /// The filtered stream cut into day sections, newest day first (items already newest-first).
+    /// Rows then show only a time — the day lives in the section header.
+    func dayGroups(calendar: Calendar = .current) -> [TimelineDayGroup] {
+        var groups: [TimelineDayGroup] = []
+        for item in filtered {
+            let day = calendar.startOfDay(for: item.date)
+            if let last = groups.last, last.day == day {
+                groups[groups.count - 1].items.append(item)
+            } else {
+                groups.append(TimelineDayGroup(day: day, items: [item]))
+            }
+        }
+        return groups
     }
 
     /// Records whose next-due falls within `days` from `now`, soonest first. Powers Home's "Due soon".
