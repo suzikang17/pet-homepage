@@ -45,6 +45,12 @@ final class RoutineStore {
 
     // MARK: - Template CRUD (versioned)
 
+    /// The editor's default for "counts as a walk" while typing; nil `isWalk` params fall
+    /// back to this so walk-named tasks are matchable without any manual toggling.
+    static func inferIsWalk(name: String) -> Bool {
+        name.localizedCaseInsensitiveContains("walk")
+    }
+
     @discardableResult
     func createTask(name: String,
                     category: ActivityCategory,
@@ -52,6 +58,7 @@ final class RoutineStore {
                     hour: Int,
                     minute: Int,
                     weekdayMask: Int64,
+                    isWalk: Bool? = nil,
                     from day: Date = Date()) throws -> RoutineTask {
         let task = RoutineTask(context: context)
         task.id = UUID()
@@ -62,6 +69,7 @@ final class RoutineStore {
         task.hour = Int64(hour)
         task.minute = Int64(minute)
         task.weekdayMask = weekdayMask
+        task.isWalk = isWalk ?? Self.inferIsWalk(name: name)
         task.effectiveFrom = calendar.startOfDay(for: day)
         task.effectiveUntil = nil
         task.isOneOff = false
@@ -69,6 +77,25 @@ final class RoutineStore {
         task.pet = try petStore.ensurePet()
         try context.save()
         return task
+    }
+
+    /// One-time backfill for rows created before `isWalk` existed: marks tasks whose name
+    /// contains "walk", or whose play/training category carries the figure.walk icon. Run
+    /// once (the caller guards with a defaults flag) so a user who later opts a task out is
+    /// never re-flipped.
+    func backfillWalkFlags() throws {
+        let request = RoutineTask.fetchRequest()
+        request.predicate = NSPredicate(format: "isWalk == NO")
+        var changed = false
+        for task in try context.fetch(request) {
+            let walkShaped = (task.category == .play || task.category == .training)
+                && task.iconName == "figure.walk"
+            if Self.inferIsWalk(name: task.name) || walkShaped {
+                task.isWalk = true
+                changed = true
+            }
+        }
+        if changed { try context.save() }
     }
 
     /// The open-ended template rows (the "current routine" the editor shows). One-offs excluded.
@@ -90,6 +117,7 @@ final class RoutineStore {
                   hour: Int,
                   minute: Int,
                   weekdayMask: Int64,
+                  isWalk: Bool? = nil,
                   on day: Date = Date()) throws -> RoutineTask {
         let today = calendar.startOfDay(for: day)
         if task.effectiveFrom >= today || task.isOneOff {
@@ -99,6 +127,7 @@ final class RoutineStore {
             task.hour = Int64(hour)
             task.minute = Int64(minute)
             task.weekdayMask = weekdayMask
+            task.isWalk = isWalk ?? task.isWalk
             try context.save()
             return task
         }
@@ -112,6 +141,7 @@ final class RoutineStore {
         successor.hour = Int64(hour)
         successor.minute = Int64(minute)
         successor.weekdayMask = weekdayMask
+        successor.isWalk = isWalk ?? task.isWalk
         successor.effectiveFrom = today
         successor.effectiveUntil = nil
         successor.isOneOff = false
@@ -142,6 +172,7 @@ final class RoutineStore {
                    iconName: String,
                    hour: Int,
                    minute: Int,
+                   isWalk: Bool? = nil,
                    on day: Date) throws -> RoutineTask {
         let start = calendar.startOfDay(for: day)
         guard let end = calendar.date(byAdding: .day, value: 1, to: start) else {
@@ -156,6 +187,7 @@ final class RoutineStore {
         task.hour = Int64(hour)
         task.minute = Int64(minute)
         task.weekdayMask = Weekdays.bit(for: calendar.component(.weekday, from: start))
+        task.isWalk = isWalk ?? Self.inferIsWalk(name: name)
         task.effectiveFrom = start
         task.effectiveUntil = end
         task.isOneOff = true

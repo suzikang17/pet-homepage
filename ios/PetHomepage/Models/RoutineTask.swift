@@ -39,6 +39,10 @@ public class RoutineTask: NSManagedObject {
     @NSManaged public var effectiveFrom: Date
     @NSManaged public var effectiveUntil: Date?
     @NSManaged public var isOneOff: Bool
+    /// Explicit "counts as a walk" marker: drives walk detection's slot attachment and
+    /// end-of-walk matching. Set by the editor toggle (auto-inferred from the name) and a
+    /// one-time backfill — never guessed at match time.
+    @NSManaged public var isWalk: Bool
     @NSManaged public var sortOrder: Int64
     @NSManaged public var pet: Pet?
 }

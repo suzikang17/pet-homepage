@@ -15,6 +15,9 @@ struct RoutineTaskEditView: View {
     @State private var category: ActivityCategory
     @State private var time: Date
     @State private var weekdayMask: Int64
+    @State private var isWalk: Bool
+    /// Once the user touches the walk toggle, stop auto-inferring from the name.
+    @State private var walkToggleTouched: Bool
 
     private let store: RoutineStore
     private let reminderScheduler: RoutineReminderScheduler
@@ -37,6 +40,9 @@ struct RoutineTaskEditView: View {
         _time = State(initialValue: calendar.date(bySettingHour: hour, minute: minute,
                                                   second: 0, of: Date()) ?? Date())
         _weekdayMask = State(initialValue: editing?.weekdayMask ?? Weekdays.all)
+        _isWalk = State(initialValue: editing?.isWalk ?? false)
+        // Editing an existing task: its stored flag is the truth, don't re-infer.
+        _walkToggleTouched = State(initialValue: editing != nil)
     }
 
     private var isOneOff: Bool {
@@ -55,11 +61,20 @@ struct RoutineTaskEditView: View {
             Section("Task") {
                 TextField("Name (e.g. Morning walk)", text: $name)
                     .accessibilityIdentifier("routineTaskName")
+                    .onChange(of: name) { _, newName in
+                        guard !walkToggleTouched else { return }
+                        isWalk = RoutineStore.inferIsWalk(name: newName)
+                    }
                 Picker("Category", selection: $category) {
                     ForEach(ActivityCategory.allCases) { cat in
                         Label(cat.displayName, systemImage: cat.systemImage).tag(cat)
                     }
                 }
+                Toggle("Counts as a walk", isOn: Binding(
+                    get: { isWalk },
+                    set: { walkToggleTouched = true; isWalk = $0 }
+                ))
+                .accessibilityIdentifier("routineIsWalkToggle")
             }
             Section("Time") {
                 DatePicker("Reminder time", selection: $time, displayedComponents: .hourAndMinute)
@@ -112,13 +127,15 @@ struct RoutineTaskEditView: View {
             switch (mode, editing) {
             case (.oneOff(let day), _):
                 saved = try store.addOneOff(name: trimmed, category: category, iconName: icon,
-                                            hour: hour, minute: minute, on: day)
+                                            hour: hour, minute: minute, isWalk: isWalk, on: day)
             case (.template, .some(let task)):
                 saved = try store.editTask(task, name: trimmed, category: category, iconName: icon,
-                                           hour: hour, minute: minute, weekdayMask: weekdayMask)
+                                           hour: hour, minute: minute, weekdayMask: weekdayMask,
+                                           isWalk: isWalk)
             case (.template, .none):
                 saved = try store.createTask(name: trimmed, category: category, iconName: icon,
-                                             hour: hour, minute: minute, weekdayMask: weekdayMask)
+                                             hour: hour, minute: minute, weekdayMask: weekdayMask,
+                                             isWalk: isWalk)
             }
             Task {
                 // A versioned edit moves reminders from the closed row to its successor; the

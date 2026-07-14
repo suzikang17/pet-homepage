@@ -32,6 +32,8 @@ struct ScheduleView: View {
     @State private var pendingPhoto: Data?
     @State private var timeSheet: TimeSheetTarget?
     @Environment(\.scenePhase) private var scenePhase
+    @AppStorage("walk.setupCardDismissed") private var walkSetupDismissed = false
+    @State private var showWalkSetup = false
 
     private let store: RoutineStore
     private let reminderScheduler: RoutineReminderScheduler
@@ -63,6 +65,14 @@ struct ScheduleView: View {
                         settingsSymbol: "slider.horizontal.3"
                     )
                     dayBar
+                    // Auto-detect setup nudge: only while a walk slot exists but detection
+                    // was never configured, and never after "Not now".
+                    if !walkSetupDismissed, !HomeLocationStore().isConfigured,
+                       model.slots.contains(where: { $0.task.isWalk }) {
+                        WalkSetupCard(onSetUp: { showWalkSetup = true },
+                                      onDismiss: { walkSetupDismissed = true })
+                            .padding(.horizontal, 16)
+                    }
                     WalkInProgressBanner(model: walkModel)
                         .padding(.horizontal, 16)
                     content
@@ -91,6 +101,9 @@ struct ScheduleView: View {
                     model.load()
                     model.onDayStateChanged?()
                 }
+            }
+            .sheet(isPresented: $showWalkSetup) {
+                NavigationStack { WalkDetectionSettingsView() }
             }
             .onChange(of: scenePhase) { _, phase in
                 // The geofence can auto-end a walk while we're backgrounded; refresh what's
