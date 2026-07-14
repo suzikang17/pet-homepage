@@ -121,6 +121,7 @@
         <attribute name="effectiveFrom" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="effectiveUntil" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="isOneOff" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="isWalk" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="sortOrder" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <relationship name="pet" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pet" inverseName="routineTasks" inverseEntity="Pet"/>
     </entity>

@@ -67,6 +67,29 @@ final class WalkSlotFinderTests: XCTestCase {
         XCTAssertNil(found)
     }
 
+    func testUnflaggedPlaySlotIsNotAttached() throws {
+        // Play category alone no longer qualifies — only the explicit isWalk flag matches.
+        _ = try routineStore.createTask(name: "Fetch time", category: .play,
+                                        iconName: "tennisball", hour: 17, minute: 15,
+                                        weekdayMask: Weekdays.all,
+                                        from: calendar.date(byAdding: .day, value: -7, to: five)!)
+        let found = try WalkSlotFinder.openWalkSlot(near: five, withinMinutes: 90,
+                                                    context: context, defaults: defaults,
+                                                    calendar: calendar)
+        XCTAssertNil(found)
+    }
+
+    func testExplicitlyFlaggedSlotAttachesWhateverItsName() throws {
+        let task = try routineStore.createTask(name: "Sniffari", category: .other,
+                                               iconName: "pawprint", hour: 17, minute: 15,
+                                               weekdayMask: Weekdays.all, isWalk: true,
+                                               from: calendar.date(byAdding: .day, value: -7, to: five)!)
+        let found = try WalkSlotFinder.openWalkSlot(near: five, withinMinutes: 90,
+                                                    context: context, defaults: defaults,
+                                                    calendar: calendar)
+        XCTAssertEqual(found?.lineageID, task.lineageID)
+    }
+
     func testWalkNamedSlotAttachesRegardlessOfCategory() throws {
         let task = try routineStore.createTask(name: "Evening walk", category: .other,
                                                iconName: "pawprint", hour: 17, minute: 15,

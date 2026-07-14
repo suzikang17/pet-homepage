@@ -45,6 +45,13 @@ struct ContentView: View {
     @State private var pendingHandoff: HandoffPresentation?
     @State private var activeHandoff: HandoffPresentation?
 
+    // One-time walk-detection intro; [Set up] chains into the settings sheet via the same
+    // pending-flag/onDismiss pattern as the capture handoffs above.
+    @AppStorage("walk.introShown") private var walkIntroShown = false
+    @State private var showWalkIntro = false
+    @State private var pendingWalkSetup = false
+    @State private var showWalkSetupSheet = false
+
     /// Opens the capture flow from the Timeline + menu: staged stub photo under
     /// `--uitest-stub-camera`, the camera when available, else the photo-library picker.
     private func startCapture() {
@@ -173,9 +180,37 @@ struct ContentView: View {
             try? activityStore.seedDefaultsIfNeeded()
             try? logStore.backfillKindsIfNeeded()
             try? routineStore.seedDefaultsIfNeeded()
+            // One-time: stamp isWalk on rows created before the flag existed. Once only, so
+            // a user who later opts a task out of walk matching is never re-flipped.
+            if !UserDefaults.standard.bool(forKey: "walk.isWalkBackfilled") {
+                try? routineStore.backfillWalkFlags()
+                UserDefaults.standard.set(true, forKey: "walk.isWalkBackfilled")
+            }
             // Re-sync routine reminders on every launch: completions/skips/overrides (and
             // template edits synced from another device) all change what should fire.
             await RoutineReminderPlanner.resync(context: context, using: routineReminderScheduler)
+            // One-time walk-detection intro (skipped in UI tests: every test would trip it).
+            if !UITestSupport.isUITest, !walkIntroShown {
+                walkIntroShown = true
+                showWalkIntro = true
+            }
+        }
+        .sheet(isPresented: $showWalkIntro, onDismiss: {
+            if pendingWalkSetup {
+                pendingWalkSetup = false
+                showWalkSetupSheet = true
+            }
+        }) {
+            WalkIntroView(
+                onSetUp: {
+                    pendingWalkSetup = true
+                    showWalkIntro = false
+                },
+                onLater: { showWalkIntro = false }
+            )
+        }
+        .sheet(isPresented: $showWalkSetupSheet) {
+            NavigationStack { WalkDetectionSettingsView() }
         }
         .fullScreenCover(isPresented: $showCamera, onDismiss: {
             if let data = pendingPhoto {
