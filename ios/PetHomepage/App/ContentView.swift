@@ -51,6 +51,8 @@ struct ContentView: View {
     @State private var showWalkIntro = false
     @State private var pendingWalkSetup = false
     @State private var showWalkSetupSheet = false
+    /// Set by the camera's library shortcut; promoted to the picker on camera dismissal.
+    @State private var pendingLibraryFromCamera = false
 
     /// Opens the capture flow from the Timeline + menu: staged stub photo under
     /// `--uitest-stub-camera`, the camera when available, else the photo-library picker.
@@ -163,7 +165,8 @@ struct ContentView: View {
                            timelineServices: timelineServices)
                 .tabItem { Label("Home", systemImage: "house") }
                 .tag(0)
-            TimelineView(services: timelineServices, onCapture: { startCapture() })
+            TimelineView(services: timelineServices, onCapture: { startCapture() },
+                         onImport: { showLibraryFallback = true })
                 .tabItem { Label("Timeline", systemImage: "calendar") }
                 .tag(1)
             ScheduleView(store: routineStore, logStore: logStore,
@@ -217,6 +220,10 @@ struct ContentView: View {
                 pendingPhoto = nil
                 capturedPhoto = CapturedPhoto(data: data)
             }
+            if pendingLibraryFromCamera {
+                pendingLibraryFromCamera = false
+                showLibraryFallback = true
+            }
         }) {
             CameraPicker(
                 onCapture: { image in
@@ -224,7 +231,11 @@ struct ContentView: View {
                         pendingPhoto = jpeg
                     }
                 },
-                onFinish: { showCamera = false }
+                onFinish: { showCamera = false },
+                onPickLibrary: {
+                    pendingLibraryFromCamera = true
+                    showCamera = false
+                }
             )
             .ignoresSafeArea()
         }

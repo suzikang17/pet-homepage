@@ -42,10 +42,14 @@ struct TimelineView: View {
     private let services: TimelineServices
     /// Opens the capture flow (camera / stub / library fallback), owned by ContentView.
     private let onCapture: (() -> Void)?
+    /// Opens the photo-library picker directly, owned by ContentView.
+    private let onImport: (() -> Void)?
 
-    init(services: TimelineServices, onCapture: (() -> Void)? = nil) {
+    init(services: TimelineServices, onCapture: (() -> Void)? = nil,
+         onImport: (() -> Void)? = nil) {
         self.services = services
         self.onCapture = onCapture
+        self.onImport = onImport
         _model = State(initialValue: TimelineViewModel(
             medicationStore: services.medicationStore,
             logStore: services.logStore
@@ -212,10 +216,15 @@ struct TimelineView: View {
             if let onCapture {
                 Button { onCapture() } label: { Label("Take photo", systemImage: "camera") }
             }
+            if let onImport {
+                Button { onImport() } label: {
+                    Label("Choose from library", systemImage: "photo.on.rectangle")
+                }
+            }
             if services.extractionService != nil && services.ingestionService != nil {
                 Button { showScan = true } label: { Label("Scan a record", systemImage: "sparkles") }
             }
-            if onCapture != nil
+            if onCapture != nil || onImport != nil
                 || (services.extractionService != nil && services.ingestionService != nil) {
                 Divider()
             }
