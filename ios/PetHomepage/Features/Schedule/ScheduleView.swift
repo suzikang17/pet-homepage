@@ -31,6 +31,7 @@ struct ScheduleView: View {
     @State private var libraryItem: PhotosPickerItem?
     @State private var pendingPhoto: Data?
     @State private var timeSheet: TimeSheetTarget?
+    @Environment(\.scenePhase) private var scenePhase
 
     private let store: RoutineStore
     private let reminderScheduler: RoutineReminderScheduler
@@ -84,6 +85,19 @@ struct ScheduleView: View {
                                                             using: reminderScheduler)
                     }
                 }
+                // Ending a walk completes a slot: reload the visible day immediately (the
+                // fix for "I ended a walk and the schedule still showed it open").
+                walkModel.onChange = {
+                    model.load()
+                    model.onDayStateChanged?()
+                }
+            }
+            .onChange(of: scenePhase) { _, phase in
+                // The geofence can auto-end a walk while we're backgrounded; refresh what's
+                // on screen when the user comes back.
+                guard phase == .active else { return }
+                walkModel.refresh()
+                model.load()
             }
             .sheet(isPresented: $showTemplateEditor, onDismiss: { model.load() }) {
                 NavigationStack {

@@ -8,6 +8,11 @@ final class WalkSessionModel {
     private let sessions: WalkSessionStore
     private let petName: () -> String
     private(set) var active: WalkSession?
+    /// Name of the slot/activity the session is bound to (banner headline).
+    private(set) var activeTitle: String?
+    /// Fired after any session mutation so the hosting view can reload day state
+    /// (the ended walk just completed a slot) and resync reminders.
+    var onChange: (() -> Void)?
 
     init(sessions: WalkSessionStore, petName: @escaping () -> String = { "Your pet" }) {
         self.sessions = sessions
@@ -17,24 +22,30 @@ final class WalkSessionModel {
 
     /// Re-reads persisted state — call on appear/foreground so sessions started from
     /// notification actions (other launches) show up.
-    func refresh() { active = sessions.active }
+    func refresh() {
+        active = sessions.active
+        activeTitle = active.flatMap { sessions.title(for: $0) }
+    }
 
     func startRoutine(taskID: UUID) {
         _ = try? sessions.startRoutine(taskID: taskID, source: .manual)
-        refresh()
-        WalkLiveActivityController.sync(active: active, petName: petName())
+        didMutate()
     }
 
     func end() {
         _ = try? sessions.end()
-        refresh()
-        WalkLiveActivityController.sync(active: active, petName: petName())
+        didMutate()
     }
 
     func cancel() {
         sessions.cancel()
+        didMutate()
+    }
+
+    private func didMutate() {
         refresh()
         WalkLiveActivityController.sync(active: active, petName: petName())
+        onChange?()
     }
 }
 
@@ -53,9 +64,10 @@ struct WalkInProgressBanner: View {
                     .frame(width: 38, height: 38)
                     .background(Theme.primary, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("Walk in progress")
+                    Text("\(model.activeTitle ?? "Walk") in progress")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Theme.ink)
+                        .lineLimit(1)
                     Text(session.startedAt, style: .timer)
                         .font(.caption.weight(.medium).monospacedDigit())
                         .foregroundStyle(Theme.inkSoft)

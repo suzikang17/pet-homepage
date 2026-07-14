@@ -122,6 +122,24 @@ final class WalkSessionStore {
         throw WalkSessionError.unknownReference
     }
 
+    /// Human name of what the active session is tracking ("Evening walk", "Walk") — shown by
+    /// the in-progress banner so it's obvious which slot/activity the walk will complete.
+    func title(for session: WalkSession) -> String? {
+        if let taskID = session.routineTaskID {
+            let request = RoutineTask.fetchRequest()
+            request.predicate = NSPredicate(format: "id == %@", taskID as CVarArg)
+            request.fetchLimit = 1
+            return (try? context.fetch(request))?.first?.name
+        }
+        if let typeID = session.activityTypeID {
+            let request = ActivityType.fetchRequest()
+            request.predicate = NSPredicate(format: "id == %@", typeID as CVarArg)
+            request.fetchLimit = 1
+            return (try? context.fetch(request))?.first?.name
+        }
+        return nil
+    }
+
     private func openWalkSlot(near date: Date) -> RoutineTask? {
         (try? WalkSlotFinder.openWalkSlot(
             near: date,
