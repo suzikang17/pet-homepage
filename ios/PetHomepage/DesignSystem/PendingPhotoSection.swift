@@ -53,7 +53,7 @@ struct PendingPhotoSection: View {
     private func thumb(_ data: Data?, onDelete: @escaping () -> Void) -> some View {
         if let data, let ui = UIImage(data: data) {
             Image(uiImage: ui).resizable().scaledToFill()
-                .frame(width: 72, height: 72)
+                .frame(width: 120, height: 120)
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .accessibilityIdentifier("pendingPhotoThumb")
                 .overlay(alignment: .topTrailing) {

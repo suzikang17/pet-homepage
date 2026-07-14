@@ -157,24 +157,34 @@ struct TimelineView: View {
             )
         } else {
             List {
-                ForEach(model.filtered) { item in
-                    Button {
-                        switch item.reference {
-                        case .medication(let m): medDetail = m   // medications get a detail page
-                        case .marker: break                       // markers have no detail/editor
-                        default: editTarget = item                // others open their editor sheet
+                ForEach(model.dayGroups()) { group in
+                    Section {
+                        ForEach(group.items) { item in
+                            Button {
+                                switch item.reference {
+                                case .medication(let m): medDetail = m // medications get a detail page
+                                case .marker: break                    // markers have no detail/editor
+                                default: editTarget = item             // others open their editor sheet
+                                }
+                            } label: {
+                                row(item)
+                            }
+                            .buttonStyle(.plain)
+                            .listRowBackground(Theme.bg)
+                            .swipeActions(edge: .trailing) {
+                                Button(role: .destructive) {
+                                    Task { await model.delete(item, using: services) }
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
                         }
-                    } label: {
-                        row(item)
-                    }
-                    .buttonStyle(.plain)
-                    .listRowBackground(Theme.bg)
-                    .swipeActions(edge: .trailing) {
-                        Button(role: .destructive) {
-                            Task { await model.delete(item, using: services) }
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
+                    } header: {
+                        Text(group.title())
+                            .font(.system(.caption, design: .rounded).weight(.heavy))
+                            .tracking(1.2)
+                            .foregroundStyle(Theme.inkSoft)
+                            .textCase(.uppercase)
                     }
                 }
             }
@@ -193,7 +203,8 @@ struct TimelineView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.title).font(.body.weight(.semibold)).foregroundStyle(Theme.ink).lineLimit(1)
                 HStack(spacing: 5) {
-                    Text(item.date, format: .dateTime.month().day().year())
+                    // The day lives in the section header — rows carry the time of day.
+                    Text(item.date, format: .dateTime.hour().minute())
                     if let subtitle = item.subtitle { Text("· \(subtitle)").lineLimit(1) }
                 }
                 .font(.caption).foregroundStyle(Theme.inkSoft)

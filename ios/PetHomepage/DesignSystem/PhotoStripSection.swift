@@ -33,8 +33,8 @@ struct PhotoStripSection: View {
                         ForEach(photos) { photo in
                             if let data = photo.imageData, let ui = UIImage(data: data) {
                                 Image(uiImage: ui).resizable().scaledToFill()
-                                    .frame(width: 72, height: 72)
-                                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                    .frame(width: 120, height: 120)
+                                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                                     .overlay(alignment: .topTrailing) {
                                         Button { onDelete(photo) } label: {
                                             Image(systemName: "xmark.circle.fill")
