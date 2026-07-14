@@ -9,14 +9,14 @@ name: TestFlight
 #   ASC_KEY_P8_BASE64  the AuthKey_XXXX.p8 file, base64-encoded
 #                      (generate: `base64 -i AuthKey_XXXX.p8 | pbcopy`)
 
+# COST: macOS runners bill at 10x Linux. This used to archive on EVERY push to main —
+# several builds per feature, plus builds for web/docs-only commits that can't change the
+# app. It now ships only when asked: run it from the Actions tab, `gh workflow run
+# TestFlight`, or push a v* tag. Merging to main is free; shipping is a deliberate act.
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - "docs/**"
-      - "**.md"
-      - ".claude/**"
   workflow_dispatch:
+  push:
+    tags: ["v*"]
 
 concurrency:
   group: testflight-${{ github.ref }}
@@ -25,6 +25,7 @@ concurrency:
 jobs:
   build-and-upload:
     runs-on: macos-15
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
