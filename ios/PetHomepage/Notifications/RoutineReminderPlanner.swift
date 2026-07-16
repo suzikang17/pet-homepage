@@ -31,6 +31,7 @@ enum RoutineReminderPlanner {
 
     /// Recomputes and reschedules everything. Cheap (a few day-slot reads), so callers just
     /// fire-and-forget after any mutation that could change what should fire.
+    @MainActor
     static func resync(context: NSManagedObjectContext,
                        using reminderScheduler: RoutineReminderScheduler,
                        calendar: Calendar = .current,

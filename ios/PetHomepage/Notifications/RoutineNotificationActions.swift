@@ -45,6 +45,9 @@ final class RoutineActionHandler {
 
     /// Routes a notification action. The request identifier carries (kind, task id) — both the
     /// original routine reminder and a snoozed re-fire resolve to the same task.
+    // @MainActor: the delegate invokes this from an arbitrary queue, but the whole chain
+    // (fetchTask, RoutineStore, resync) touches the main-queue viewContext.
+    @MainActor
     func handle(actionID: String, requestID: String) async {
         guard let (kind, taskID) = ReminderIdentifier.parse(requestID),
               kind == .routine || kind == .routineSnooze,
@@ -71,6 +74,7 @@ final class RoutineActionHandler {
 
     /// Day state changed from a notification action (possibly with the app never opened) —
     /// re-derive the pending occurrences so nothing stale fires later.
+    @MainActor
     private func resyncReminders() async {
         await RoutineReminderPlanner.resync(
             context: context,
@@ -89,6 +93,7 @@ final class RoutineActionHandler {
     /// One-shot re-fire 30 minutes from now, under the dedicated snooze kind so it can never
     /// replace the task's repeating trigger. The snoozed notification carries the same
     /// actionable category, so it can itself be done/skipped/snoozed again.
+    @MainActor
     private func scheduleSnooze(for task: RoutineTask) async {
         let fireAt = now().addingTimeInterval(30 * 60)
         let dateComponents = calendar.dateComponents([.year, .month, .day], from: fireAt)
@@ -127,7 +132,7 @@ final class RoutineNotificationResponder: NSObject, UNUserNotificationCenterDele
                                 didReceive response: UNNotificationResponse) async {
         let requestID = response.notification.request.identifier
         if requestID.hasPrefix("walk-") {
-            walkHandler?.handle(actionID: response.actionIdentifier, requestID: requestID)
+            await walkHandler?.handle(actionID: response.actionIdentifier, requestID: requestID)
             return
         }
         await handler.handle(actionID: response.actionIdentifier, requestID: requestID)

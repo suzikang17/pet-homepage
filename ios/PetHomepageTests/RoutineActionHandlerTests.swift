@@ -4,6 +4,7 @@ import CoreData
 import UserNotifications
 @testable import PetHomepage
 
+@MainActor
 final class RoutineActionHandlerTests: XCTestCase {
     private var context: NSManagedObjectContext!
     private var petStore: PetStore!

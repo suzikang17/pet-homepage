@@ -4,6 +4,7 @@ import XCTest
 
 @testable import PetHomepage
 
+@MainActor
 final class WalkActionHandlerTests: XCTestCase {
     private var controller: PersistenceController!
     private var context: NSManagedObjectContext!
