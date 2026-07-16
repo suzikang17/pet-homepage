@@ -35,15 +35,9 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - name: Cache XcodeGen
-        id: xcodegen-cache
-        uses: actions/cache@v4
-        with:
-          path: /opt/homebrew/bin/xcodegen
-          key: xcodegen-${{ runner.os }}-v1
-
       - name: Install XcodeGen
-        if: steps.xcodegen-cache.outputs.cache-hit != 'true'
+        # Not cached: caching the Homebrew symlink alone leaves a dangling link on restore
+        # (exit 127). The install is ~1 min; reliability beats the saving.
         run: brew install xcodegen
 
       - name: Generate Xcode project
