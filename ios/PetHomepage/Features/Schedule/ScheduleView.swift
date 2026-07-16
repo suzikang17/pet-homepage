@@ -31,6 +31,7 @@ struct ScheduleView: View {
     @State private var libraryItem: PhotosPickerItem?
     @State private var pendingPhoto: Data?
     @State private var timeSheet: TimeSheetTarget?
+    @State private var feedingTarget: RoutineSlot?
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("walk.setupCardDismissed") private var walkSetupDismissed = false
     /// Mirrors HomeLocationStore's key so the card disappears the moment home is set —
@@ -124,6 +125,14 @@ struct ScheduleView: View {
             .sheet(isPresented: $showOneOffEditor, onDismiss: { model.load() }) {
                 RoutineTaskEditView(store: store, reminderScheduler: reminderScheduler,
                                     petStore: petStore, mode: .oneOff(day: model.day), editing: nil)
+            }
+            .sheet(item: $feedingTarget) { slot in
+                MealFeedingSheet(
+                    slot: slot,
+                    onLog: { amount in model.logFeeding(slot, amount: amount) },
+                    onRemove: { entry in model.removeFeeding(entry) }
+                )
+                .presentationDetents([.medium, .large])
             }
             .sheet(item: $timeSheet) { target in
                 switch target {
@@ -250,21 +259,27 @@ struct ScheduleView: View {
     private func slotRow(_ slot: RoutineSlot) -> some View {
         HStack(spacing: 12) {
             Button {
-                if slot.isCompleted {
+                if slot.isMeal {
+                    feedingTarget = slot
+                } else if slot.isCompleted {
                     model.uncheck(slot)
                 } else {
                     model.checkOff(slot)
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 }
             } label: {
-                // Completed reads as a quiet receipt; the open circle is the loud, inviting tap.
-                Image(systemName: slot.isCompleted ? "checkmark.circle" : "circle")
-                    .font(.system(size: slot.isCompleted ? 20 : 26,
-                                  weight: slot.isCompleted ? .medium : .semibold))
-                    .foregroundStyle(slot.isCompleted
-                                     ? Theme.inkSoft.opacity(0.6)
-                                     : Theme.primary.opacity(0.45))
-                    .frame(width: 26)
+                if slot.isMeal {
+                    MealRing(progress: slot.mealProgress, complete: slot.isCompleted)
+                } else {
+                    // Completed reads as a quiet receipt; the open circle is the loud, inviting tap.
+                    Image(systemName: slot.isCompleted ? "checkmark.circle" : "circle")
+                        .font(.system(size: slot.isCompleted ? 20 : 26,
+                                      weight: slot.isCompleted ? .medium : .semibold))
+                        .foregroundStyle(slot.isCompleted
+                                         ? Theme.inkSoft.opacity(0.6)
+                                         : Theme.primary.opacity(0.45))
+                        .frame(width: 26)
+                }
             }
             .buttonStyle(.plain)
             .disabled(model.isFuture || slot.isSkipped)
@@ -285,6 +300,10 @@ struct ScheduleView: View {
                 HStack(spacing: 5) {
                     if slot.isSkipped {
                         Text("Skipped")
+                    } else if slot.isMeal {
+                        Text(scheduledTime(slot), format: .dateTime.hour().minute())
+                        Text("· \(slot.amountLabel)")
+                            .foregroundStyle(slot.isCompleted ? Theme.ok : Theme.inkSoft)
                     } else if let completion = slot.completion {
                         if completion.endedAt != nil {
                             Text("Done \(WalkFormatting.spanLabel(start: completion.performedAt, end: completion.endedAt))")
