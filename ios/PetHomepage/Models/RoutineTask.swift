@@ -43,6 +43,11 @@ public class RoutineTask: NSManagedObject {
     /// end-of-walk matching. Set by the editor toggle (auto-inferred from the name) and a
     /// one-time backfill — never guessed at match time.
     @NSManaged public var isWalk: Bool
+    /// "Counts as a meal" marker: the slot is logged multiple times a day, each feeding an
+    /// amount in `mealUnit` summing toward `mealAllotment`; the slot completes at the total.
+    @NSManaged public var isMeal: Bool
+    @NSManaged public var mealAllotment: Double
+    @NSManaged public var mealUnit: String?
     @NSManaged public var sortOrder: Int64
     @NSManaged public var pet: Pet?
 }

@@ -105,6 +105,30 @@ final class ScheduleViewModel {
         }
     }
 
+    /// Logs one feeding of a meal slot (amount in the slot's unit). No photo toast — feedings
+    /// are frequent and a toast per bite would nag.
+    func logFeeding(_ slot: RoutineSlot, amount: Double) {
+        guard !isFuture, amount > 0 else { return }
+        do {
+            _ = try store.logFeeding(slot.task, on: day, now: now(), amount: amount)
+            load()
+            onDayStateChanged?()
+        } catch {
+            errorMessage = String(describing: error)
+        }
+    }
+
+    /// Removes one feeding entry; the slot reopens if the total drops below allotment.
+    func removeFeeding(_ entry: LogEntry) {
+        do {
+            try store.uncheck(entry)
+            load()
+            onDayStateChanged?()
+        } catch {
+            errorMessage = String(describing: error)
+        }
+    }
+
     func uncheck(_ slot: RoutineSlot) {
         guard let completion = slot.completion else { return }
         do {

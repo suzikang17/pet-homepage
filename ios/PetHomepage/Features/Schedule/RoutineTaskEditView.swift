@@ -16,6 +16,10 @@ struct RoutineTaskEditView: View {
     @State private var time: Date
     @State private var weekdayMask: Int64
     @State private var isWalk: Bool
+    @State private var isMeal: Bool
+    @State private var mealToggleTouched: Bool
+    @State private var mealUnit: String
+    @State private var mealAllotment: Double
     /// Once the user touches the walk toggle, stop auto-inferring from the name.
     @State private var walkToggleTouched: Bool
 
@@ -41,8 +45,12 @@ struct RoutineTaskEditView: View {
                                                   second: 0, of: Date()) ?? Date())
         _weekdayMask = State(initialValue: editing?.weekdayMask ?? Weekdays.all)
         _isWalk = State(initialValue: editing?.isWalk ?? false)
-        // Editing an existing task: its stored flag is the truth, don't re-infer.
+        _isMeal = State(initialValue: editing?.isMeal ?? false)
+        _mealUnit = State(initialValue: editing?.mealUnit ?? "cups")
+        _mealAllotment = State(initialValue: editing.map { $0.mealAllotment > 0 ? $0.mealAllotment : 2 } ?? 2)
+        // Editing an existing task: its stored flags are the truth, don't re-infer.
         _walkToggleTouched = State(initialValue: editing != nil)
+        _mealToggleTouched = State(initialValue: editing != nil)
     }
 
     private var isOneOff: Bool {
@@ -62,8 +70,8 @@ struct RoutineTaskEditView: View {
                 TextField("Name (e.g. Morning walk)", text: $name)
                     .accessibilityIdentifier("routineTaskName")
                     .onChange(of: name) { _, newName in
-                        guard !walkToggleTouched else { return }
-                        isWalk = RoutineStore.inferIsWalk(name: newName)
+                        if !walkToggleTouched { isWalk = RoutineStore.inferIsWalk(name: newName) }
+                        if !mealToggleTouched { isMeal = RoutineStore.inferIsMeal(name: newName) }
                     }
                 Picker("Category", selection: $category) {
                     ForEach(ActivityCategory.allCases) { cat in
@@ -72,9 +80,29 @@ struct RoutineTaskEditView: View {
                 }
                 Toggle("Counts as a walk", isOn: Binding(
                     get: { isWalk },
-                    set: { walkToggleTouched = true; isWalk = $0 }
+                    set: { walkToggleTouched = true; isWalk = $0; if $0 { isMeal = false } }
                 ))
                 .accessibilityIdentifier("routineIsWalkToggle")
+                Toggle("Counts as a meal", isOn: Binding(
+                    get: { isMeal },
+                    set: { mealToggleTouched = true; isMeal = $0; if $0 { isWalk = false } }
+                ))
+                .accessibilityIdentifier("routineIsMealToggle")
+            }
+            if isMeal {
+                Section("Meal") {
+                    Picker("Unit", selection: $mealUnit) {
+                        ForEach(["cups", "grams", "oz", "scoops"], id: \.self) { Text($0).tag($0) }
+                    }
+                    Stepper(value: $mealAllotment, in: mealStep...100, step: mealStep) {
+                        HStack {
+                            Text("Daily allotment")
+                            Spacer()
+                            Text("\(formatAmount(mealAllotment)) \(mealUnit)")
+                                .foregroundStyle(Theme.inkSoft)
+                        }
+                    }
+                }
             }
             Section("Time") {
                 DatePicker("Reminder time", selection: $time, displayedComponents: .hourAndMinute)
@@ -114,6 +142,14 @@ struct RoutineTaskEditView: View {
         .frame(maxWidth: .infinity)
     }
 
+    private var mealStep: Double {
+        switch mealUnit { case "grams": return 5; case "oz": return 1; default: return 0.25 }
+    }
+
+    private func formatAmount(_ v: Double) -> String {
+        v == v.rounded() ? String(Int(v)) : String(format: "%.2f", v)
+    }
+
     private func save() {
         let trimmed = name.trimmingCharacters(in: .whitespaces)
         let comps = Calendar.current.dateComponents([.hour, .minute], from: time)
@@ -127,15 +163,21 @@ struct RoutineTaskEditView: View {
             switch (mode, editing) {
             case (.oneOff(let day), _):
                 saved = try store.addOneOff(name: trimmed, category: category, iconName: icon,
-                                            hour: hour, minute: minute, isWalk: isWalk, on: day)
+                                            hour: hour, minute: minute, isWalk: isWalk,
+                                            isMeal: isMeal, mealAllotment: isMeal ? mealAllotment : 0,
+                                            mealUnit: isMeal ? mealUnit : nil, on: day)
             case (.template, .some(let task)):
                 saved = try store.editTask(task, name: trimmed, category: category, iconName: icon,
                                            hour: hour, minute: minute, weekdayMask: weekdayMask,
-                                           isWalk: isWalk)
+                                           isWalk: isWalk, isMeal: isMeal,
+                                           mealAllotment: isMeal ? mealAllotment : 0,
+                                           mealUnit: isMeal ? mealUnit : nil)
             case (.template, .none):
                 saved = try store.createTask(name: trimmed, category: category, iconName: icon,
                                              hour: hour, minute: minute, weekdayMask: weekdayMask,
-                                             isWalk: isWalk)
+                                             isWalk: isWalk, isMeal: isMeal,
+                                             mealAllotment: isMeal ? mealAllotment : 0,
+                                             mealUnit: isMeal ? mealUnit : nil)
             }
             Task {
                 // A versioned edit moves reminders from the closed row to its successor; the
