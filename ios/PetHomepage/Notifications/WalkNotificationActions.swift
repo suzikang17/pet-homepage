@@ -95,6 +95,8 @@ final class WalkActionHandler {
         self.now = now
     }
 
+    // @MainActor: mutates the main-queue viewContext from the delegate's arbitrary queue.
+    @MainActor
     func handle(actionID: String, requestID: String) {
         guard let parsed = WalkRequestID.parse(requestID) else { return }
         defer {
