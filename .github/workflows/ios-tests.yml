@@ -66,5 +66,4 @@ jobs:
             -destination "platform=iOS Simulator,name=${DEST:-iPhone 16}" \
             -only-testing:PetHomepageTests \
             -enableCodeCoverage NO \
-            -quiet \
             CODE_SIGNING_ALLOWED=NO
