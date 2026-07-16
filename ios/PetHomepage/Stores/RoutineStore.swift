@@ -9,18 +9,39 @@ struct RoutineSlot: Identifiable {
     let skip: RoutineSkip?
     /// A "this day only" time change; nil = the template time applies.
     let timeOverride: RoutineOverride?
+    /// For meal slots: every feeding logged this day (oldest first). Empty for non-meals.
+    let feedings: [LogEntry]
 
     init(task: RoutineTask, completion: LogEntry?, skip: RoutineSkip?,
-         timeOverride: RoutineOverride? = nil) {
+         timeOverride: RoutineOverride? = nil, feedings: [LogEntry] = []) {
         self.task = task
         self.completion = completion
         self.skip = skip
         self.timeOverride = timeOverride
+        self.feedings = feedings
     }
 
     var id: UUID { task.lineageID }
-    var isCompleted: Bool { completion != nil }
+    /// Behaves as a meal only once it has an allotment — a meal-flagged slot with no target
+    /// stays an ordinary single check-off (so feeding-named seeds keep working until configured).
+    var isMeal: Bool { task.isMeal && task.mealAllotment > 0 }
     var isSkipped: Bool { skip != nil }
+
+    /// Total amount fed this day (sum of feeding values). 0 for non-meal slots.
+    var fedTotal: Double { feedings.reduce(0) { $0 + $1.value } }
+
+    /// A meal slot completes when its feedings reach the allotment; every other slot
+    /// completes when it has a completion entry.
+    var isCompleted: Bool {
+        if isMeal { return task.mealAllotment > 0 && fedTotal >= task.mealAllotment }
+        return completion != nil
+    }
+
+    /// Ring fill for meal slots, 0…1.
+    var mealProgress: Double {
+        guard isMeal, task.mealAllotment > 0 else { return 0 }
+        return min(1, fedTotal / task.mealAllotment)
+    }
 
     /// The time this slot is due on its day — the override's when one exists, else the template's.
     var hour: Int { timeOverride.map { Int($0.hour) } ?? Int(task.hour) }
@@ -51,6 +72,13 @@ final class RoutineStore {
         name.localizedCaseInsensitiveContains("walk")
     }
 
+    /// Default for "counts as a meal" while typing: feeding-shaped names.
+    static func inferIsMeal(name: String) -> Bool {
+        let n = name.lowercased()
+        return ["meal", "breakfast", "lunch", "dinner", "feed", "food", "snack"]
+            .contains { n.contains($0) }
+    }
+
     @discardableResult
     func createTask(name: String,
                     category: ActivityCategory,
@@ -59,6 +87,9 @@ final class RoutineStore {
                     minute: Int,
                     weekdayMask: Int64,
                     isWalk: Bool? = nil,
+                    isMeal: Bool? = nil,
+                    mealAllotment: Double = 0,
+                    mealUnit: String? = nil,
                     from day: Date = Date()) throws -> RoutineTask {
         let task = RoutineTask(context: context)
         task.id = UUID()
@@ -70,6 +101,9 @@ final class RoutineStore {
         task.minute = Int64(minute)
         task.weekdayMask = weekdayMask
         task.isWalk = isWalk ?? Self.inferIsWalk(name: name)
+        task.isMeal = isMeal ?? Self.inferIsMeal(name: name)
+        task.mealAllotment = mealAllotment
+        task.mealUnit = mealUnit
         task.effectiveFrom = calendar.startOfDay(for: day)
         task.effectiveUntil = nil
         task.isOneOff = false
@@ -118,6 +152,9 @@ final class RoutineStore {
                   minute: Int,
                   weekdayMask: Int64,
                   isWalk: Bool? = nil,
+                  isMeal: Bool? = nil,
+                  mealAllotment: Double? = nil,
+                  mealUnit: String? = nil,
                   on day: Date = Date()) throws -> RoutineTask {
         let today = calendar.startOfDay(for: day)
         if task.effectiveFrom >= today || task.isOneOff {
@@ -128,6 +165,9 @@ final class RoutineStore {
             task.minute = Int64(minute)
             task.weekdayMask = weekdayMask
             task.isWalk = isWalk ?? task.isWalk
+            task.isMeal = isMeal ?? task.isMeal
+            if let mealAllotment { task.mealAllotment = mealAllotment }
+            if let mealUnit { task.mealUnit = mealUnit }
             try context.save()
             return task
         }
@@ -142,6 +182,9 @@ final class RoutineStore {
         successor.minute = Int64(minute)
         successor.weekdayMask = weekdayMask
         successor.isWalk = isWalk ?? task.isWalk
+        successor.isMeal = isMeal ?? task.isMeal
+        successor.mealAllotment = mealAllotment ?? task.mealAllotment
+        successor.mealUnit = mealUnit ?? task.mealUnit
         successor.effectiveFrom = today
         successor.effectiveUntil = nil
         successor.isOneOff = false
@@ -173,6 +216,9 @@ final class RoutineStore {
                    hour: Int,
                    minute: Int,
                    isWalk: Bool? = nil,
+                   isMeal: Bool? = nil,
+                   mealAllotment: Double = 0,
+                   mealUnit: String? = nil,
                    on day: Date) throws -> RoutineTask {
         let start = calendar.startOfDay(for: day)
         guard let end = calendar.date(byAdding: .day, value: 1, to: start) else {
@@ -188,6 +234,9 @@ final class RoutineStore {
         task.minute = Int64(minute)
         task.weekdayMask = Weekdays.bit(for: calendar.component(.weekday, from: start))
         task.isWalk = isWalk ?? Self.inferIsWalk(name: name)
+        task.isMeal = isMeal ?? Self.inferIsMeal(name: name)
+        task.mealAllotment = mealAllotment
+        task.mealUnit = mealUnit
         task.effectiveFrom = start
         task.effectiveUntil = end
         task.isOneOff = true
@@ -219,8 +268,14 @@ final class RoutineStore {
             format: "pet == %@ AND kindRaw == %@ AND performedAt >= %@ AND performedAt < %@",
             pet, LogKind.routine.rawValue, start as NSDate, end as NSDate)
         var completions: [UUID: LogEntry] = [:]
+        var feedingsByLineage: [UUID: [LogEntry]] = [:]
         for entry in try context.fetch(completionRequest) {
-            if let lineage = entry.routineLineageID { completions[lineage] = entry }
+            guard let lineage = entry.routineLineageID else { continue }
+            completions[lineage] = entry
+            feedingsByLineage[lineage, default: []].append(entry)
+        }
+        for lineage in feedingsByLineage.keys {
+            feedingsByLineage[lineage]?.sort { $0.performedAt < $1.performedAt }
         }
 
         let skipRequest = RoutineSkip.fetchRequest()
@@ -241,7 +296,8 @@ final class RoutineStore {
         return tasks
             .map {
                 RoutineSlot(task: $0, completion: completions[$0.lineageID],
-                            skip: skips[$0.lineageID], timeOverride: overrides[$0.lineageID])
+                            skip: skips[$0.lineageID], timeOverride: overrides[$0.lineageID],
+                            feedings: $0.isMeal ? (feedingsByLineage[$0.lineageID] ?? []) : [])
             }
             .sorted { l, r in
                 if l.hour != r.hour { return l.hour < r.hour }
@@ -350,6 +406,52 @@ final class RoutineStore {
         entry.pet = try task.pet ?? petStore.ensurePet()
         try context.save()
         return entry
+    }
+
+    /// Logs one feeding of a meal slot: a routine LogEntry carrying the amount (`value`) in
+    /// the slot's unit. Never dedupes — a meal is logged as many times as the pet eats.
+    @discardableResult
+    func logFeeding(_ task: RoutineTask, on day: Date, now: Date = Date(),
+                    amount: Double) throws -> LogEntry {
+        let start = calendar.startOfDay(for: day)
+        let performedAt: Date
+        if calendar.isDate(now, inSameDayAs: start) {
+            performedAt = now
+        } else {
+            let override = try overrideRecord(lineageID: task.lineageID, on: start)
+            let hour = override.map { Int($0.hour) } ?? Int(task.hour)
+            let minute = override.map { Int($0.minute) } ?? Int(task.minute)
+            performedAt = calendar.date(bySettingHour: hour, minute: minute,
+                                        second: 0, of: start) ?? start
+        }
+        let entry = LogEntry(context: context)
+        entry.id = UUID()
+        entry.performedAt = performedAt
+        entry.kind = .routine
+        entry.title = task.name
+        entry.routineLineageID = task.lineageID
+        entry.value = amount
+        entry.unit = task.mealUnit
+        entry.pet = try task.pet ?? petStore.ensurePet()
+        try context.save()
+        return entry
+    }
+
+    /// Every routine completion for this task on `day`, oldest first (meal slots have many).
+    func completions(of task: RoutineTask, on day: Date) throws -> [LogEntry] {
+        let start = calendar.startOfDay(for: day)
+        guard let end = calendar.date(byAdding: .day, value: 1, to: start) else { return [] }
+        let request = LogEntry.fetchRequest()
+        request.predicate = NSPredicate(
+            format: "kindRaw == %@ AND routineLineageID == %@ AND performedAt >= %@ AND performedAt < %@",
+            LogKind.routine.rawValue, task.lineageID as CVarArg, start as NSDate, end as NSDate)
+        request.sortDescriptors = [NSSortDescriptor(key: "performedAt", ascending: true)]
+        return try context.fetch(request)
+    }
+
+    /// Total amount fed for a meal slot on `day`.
+    func fedTotal(of task: RoutineTask, on day: Date) throws -> Double {
+        try completions(of: task, on: day).reduce(0) { $0 + $1.value }
     }
 
     /// The completion entry for this task on `day`, if any. Pet-independent (keyed by lineage),
