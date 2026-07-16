@@ -44,15 +44,6 @@ jobs:
         working-directory: ios
         run: xcodegen generate
 
-      # Keyed on the sources: a run that changes one file reuses the rest of the build.
-      - name: Cache DerivedData
-        uses: actions/cache@v4
-        with:
-          path: ~/Library/Developer/Xcode/DerivedData
-          key: deriveddata-${{ runner.os }}-${{ hashFiles('ios/**/*.swift', 'ios/project.yml') }}
-          restore-keys: |
-            deriveddata-${{ runner.os }}-
-
       - name: Run unit tests (simulator)
         working-directory: ios
         run: |
