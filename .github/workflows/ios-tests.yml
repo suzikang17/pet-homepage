@@ -56,5 +56,6 @@ jobs:
             -scheme PetHomepage \
             -destination "platform=iOS Simulator,name=${DEST:-iPhone 16}" \
             -only-testing:PetHomepageTests \
+            -parallel-testing-enabled NO \
             -enableCodeCoverage NO \
             CODE_SIGNING_ALLOWED=NO

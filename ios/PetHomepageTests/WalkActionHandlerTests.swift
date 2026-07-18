@@ -66,6 +66,15 @@ final class WalkActionHandlerTests: XCTestCase {
         XCTAssertEqual(try logStore.fetch(NSPredicate(value: true)).count, 0)
     }
 
+    func testCancelStartDiscardsActiveSession() throws {
+        let taskID = UUID()
+        _ = try sessions.startRoutine(taskID: taskID, startedAt: start, source: .detected)
+        XCTAssertNotNil(sessions.active)
+        handler.handle(actionID: WalkNotificationAction.cancelStart,
+                       requestID: WalkRequestID.autoStarted(taskID: taskID).string)
+        XCTAssertNil(sessions.active)
+    }
+
     func testMalformedRequestIDIsIgnored() throws {
         handler.handle(actionID: WalkNotificationAction.start, requestID: "walk-detected-a-nonsense-99")
         handler.handle(actionID: WalkNotificationAction.undo, requestID: "walk-ended-garbage")

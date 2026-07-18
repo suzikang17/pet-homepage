@@ -13,6 +13,9 @@ enum WalkNotificationAction {
     static let endedCategoryID = "walkEnded"
     static let undo = "walkUndoEnd"
 
+    static let autoStartedCategoryID = "walkAutoStarted"
+    static let cancelStart = "walkCancelStart"
+
     /// UserDefaults flag set by "Not now": suppresses re-prompting until the next home exit
     /// (the detector clears it on exit). Lives in defaults because the action can arrive in a
     /// background launch where the detector's in-memory state is fresh.
@@ -31,7 +34,12 @@ enum WalkNotificationAction {
         let ended = UNNotificationCategory(identifier: endedCategoryID,
                                            actions: [undo],
                                            intentIdentifiers: [])
-        return [detected, ended]
+        let cancel = UNNotificationAction(identifier: Self.cancelStart, title: "Cancel",
+                                          options: [.destructive])
+        let autoStarted = UNNotificationCategory(identifier: autoStartedCategoryID,
+                                                 actions: [cancel],
+                                                 intentIdentifiers: [])
+        return [detected, ended, autoStarted]
     }
 }
 
@@ -45,6 +53,7 @@ enum WalkRequestID {
     case detectedActivity(typeID: UUID, exitedAt: Date)
     case detectedRoutine(taskID: UUID, exitedAt: Date)
     case ended(entryID: UUID, startedAt: Date)
+    case autoStarted(taskID: UUID)
 
     var string: String {
         switch self {
@@ -54,6 +63,8 @@ enum WalkRequestID {
             "walk-detected-r-\(taskID.uuidString)-\(Int(exitedAt.timeIntervalSince1970))"
         case let .ended(entryID, startedAt):
             "walk-ended-\(entryID.uuidString)-\(Int(startedAt.timeIntervalSince1970))"
+        case let .autoStarted(taskID):
+            "walk-autostarted-\(taskID.uuidString)"
         }
     }
 
@@ -74,6 +85,10 @@ enum WalkRequestID {
             guard parts.count == 8, let epoch = Int(parts[7]),
                   let id = uuid(from: parts[2...6]) else { return nil }
             return .ended(entryID: id, startedAt: Date(timeIntervalSince1970: TimeInterval(epoch)))
+        }
+        if requestID.hasPrefix("walk-autostarted-") {
+            guard parts.count == 7, let id = uuid(from: parts[2...6]) else { return nil }
+            return .autoStarted(taskID: id)
         }
         return nil
     }
@@ -114,6 +129,9 @@ final class WalkActionHandler {
             defaults.set(true, forKey: WalkNotificationAction.dismissedFlagKey)
         case let (WalkNotificationAction.undo, .ended(entryID, startedAt)):
             undoEnd(entryID: entryID, startedAt: startedAt)
+        case (WalkNotificationAction.cancelStart, .autoStarted):
+            // A false auto-start: discard the running session without logging.
+            sessions.cancel()
         default:
             break // plain tap opens the app
         }

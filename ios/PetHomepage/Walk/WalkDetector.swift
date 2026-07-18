@@ -107,6 +107,15 @@ final class WalkDetector: NSObject {
         let slotTask = try? WalkSlotFinder.openWalkSlot(
             near: exitedAt, withinMinutes: tuning.slotAttachWindowMinutes,
             context: context, defaults: defaults, calendar: calendar)
+
+        // A scheduled-slot match auto-starts silently when enabled; everything else prompts.
+        if case let .silentRoutine(taskID) = WalkStartDecision.mode(
+            matchingSlotTaskID: slotTask?.id, autoStartScheduled: home.autoStartScheduled),
+           let slotTask, sessions.active == nil {
+            autoStart(taskID: taskID, name: slotTask.name, exitedAt: exitedAt)
+            return
+        }
+
         let requestID: WalkRequestID
         if let slotTask {
             requestID = .detectedRoutine(taskID: slotTask.id, exitedAt: exitedAt)
@@ -126,6 +135,26 @@ final class WalkDetector: NSObject {
         content.sound = nil
         let request = UNNotificationRequest(identifier: requestID.string, content: content,
                                             trigger: nil)
+        UNUserNotificationCenter.current().add(request)
+    }
+
+    /// Silently starts logging a matched scheduled walk (backdated to the home exit), shows
+    /// the lock-screen timer, and posts a reversible "started" notice.
+    private func autoStart(taskID: UUID, name: String, exitedAt: Date) {
+        guard (try? sessions.startRoutine(taskID: taskID, startedAt: exitedAt,
+                                          source: .detected)) != nil else { return }
+        let petName = (try? PetStore(context: context, defaults: defaults).currentPet()?.name)
+            .flatMap { $0 } ?? "your pet"
+        WalkLiveActivityController.sync(active: sessions.active, petName: petName)
+
+        let content = UNMutableNotificationContent()
+        content.title = "Walk started"
+        content.body = "Logging \(name) for \(petName). Not a walk? Tap to cancel."
+        content.categoryIdentifier = WalkNotificationAction.autoStartedCategoryID
+        content.sound = nil
+        let request = UNNotificationRequest(
+            identifier: WalkRequestID.autoStarted(taskID: taskID).string,
+            content: content, trigger: nil)
         UNUserNotificationCenter.current().add(request)
     }
 
