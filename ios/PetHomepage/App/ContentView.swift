@@ -21,6 +21,7 @@ private struct HandoffPresentation: Identifiable {
 
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var context
+    @Environment(NotificationRouter.self) private var deeplinkRouter: NotificationRouter?
 
     /// v1 default vet-visit cadence: see the vet every 6 months.
     private let vetCadenceMonths = 6
@@ -179,6 +180,11 @@ struct ContentView: View {
                 .tag(4)
         }
         .tint(Theme.primary)
+        .onChange(of: deeplinkRouter?.pendingTab) { _, tab in
+            guard let tab else { return }
+            selectedTab = tab
+            deeplinkRouter?.pendingTab = nil
+        }
         .task {
             try? activityStore.seedDefaultsIfNeeded()
             try? logStore.backfillKindsIfNeeded()
