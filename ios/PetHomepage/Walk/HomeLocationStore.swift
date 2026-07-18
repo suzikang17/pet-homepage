@@ -8,6 +8,7 @@ struct HomeLocationStore {
     private static let lonKey = "walk.homeLon"
     private static let ruleKey = "walk.promptRule"
     private static let typeKey = "walk.defaultActivityTypeID"
+    private static let autoStartKey = "walk.autoStartScheduled"
 
     private let defaults: UserDefaults
 
@@ -47,5 +48,13 @@ struct HomeLocationStore {
     /// Home is the only thing the user must choose — the activity a detected walk logs as is
     /// resolved automatically (see WalkActivityResolver), so a half-finished setup can't
     /// silently disarm detection.
+    /// When a detected walk matches an open scheduled walk slot, start logging it silently
+    /// (Live Activity + an undo notice) instead of prompting. Off-schedule walks still prompt.
+    /// Defaults on; stored as an inverted "disabled" flag so an absent value reads as true.
+    var autoStartScheduled: Bool {
+        get { !defaults.bool(forKey: Self.autoStartKey + ".disabled") }
+        nonmutating set { defaults.set(!newValue, forKey: Self.autoStartKey + ".disabled") }
+    }
+
     var isConfigured: Bool { homeCoordinate != nil }
 }
