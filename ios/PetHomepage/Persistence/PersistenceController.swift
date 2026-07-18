@@ -48,12 +48,7 @@ struct PersistenceController {
                 fatalError("Unresolved Core Data error \(error), \(error.userInfo)")
             }
         }
-        // Off for in-memory test stacks: Core Data's save notifications are GLOBAL, so with
-        // several test stacks alive sharing the static model, an auto-merging viewContext
-        // tries to merge a *foreign* coordinator's objects and crashes Core Data's change
-        // processing ("attempt to insert nil" inside an ObjectsDidChange observer). Tests use
-        // one context per stack and never need the merge. The real CloudKit stack keeps it.
-        container.viewContext.automaticallyMergesChangesFromParent = !inMemory
+        container.viewContext.automaticallyMergesChangesFromParent = true
         container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
     }
 }
