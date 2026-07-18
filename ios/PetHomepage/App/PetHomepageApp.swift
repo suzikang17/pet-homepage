@@ -9,6 +9,8 @@ struct PetHomepageApp: App {
     let persistence: PersistenceController
     /// Retained for the app's lifetime — UNUserNotificationCenter holds its delegate weakly.
     let notificationResponder: RoutineNotificationResponder
+    /// Routes a notification tap to the right tab; observed by ContentView.
+    let deeplinkRouter: NotificationRouter
     /// Retained for the app's lifetime — owns the home geofence + motion feed.
     let walkDetector: WalkDetector
     let walkSessions: WalkSessionStore
@@ -28,8 +30,11 @@ struct PetHomepageApp: App {
         let handler = RoutineActionHandler(context: context,
                                            scheduler: UNNotificationScheduler())
         let walkHandler = WalkActionHandler(sessions: sessions, context: context)
+        let router = NotificationRouter()
+        deeplinkRouter = router
         notificationResponder = RoutineNotificationResponder(handler: handler,
-                                                             walkHandler: walkHandler)
+                                                             walkHandler: walkHandler,
+                                                             router: router)
         UNUserNotificationCenter.current().delegate = notificationResponder
         NotificationBootstrap.registerCategories()
 
@@ -42,6 +47,7 @@ struct PetHomepageApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(deeplinkRouter)
                 .environment(\.managedObjectContext, persistence.container.viewContext)
                 .task {
                     // A system notification-permission alert would block UI tests waiting on it.

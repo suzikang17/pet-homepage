@@ -122,15 +122,22 @@ final class RoutineActionHandler {
 final class RoutineNotificationResponder: NSObject, UNUserNotificationCenterDelegate {
     private let handler: RoutineActionHandler
     private let walkHandler: WalkActionHandler?
+    private let router: NotificationRouter?
 
-    init(handler: RoutineActionHandler, walkHandler: WalkActionHandler? = nil) {
+    init(handler: RoutineActionHandler, walkHandler: WalkActionHandler? = nil,
+         router: NotificationRouter? = nil) {
         self.handler = handler
         self.walkHandler = walkHandler
+        self.router = router
     }
 
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 didReceive response: UNNotificationResponse) async {
         let requestID = response.notification.request.identifier
+        // A plain tap (open) deep-links to the right screen; action buttons don't navigate.
+        if response.actionIdentifier == UNNotificationDefaultActionIdentifier {
+            await router?.route(requestID: requestID)
+        }
         if requestID.hasPrefix("walk-") {
             await walkHandler?.handle(actionID: response.actionIdentifier, requestID: requestID)
             return
