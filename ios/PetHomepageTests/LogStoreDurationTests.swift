@@ -23,6 +23,12 @@ final class LogStoreDurationTests: XCTestCase {
                                      iconName: "figure.walk", defaultIntervalDays: 0)
     }
 
+    override func tearDownWithError() throws {
+        controller = nil
+        logStore = nil
+        activityStore = nil
+    }
+
     func testLogActivityStoresEndedAt() throws {
         let type = try makeWalkType()
         let start = Date(timeIntervalSince1970: 1_700_000_000)

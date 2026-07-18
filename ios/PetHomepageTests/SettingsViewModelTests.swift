@@ -17,6 +17,9 @@ final class SettingsViewModelTests: XCTestCase {
 
     override func tearDownWithError() throws {
         try? FileManager.default.removeItem(at: baseURL)
+        context = nil
+        baseURL = nil
+        documentStore = nil
     }
 
     private func makeCoordinator(service: MirrorService, settings: MirrorSettings) -> MirrorCoordinator {

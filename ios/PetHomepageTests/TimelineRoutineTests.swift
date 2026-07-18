@@ -17,6 +17,13 @@ final class TimelineRoutineTests: XCTestCase {
         routineStore = RoutineStore(context: context, petStore: petStore)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        petStore = nil
+        logStore = nil
+        routineStore = nil
+    }
+
     func testRoutineEntriesAppearInTimelineWithRoutineKind() throws {
         let task = try routineStore.createTask(name: "Morning walk", category: .play,
                                                iconName: "figure.walk", hour: 8, minute: 0,

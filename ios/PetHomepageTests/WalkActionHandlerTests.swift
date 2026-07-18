@@ -30,6 +30,16 @@ final class WalkActionHandlerTests: XCTestCase {
                                     now: { self.start.addingTimeInterval(1800) })
     }
 
+    override func tearDownWithError() throws {
+        controller = nil
+        context = nil
+        defaults = nil
+        sessions = nil
+        handler = nil
+        logStore = nil
+        walkType = nil
+    }
+
     func testStartActionCreatesBackdatedSession() throws {
         let requestID = WalkRequestID.detectedActivity(typeID: walkType.id, exitedAt: start).string
         handler.handle(actionID: WalkNotificationAction.start, requestID: requestID)

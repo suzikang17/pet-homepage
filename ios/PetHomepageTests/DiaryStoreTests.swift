@@ -26,6 +26,12 @@ final class DiaryStoreTests: XCTestCase {
                                    scheduleTime: Date(), startedAt: Date(), endedAt: nil, refillDueAt: nil)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        petStore = nil
+        store = nil
+    }
+
     func testMedicationPhotoIsAttachedAndPetScoped() throws {
         let med = try makeMedication()
         try store.addPhoto(toMedication: med, imageData: Data([0x1]))

@@ -36,6 +36,16 @@ final class CaptureReviewViewModelTests: XCTestCase {
         )
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        petStore = nil
+        activityStore = nil
+        medicationStore = nil
+        logStore = nil
+        fake = nil
+        sched = nil
+    }
+
     func testSaveUntaggedCreatesDiaryEntryWithPhoto() async throws {
         let vm = makeModel()
         vm.note = "Just a snapshot"

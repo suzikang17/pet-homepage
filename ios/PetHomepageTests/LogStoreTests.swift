@@ -15,6 +15,12 @@ final class LogStoreTests: XCTestCase {
         store = LogStore(context: context, petStore: petStore)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        petStore = nil
+        store = nil
+    }
+
     func testCreateDiaryHasNoReferenceAndIsDiaryKind() throws {
         let e = try store.createDiary(performedAt: Date(timeIntervalSince1970: 0), note: "  walk in park  ")
         XCTAssertEqual(e.kind, .diary)

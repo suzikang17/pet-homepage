@@ -14,6 +14,12 @@ final class VeterinarianStoreTests: XCTestCase {
         store = VeterinarianStore(context: context, petStore: petStore)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        petStore = nil
+        store = nil
+    }
+
     func testCreateAndListScopedToPet() throws {
         try store.create(name: "Dr. Ruth", clinic: "Maple Vet", phone: "555-1234")
         let vets = try store.veterinarians()

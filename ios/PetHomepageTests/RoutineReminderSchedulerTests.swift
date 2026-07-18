@@ -39,6 +39,14 @@ final class RoutineReminderSchedulerTests: XCTestCase {
         try RoutineReminderPlanner.occurrences(store: store, calendar: calendar, now: earlyToday)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        fake = nil
+        scheduler = nil
+        store = nil
+        earlyToday = nil
+    }
+
     func testDailyTaskGetsOneOneShotPerHorizonDay() async throws {
         let task = try makeTask()
         let planned = try occurrences()

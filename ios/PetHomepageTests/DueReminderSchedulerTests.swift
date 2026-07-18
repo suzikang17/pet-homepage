@@ -20,6 +20,15 @@ final class DueReminderSchedulerTests: XCTestCase {
         calendar = Calendar(identifier: .gregorian)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        petStore = nil
+        pet = nil
+        activityStore = nil
+        logStore = nil
+        calendar = nil
+    }
+
     func testVaccinationReminderUsesNextDueAtDate() throws {
         let due = calendar.date(from: DateComponents(year: 2027, month: 3, day: 15))!
         let vax = try logStore.logVaccine(name: "Rabies", performedAt: Date(timeIntervalSince1970: 1),

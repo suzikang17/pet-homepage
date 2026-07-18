@@ -30,6 +30,15 @@ final class WalkSlotFinderTests: XCTestCase {
                                     from: calendar.date(byAdding: .day, value: -7, to: five)!)
     }
 
+    override func tearDownWithError() throws {
+        controller = nil
+        context = nil
+        defaults = nil
+        routineStore = nil
+        calendar = nil
+        five = nil
+    }
+
     func testSlotInsideWindowAttaches() throws {
         let task = try makeWalkTask(hour: 17, minute: 30)
         let found = try WalkSlotFinder.openWalkSlot(near: five, withinMinutes: 90,

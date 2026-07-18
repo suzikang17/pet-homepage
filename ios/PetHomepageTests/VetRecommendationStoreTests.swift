@@ -16,6 +16,12 @@ final class VetRecommendationStoreTests: XCTestCase {
         store = VetRecommendationStore(context: context)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        logStore = nil
+        store = nil
+    }
+
     func testCreateLinkedToVisitAndFetch() throws {
         let visit = try logStore.logVetVisit(occurredAt: Date(timeIntervalSince1970: 1),
                                              clinicName: nil, vetName: nil, reason: nil,

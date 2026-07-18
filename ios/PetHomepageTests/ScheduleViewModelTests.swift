@@ -28,6 +28,14 @@ final class ScheduleViewModelTests: XCTestCase {
         model.load()
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        petStore = nil
+        store = nil
+        logStore = nil
+        model = nil
+    }
+
     func testLoadsTodaySlots() {
         XCTAssertTrue(model.isToday)
         XCTAssertFalse(model.isFuture)

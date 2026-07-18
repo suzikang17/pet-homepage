@@ -15,6 +15,12 @@ final class VetEditViewModelTests: XCTestCase {
         store = VeterinarianStore(context: context, petStore: petStore)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        petStore = nil
+        store = nil
+    }
+
     func testApplyContactFillsFields() {
         let vm = VetEditViewModel(store: store, editing: nil)
         let contact = CNMutableContact()

@@ -20,6 +20,12 @@ final class TimelineDayGroupTests: XCTestCase {
                                   logStore: logStore)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        logStore = nil
+        model = nil
+    }
+
     func testItemsGroupIntoDaysNewestFirst() throws {
         let today = Date()
         let yesterday = try XCTUnwrap(calendar.date(byAdding: .day, value: -1, to: today))

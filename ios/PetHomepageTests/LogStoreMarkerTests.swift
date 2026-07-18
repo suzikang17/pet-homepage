@@ -15,6 +15,12 @@ final class LogStoreMarkerTests: XCTestCase {
         store = LogStore(context: context, petStore: petStore)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        petStore = nil
+        store = nil
+    }
+
     func testLogMarkerStampsKindAndFields() throws {
         let recorded = Date(timeIntervalSince1970: 1_700_000_000)
         let marker = try store.logMarker(type: .weight, value: 12.4, unit: "kg", recordedAt: recorded)

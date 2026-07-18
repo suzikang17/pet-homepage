@@ -27,6 +27,12 @@ final class RecordIngestionServiceTests: XCTestCase {
 
     override func tearDownWithError() throws {
         try? FileManager.default.removeItem(at: baseURL)
+        context = nil
+        logStore = nil
+        medStore = nil
+        documentStore = nil
+        baseURL = nil
+        service = nil
     }
 
     private func decode(_ json: String) throws -> ExtractionResult {

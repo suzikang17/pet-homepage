@@ -26,6 +26,12 @@ final class RoutineStoreOverrideTests: XCTestCase {
                              hour: hour, minute: 0, weekdayMask: Weekdays.all, from: day(-7))
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        petStore = nil
+        store = nil
+    }
+
     func testOverrideMovesSlotTimeForThatDayOnly() throws {
         let task = try makeTask()
         try store.overrideTime(task, on: today, hour: 15, minute: 30)

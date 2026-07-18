@@ -20,6 +20,14 @@ final class VaccinationEditViewModelTests: XCTestCase {
         dueScheduler = DueReminderScheduler(scheduler: fake, calendar: Calendar(identifier: .gregorian))
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        logStore = nil
+        dueScheduler = nil
+        fake = nil
+        veterinarianStore = nil
+    }
+
     func testSaveCreatesAndSchedulesDueReminder() async throws {
         let vm = VaccinationEditViewModel(logStore: logStore, dueScheduler: dueScheduler,
                                           veterinarianStore: veterinarianStore, editing: nil)

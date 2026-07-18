@@ -18,6 +18,11 @@ final class SymptomEntryStoreTests: XCTestCase {
         try logStore.startEpisode(category: .digestive, title: "Loose stool", startedAt: Date(timeIntervalSince1970: 0))
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        logStore = nil
+    }
+
     func testAddEntryLinksToEpisode() throws {
         let store = SymptomEntryStore(context: context)
         let episode = try makeEpisode()

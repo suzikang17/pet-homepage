@@ -21,6 +21,12 @@ final class MedicationDetailViewModelTests: XCTestCase {
                          scheduleTime: Date(), startedAt: Date(), endedAt: nil, refillDueAt: nil)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        store = nil
+        logStore = nil
+    }
+
     func testLogDoseAppendsAndOrdersNewestFirst() throws {
         let vm = MedicationDetailViewModel(medication: try makeMed(), logStore: logStore)
         XCTAssertEqual(vm.doseCount, 0)

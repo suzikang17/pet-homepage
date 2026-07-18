@@ -116,6 +116,16 @@ final class TagSuggesterViewModelTests: XCTestCase {
         )
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        petStore = nil
+        activityStore = nil
+        medicationStore = nil
+        logStore = nil
+        fake = nil
+        sched = nil
+    }
+
     func testRunSuggestionPreSelectsMatchingMedicationChip() async throws {
         let med = try medicationStore.create(
             drugName: "Heartgard",

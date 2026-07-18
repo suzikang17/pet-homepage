@@ -15,6 +15,12 @@ final class ActivityStoreSeedingTests: XCTestCase {
         store = ActivityStore(context: context, petStore: petStore)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        petStore = nil
+        store = nil
+    }
+
     func testSeedingCreatesDefaultsOnce() throws {
         try store.seedDefaultsIfNeeded()
         let firstCount = try store.types().count

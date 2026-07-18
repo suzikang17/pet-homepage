@@ -21,6 +21,10 @@ final class MirrorCoordinatorTests: XCTestCase {
         )
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+    }
+
     func testDisabledMirroringPushesNothing() async throws {
         try PetStore(context: context).createPet(name: "Sandy", species: "dog")
         let service = FakeMirrorService()
