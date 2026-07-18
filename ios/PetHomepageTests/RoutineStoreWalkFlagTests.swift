@@ -16,6 +16,11 @@ final class RoutineStoreWalkFlagTests: XCTestCase {
         store = RoutineStore(context: context, petStore: petStore, calendar: .current)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        store = nil
+    }
+
     func testCreateInfersWalkFromName() throws {
         let walk = try store.createTask(name: "Evening walk", category: .other,
                                         iconName: "pawprint", hour: 17, minute: 30,

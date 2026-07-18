@@ -15,6 +15,12 @@ final class ActivityStoreTests: XCTestCase {
         store = ActivityStore(context: context, petStore: petStore)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        petStore = nil
+        store = nil
+    }
+
     func testCreateTypeIsListedAndScopedToPet() throws {
         let type = try store.createType(name: "Bath", category: .care, iconName: "shower", defaultIntervalDays: 30)
         XCTAssertNotNil(type.id)

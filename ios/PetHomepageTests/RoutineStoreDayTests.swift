@@ -21,6 +21,12 @@ final class RoutineStoreDayTests: XCTestCase {
         store = RoutineStore(context: context, petStore: petStore)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        petStore = nil
+        store = nil
+    }
+
     func testSlotsHonorWeekdayMask() throws {
         let weekdayToday = calendar.component(.weekday, from: today)
         let weekdayTomorrow = calendar.component(.weekday, from: day(1))

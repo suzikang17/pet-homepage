@@ -22,6 +22,15 @@ final class ActivityLogEditViewModelTests: XCTestCase {
         sched = DueReminderScheduler(scheduler: fake, calendar: Calendar(identifier: .gregorian), hour: 9, minute: 0)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        petStore = nil
+        store = nil
+        logStore = nil
+        fake = nil
+        sched = nil
+    }
+
     func testSelectingTypeAdoptsItsDefaultCadence() throws {
         let type = try store.createType(name: "Bath", category: .care, iconName: "shower", defaultIntervalDays: 30)
         let vm = ActivityLogEditViewModel(logStore: logStore, store: store, dueScheduler: sched, editing: nil)

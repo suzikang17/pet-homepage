@@ -15,6 +15,12 @@ final class LogStoreVetTests: XCTestCase {
         store = LogStore(context: context, petStore: petStore)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        petStore = nil
+        store = nil
+    }
+
     func testLogVetVisitStampsKindAndFields() throws {
         let occurred = Date(timeIntervalSince1970: 1_700_000_000)
         let nextVisit = Date(timeIntervalSince1970: 1_900_000_000)

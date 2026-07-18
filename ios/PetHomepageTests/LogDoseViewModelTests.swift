@@ -28,6 +28,13 @@ final class LogDoseViewModelTests: XCTestCase {
                                 scheduleTime: eightAM, startedAt: eightAM, endedAt: nil, refillDueAt: nil)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        store = nil
+        logStore = nil
+        reminderScheduler = nil
+    }
+
     func testNextReminderIsOneIntervalAfterDoseAtScheduleTime() throws {
         let vm = LogDoseViewModel(medication: try makeMed(frequency: "Every 3 days"),
                                   logStore: logStore, reminderScheduler: reminderScheduler)

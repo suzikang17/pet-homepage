@@ -24,6 +24,13 @@ final class WalkSessionStoreTests: XCTestCase {
         WalkSessionStore(context: context, defaults: defaults, now: { now })
     }
 
+    override func tearDownWithError() throws {
+        controller = nil
+        context = nil
+        defaults = nil
+        walkType = nil
+    }
+
     func testStartEndWritesActivitySpan() throws {
         let t0 = Date(timeIntervalSince1970: 1_700_000_000)
         let store = makeStore(now: t0)

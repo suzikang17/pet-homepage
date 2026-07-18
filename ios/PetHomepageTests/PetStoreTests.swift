@@ -17,6 +17,8 @@ final class PetStoreTests: XCTestCase {
     override func tearDownWithError() throws {
         scratchDefaults.removePersistentDomain(forName: scratchSuiteName)
         scratchDefaults = nil
+        context = nil
+        scratchSuiteName = nil
     }
 
     func testCreatePetIsRetrievableAsCurrentPet() throws {

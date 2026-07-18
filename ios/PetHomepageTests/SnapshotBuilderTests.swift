@@ -33,6 +33,16 @@ final class SnapshotBuilderTests: XCTestCase {
         )
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        petStore = nil
+        medicationStore = nil
+        logStore = nil
+        recommendationStore = nil
+        symptomEntryStore = nil
+        activityStore = nil
+    }
+
     func testBuildThrowsWhenNoPet() {
         let builder = makeBuilder()
         XCTAssertThrowsError(try builder.build()) { error in

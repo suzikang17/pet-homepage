@@ -15,6 +15,12 @@ final class LogStoreSymptomTests: XCTestCase {
         store = LogStore(context: context, petStore: petStore)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        petStore = nil
+        store = nil
+    }
+
     func testStartEpisodeStampsKindAndFieldsAsActive() throws {
         let started = Date(timeIntervalSince1970: 1_700_000_000)
         let episode = try store.startEpisode(category: .digestive, title: "Loose stool", startedAt: started)

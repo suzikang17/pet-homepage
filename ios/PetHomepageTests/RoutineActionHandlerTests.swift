@@ -35,6 +35,15 @@ final class RoutineActionHandlerTests: XCTestCase {
         ReminderIdentifier.requestID(kind: .routine, entityID: task.id)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        petStore = nil
+        store = nil
+        fake = nil
+        handler = nil
+        task = nil
+    }
+
     func testMarkDoneChecksOffToday() async throws {
         await handler.handle(actionID: RoutineNotificationAction.done, requestID: dailyRequestID)
         let completion = try XCTUnwrap(try store.completion(of: task, on: fixedNow))

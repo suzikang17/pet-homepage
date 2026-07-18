@@ -23,6 +23,14 @@ final class MedicationEditViewModelTests: XCTestCase {
         )
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        store = nil
+        fake = nil
+        reminderScheduler = nil
+        veterinarianStore = nil
+    }
+
     func testResetNextReminderFromFrequencyAnchorsOneIntervalOut() {
         let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, veterinarianStore: veterinarianStore, editing: nil)
         vm.frequencyUnit = .day

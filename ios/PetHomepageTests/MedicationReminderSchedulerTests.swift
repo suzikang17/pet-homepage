@@ -31,6 +31,12 @@ final class MedicationReminderSchedulerTests: XCTestCase {
         return med
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        medStore = nil
+        calendar = nil
+    }
+
     func testDailyMedicationUsesRepeatingTrigger() throws {
         let med = try makeMed(hour: 8, minute: 0) // frequency "daily"
         let scheduler = MedicationReminderScheduler(scheduler: FakeNotificationScheduler(), calendar: calendar)

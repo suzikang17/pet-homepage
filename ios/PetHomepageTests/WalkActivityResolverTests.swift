@@ -19,6 +19,13 @@ final class WalkActivityResolverTests: XCTestCase {
         activityStore = ActivityStore(context: context, petStore: petStore)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        defaults = nil
+        home = nil
+        activityStore = nil
+    }
+
     func testHomeOnlyIsEnoughToBeConfigured() {
         XCTAssertFalse(home.isConfigured)
         home.homeCoordinate = (latitude: 37.77, longitude: -122.43)

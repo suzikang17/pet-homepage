@@ -15,6 +15,12 @@ final class RoutineStoreSeedingTests: XCTestCase {
         store = RoutineStore(context: context, petStore: petStore)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        petStore = nil
+        store = nil
+    }
+
     func testSeedsDefaultRoutineOnce() throws {
         try store.seedDefaultsIfNeeded()
         let names = try store.currentTasks().map(\.name)

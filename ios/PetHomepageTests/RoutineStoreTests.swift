@@ -22,6 +22,12 @@ final class RoutineStoreTests: XCTestCase {
         store = RoutineStore(context: context, petStore: petStore)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        petStore = nil
+        store = nil
+    }
+
     func testCreateTaskIsListedAndScopedToPet() throws {
         let task = try store.createTask(name: "Morning walk", category: .play, iconName: "figure.walk",
                                         hour: 8, minute: 0, weekdayMask: Weekdays.all)

@@ -23,6 +23,12 @@ final class VetVisitEditViewModelTests: XCTestCase {
                               editing: editing, initialPhoto: initialPhoto)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        logStore = nil
+        veterinarianStore = nil
+    }
+
     func testSaveCreatesNewVisitAndResyncsCadence() async throws {
         let fake = FakeNotificationScheduler()
         let dueScheduler = DueReminderScheduler(scheduler: fake)

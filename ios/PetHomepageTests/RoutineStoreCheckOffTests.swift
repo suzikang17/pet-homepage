@@ -23,6 +23,13 @@ final class RoutineStoreCheckOffTests: XCTestCase {
         logStore = LogStore(context: context, petStore: petStore)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        petStore = nil
+        store = nil
+        logStore = nil
+    }
+
     func testCheckOffWritesRoutineLogEntryWithCopiedFields() throws {
         let task = try store.createTask(name: "Morning walk", category: .play, iconName: "figure.walk",
                                         hour: 8, minute: 0, weekdayMask: Weekdays.all, from: day(-7))

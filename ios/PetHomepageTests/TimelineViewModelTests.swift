@@ -28,6 +28,14 @@ final class TimelineViewModelTests: XCTestCase {
 
     private func day(_ n: Int) -> Date { Date(timeIntervalSince1970: Double(n) * 86_400) }
 
+    override func tearDownWithError() throws {
+        context = nil
+        medicationStore = nil
+        activityStore = nil
+        logStore = nil
+        pet = nil
+    }
+
     func testLoadAggregatesEveryTypeNewestFirst() throws {
         _ = try logStore.logVaccine(name: "Rabies", performedAt: day(10), nextDueAt: nil, lotNumber: nil, administeredBy: nil)
         _ = try logStore.logVetVisit(occurredAt: day(30), clinicName: "Bayside", vetName: nil, reason: "Checkup", diagnosis: nil, treatmentNotes: nil, nextVisitDate: nil)

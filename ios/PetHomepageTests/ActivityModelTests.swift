@@ -10,6 +10,10 @@ final class ActivityModelTests: XCTestCase {
         context = PersistenceController(inMemory: true).container.viewContext
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+    }
+
     func testActivityTypePersists() throws {
         let type = ActivityType(context: context)
         type.id = UUID()

@@ -13,6 +13,11 @@ final class MedicationStoreTests: XCTestCase {
         try petStore.createPet(name: "Sandy", species: "dog")
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        petStore = nil
+    }
+
     func testCreateMedicationWithoutAPetCreatesADefaultPetAndSaves() throws {
         // Fresh context with NO pet — simulates adding a med before the user sets up their pet.
         let freshContext = PersistenceController(inMemory: true).container.viewContext

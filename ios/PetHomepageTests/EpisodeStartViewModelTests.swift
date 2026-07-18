@@ -14,6 +14,11 @@ final class EpisodeStartViewModelTests: XCTestCase {
         logStore = LogStore(context: context, petStore: petStore)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        logStore = nil
+    }
+
     func testIsValidIsAlwaysTrue() {
         let vm = EpisodeStartViewModel(store: logStore)
         XCTAssertTrue(vm.isValid)

@@ -29,6 +29,11 @@ final class RoutineStoreMealTests: XCTestCase {
         try XCTUnwrap(try store.slots(for: today).first { $0.task.lineageID == task.lineageID })
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        store = nil
+    }
+
     func testInferMealFromName() throws {
         let dinner = try store.createTask(name: "Dinner", category: .feeding, iconName: "fork.knife",
                                           hour: 18, minute: 0, weekdayMask: Weekdays.all)

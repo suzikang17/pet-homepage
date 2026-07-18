@@ -21,6 +21,12 @@ final class EpisodeDetailViewModelTests: XCTestCase {
         return EpisodeDetailViewModel(episode: episode, logStore: logStore, entryStore: entryStore)
     }
 
+    override func tearDownWithError() throws {
+        context = nil
+        logStore = nil
+        entryStore = nil
+    }
+
     func testLoadShowsEntriesOldestFirst() throws {
         let vm = try makeVM()
         try entryStore.addEntry(to: vm.episode, date: Date(timeIntervalSince1970: 3_000), severity: .severe, note: "c", suspectedCause: nil)
