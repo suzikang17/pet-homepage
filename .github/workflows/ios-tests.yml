@@ -59,3 +59,16 @@ jobs:
             -parallel-testing-enabled NO \
             -enableCodeCoverage NO \
             CODE_SIGNING_ALLOWED=NO
+
+      - name: Dump crash diagnostics on failure
+        if: failure()
+        run: |
+          echo "=== simulator crash reports (the nil-insert stack) ==="
+          for d in ~/Library/Logs/DiagnosticReports \
+                   ~/Library/Developer/CoreSimulator/Devices/*/data/Library/Logs/DiagnosticReports; do
+            for f in "$d"/PetHomepage*.ips "$d"/xctest*.ips "$d"/*.crash; do
+              [ -f "$f" ] || continue
+              echo "----- $f -----"
+              cat "$f" | head -120
+            done
+          done
