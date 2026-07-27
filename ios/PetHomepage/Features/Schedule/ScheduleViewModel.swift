@@ -105,6 +105,20 @@ final class ScheduleViewModel {
         }
     }
 
+    /// Completes the slot stamped at an explicit time — the swipe "Done at…" path for crossing
+    /// things off after the fact. No photo toast: the time sheet already had the user's focus,
+    /// and the completed row keeps its own camera button.
+    func checkOff(_ slot: RoutineSlot, at date: Date) {
+        guard !isFuture, !slot.isCompleted else { return }
+        do {
+            _ = try store.checkOff(slot.task, on: day, now: date)
+            load()
+            onDayStateChanged?()
+        } catch {
+            errorMessage = String(describing: error)
+        }
+    }
+
     /// Logs one feeding of a meal slot (amount in the slot's unit). No photo toast — feedings
     /// are frequent and a toast per bite would nag.
     func logFeeding(_ slot: RoutineSlot, amount: Double) {

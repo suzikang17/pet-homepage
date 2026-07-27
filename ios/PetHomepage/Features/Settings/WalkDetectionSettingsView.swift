@@ -49,7 +49,7 @@ struct WalkDetectionSettingsView: View {
     @State private var homeCoordinate: (latitude: Double, longitude: Double)?
     @State private var promptRule: WalkPromptRule = .anyWalk
     @State private var defaultTypeID: UUID?
-    @State private var autoStartScheduled: Bool = true
+    @State private var autoLog: Bool = true
     @State private var showHomePicker = false
     @State private var showAlwaysExplainer = false
 
@@ -101,7 +101,7 @@ struct WalkDetectionSettingsView: View {
                             NotificationCenter.default.post(name: .walkSettingsChanged, object: nil)
                         }
 
-                        Picker("Prompt me", selection: $promptRule) {
+                        Picker("Detect walks", selection: $promptRule) {
                             ForEach(WalkPromptRule.allCases, id: \.self) { rule in
                                 Text(rule.displayName).tag(rule)
                             }
@@ -114,13 +114,13 @@ struct WalkDetectionSettingsView: View {
                         Text("A detected walk near a scheduled walk slot checks that slot off with real start and end times.")
                             .font(.footnote).foregroundStyle(Theme.inkSoft)
 
-                        Toggle("Auto-start scheduled walks", isOn: $autoStartScheduled)
+                        Toggle("Auto-log without asking", isOn: $autoLog)
                             .font(Theme.body().weight(.semibold)).tint(Theme.primary)
-                            .onChange(of: autoStartScheduled) { _, new in
-                                home.autoStartScheduled = new
+                            .onChange(of: autoLog) { _, new in
+                                home.autoLog = new
                                 NotificationCenter.default.post(name: .walkSettingsChanged, object: nil)
                             }
-                        Text("When a detected walk matches a scheduled walk slot, start logging it automatically (with an undo notice) instead of asking first. Off-schedule walks still prompt.")
+                        Text("Log detected walks automatically with an undo notice, instead of asking first — scheduled and off-schedule walks alike. Turn off to be prompted before anything is logged.")
                             .font(.footnote).foregroundStyle(Theme.inkSoft)
                     }
                 }
@@ -161,7 +161,7 @@ struct WalkDetectionSettingsView: View {
             homeCoordinate = home.homeCoordinate
             promptRule = home.promptRule
             defaultTypeID = home.defaultActivityTypeID
-            autoStartScheduled = home.autoStartScheduled
+            autoLog = home.autoLog
         }
         .sheet(isPresented: $showHomePicker) {
             HomeLocationPickerView(permissions: permissions,

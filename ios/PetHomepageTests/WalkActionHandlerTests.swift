@@ -85,6 +85,14 @@ final class WalkActionHandlerTests: XCTestCase {
         XCTAssertNil(sessions.active)
     }
 
+    func testCancelStartDiscardsActiveActivitySession() throws {
+        _ = try sessions.startActivity(typeID: walkType.id, startedAt: start, source: .detected)
+        XCTAssertNotNil(sessions.active)
+        handler.handle(actionID: WalkNotificationAction.cancelStart,
+                       requestID: WalkRequestID.autoStartedActivity(typeID: walkType.id).string)
+        XCTAssertNil(sessions.active)
+    }
+
     func testMalformedRequestIDIsIgnored() throws {
         handler.handle(actionID: WalkNotificationAction.start, requestID: "walk-detected-a-nonsense-99")
         handler.handle(actionID: WalkNotificationAction.undo, requestID: "walk-ended-garbage")
@@ -114,5 +122,21 @@ final class WalkActionHandlerTests: XCTestCase {
         }
         XCTAssertEqual(parsedEntry, entryID)
         XCTAssertEqual(parsedStart.timeIntervalSince1970, start.timeIntervalSince1970, accuracy: 1)
+
+        // The two auto-started variants share the "walk-autostarted-" prefix; parsing must not
+        // confuse the routine one for the activity one.
+        let autoTask = UUID()
+        guard case let .autoStarted(parsedAutoTask)? =
+                WalkRequestID.parse(WalkRequestID.autoStarted(taskID: autoTask).string) else {
+            return XCTFail("failed to parse routine auto-start")
+        }
+        XCTAssertEqual(parsedAutoTask, autoTask)
+
+        let autoType = UUID()
+        guard case let .autoStartedActivity(parsedAutoType)? =
+                WalkRequestID.parse(WalkRequestID.autoStartedActivity(typeID: autoType).string) else {
+            return XCTFail("failed to parse activity auto-start")
+        }
+        XCTAssertEqual(parsedAutoType, autoType)
     }
 }

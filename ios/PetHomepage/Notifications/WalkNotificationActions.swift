@@ -54,6 +54,7 @@ enum WalkRequestID {
     case detectedRoutine(taskID: UUID, exitedAt: Date)
     case ended(entryID: UUID, startedAt: Date)
     case autoStarted(taskID: UUID)
+    case autoStartedActivity(typeID: UUID)
 
     var string: String {
         switch self {
@@ -65,6 +66,8 @@ enum WalkRequestID {
             "walk-ended-\(entryID.uuidString)-\(Int(startedAt.timeIntervalSince1970))"
         case let .autoStarted(taskID):
             "walk-autostarted-\(taskID.uuidString)"
+        case let .autoStartedActivity(typeID):
+            "walk-autostarted-a-\(typeID.uuidString)"
         }
     }
 
@@ -85,6 +88,12 @@ enum WalkRequestID {
             guard parts.count == 8, let epoch = Int(parts[7]),
                   let id = uuid(from: parts[2...6]) else { return nil }
             return .ended(entryID: id, startedAt: Date(timeIntervalSince1970: TimeInterval(epoch)))
+        }
+        // Activity variant ("-a-") must be checked before the routine one — it shares the
+        // "walk-autostarted-" prefix but carries an extra segment.
+        if requestID.hasPrefix("walk-autostarted-a-") {
+            guard parts.count == 8, let id = uuid(from: parts[3...7]) else { return nil }
+            return .autoStartedActivity(typeID: id)
         }
         if requestID.hasPrefix("walk-autostarted-") {
             guard parts.count == 7, let id = uuid(from: parts[2...6]) else { return nil }
@@ -129,7 +138,8 @@ final class WalkActionHandler {
             defaults.set(true, forKey: WalkNotificationAction.dismissedFlagKey)
         case let (WalkNotificationAction.undo, .ended(entryID, startedAt)):
             undoEnd(entryID: entryID, startedAt: startedAt)
-        case (WalkNotificationAction.cancelStart, .autoStarted):
+        case (WalkNotificationAction.cancelStart, .autoStarted),
+             (WalkNotificationAction.cancelStart, .autoStartedActivity):
             // A false auto-start: discard the running session without logging.
             sessions.cancel()
         default:

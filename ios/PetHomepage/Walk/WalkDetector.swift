@@ -91,7 +91,7 @@ final class WalkDetector: NSObject {
         switch effect {
         case let .promptStart(exitedAt):
             stopMotion()
-            postStartPrompt(exitedAt: exitedAt)
+            startDetectedWalk(exitedAt: exitedAt)
         case let .endSession(at):
             stopMotion()
             autoEnd(at: at)
@@ -102,35 +102,45 @@ final class WalkDetector: NSObject {
 
     // MARK: - Effects
 
-    private func postStartPrompt(exitedAt: Date) {
-        // Attach to an open routine walk slot when one is near; else the default type.
+    /// A walk was detected. With auto-log on (the default) it starts logging silently — against
+    /// a near scheduled slot if one's open, else the resolved activity type — with a reversible
+    /// "started" notice. With auto-log off, it posts the "log it?" prompt instead.
+    private func startDetectedWalk(exitedAt: Date) {
+        guard sessions.active == nil else { return }
+
+        // Attach to an open routine walk slot when one is near; else resolve an activity type.
         let slotTask = try? WalkSlotFinder.openWalkSlot(
             near: exitedAt, withinMinutes: tuning.slotAttachWindowMinutes,
             context: context, defaults: defaults, calendar: calendar)
+        let resolvedTypeID = slotTask == nil
+            ? WalkActivityResolver.resolve(context: context, home: home, defaults: defaults)
+            : nil
 
-        // A scheduled-slot match auto-starts silently when enabled; everything else prompts.
-        if case let .silentRoutine(taskID) = WalkStartDecision.mode(
-            matchingSlotTaskID: slotTask?.id, autoStartScheduled: home.autoStartScheduled),
-           let slotTask, sessions.active == nil {
-            autoStart(taskID: taskID, name: slotTask.name, exitedAt: exitedAt)
-            return
+        switch WalkStartDecision.mode(matchingSlotTaskID: slotTask?.id,
+                                      resolvedTypeID: resolvedTypeID, autoLog: home.autoLog) {
+        case let .silentRoutine(taskID):
+            autoStart(taskID: taskID, name: slotTask?.name ?? "walk", exitedAt: exitedAt)
+        case let .silentActivity(typeID):
+            autoStartActivity(typeID: typeID, exitedAt: exitedAt)
+        case .prompt:
+            postPrompt(slotTask: slotTask, resolvedTypeID: resolvedTypeID, exitedAt: exitedAt)
         }
+    }
 
+    /// The "Out for a walk? — log it?" notification (auto-log off, or a manual fallback).
+    private func postPrompt(slotTask: RoutineTask?, resolvedTypeID: UUID?, exitedAt: Date) {
         let requestID: WalkRequestID
         if let slotTask {
             requestID = .detectedRoutine(taskID: slotTask.id, exitedAt: exitedAt)
-        } else if let typeID = WalkActivityResolver.resolve(context: context, home: home,
-                                                            defaults: defaults) {
+        } else if let typeID = resolvedTypeID {
             requestID = .detectedActivity(typeID: typeID, exitedAt: exitedAt)
         } else {
             return
         }
 
         let content = UNMutableNotificationContent()
-        let petName = (try? PetStore(context: context, defaults: defaults).currentPet()?.name)
-            .flatMap { $0 } ?? "your pet"
         content.title = "Out for a walk?"
-        content.body = "Looks like a walk with \(petName) — log it?"
+        content.body = "Looks like a walk with \(currentPetName()) — log it?"
         content.categoryIdentifier = WalkNotificationAction.detectedCategoryID
         content.sound = nil
         let request = UNNotificationRequest(identifier: requestID.string, content: content,
@@ -143,8 +153,7 @@ final class WalkDetector: NSObject {
     private func autoStart(taskID: UUID, name: String, exitedAt: Date) {
         guard (try? sessions.startRoutine(taskID: taskID, startedAt: exitedAt,
                                           source: .detected)) != nil else { return }
-        let petName = (try? PetStore(context: context, defaults: defaults).currentPet()?.name)
-            .flatMap { $0 } ?? "your pet"
+        let petName = currentPetName()
         WalkLiveActivityController.sync(active: sessions.active, petName: petName)
 
         let content = UNMutableNotificationContent()
@@ -156,6 +165,30 @@ final class WalkDetector: NSObject {
             identifier: WalkRequestID.autoStarted(taskID: taskID).string,
             content: content, trigger: nil)
         UNUserNotificationCenter.current().add(request)
+    }
+
+    /// Silently starts logging an off-schedule walk against a resolved activity type (backdated
+    /// to the home exit), with the lock-screen timer and a reversible "started" notice.
+    private func autoStartActivity(typeID: UUID, exitedAt: Date) {
+        guard (try? sessions.startActivity(typeID: typeID, startedAt: exitedAt,
+                                           source: .detected)) != nil else { return }
+        let petName = currentPetName()
+        WalkLiveActivityController.sync(active: sessions.active, petName: petName)
+
+        let content = UNMutableNotificationContent()
+        content.title = "Walk started"
+        content.body = "Logging a walk with \(petName). Not a walk? Tap to cancel."
+        content.categoryIdentifier = WalkNotificationAction.autoStartedCategoryID
+        content.sound = nil
+        let request = UNNotificationRequest(
+            identifier: WalkRequestID.autoStartedActivity(typeID: typeID).string,
+            content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(request)
+    }
+
+    private func currentPetName() -> String {
+        (try? PetStore(context: context, defaults: defaults).currentPet()?.name)
+            .flatMap { $0 } ?? "your pet"
     }
 
     private func autoEnd(at endDate: Date) {

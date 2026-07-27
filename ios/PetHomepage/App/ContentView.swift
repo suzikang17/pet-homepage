@@ -29,7 +29,10 @@ struct ContentView: View {
     // Center camera tab: it's a pseudo-tab (index 2) that never actually gets selected — picking
     // it snaps back to whatever was selected before and opens the camera (or the library picker
     // fallback on Simulator, where there's no camera) full-screen instead.
-    @State private var selectedTab = 0
+    // Launches on Schedule (tag 3): it's the daily driver, so it's both the first tab and the
+    // opening screen. Tab *tags* stay fixed (NotificationRouter routes by tag) — only the
+    // declaration order below puts Schedule leftmost.
+    @State private var selectedTab = 3
     @State private var showCamera = false
     @State private var showLibraryFallback = false
     @State private var libraryItem: PhotosPickerItem?
@@ -162,6 +165,11 @@ struct ContentView: View {
         )
 
         return TabView(selection: $selectedTab) {
+            ScheduleView(store: routineStore, logStore: logStore,
+                         reminderScheduler: routineReminderScheduler, petStore: petStore,
+                         walkSessions: walkSessions)
+                .tabItem { Label("Schedule", systemImage: "checklist") }
+                .tag(3)
             PetProfileView(store: petStore, settings: settingsViewModel,
                            timelineServices: timelineServices)
                 .tabItem { Label("Home", systemImage: "house") }
@@ -170,11 +178,6 @@ struct ContentView: View {
                          onImport: { showLibraryFallback = true })
                 .tabItem { Label("Timeline", systemImage: "calendar") }
                 .tag(1)
-            ScheduleView(store: routineStore, logStore: logStore,
-                         reminderScheduler: routineReminderScheduler, petStore: petStore,
-                         walkSessions: walkSessions)
-                .tabItem { Label("Schedule", systemImage: "checklist") }
-                .tag(3)
             CareTeamView(store: veterinarianStore)
                 .tabItem { Label("Care Team", systemImage: "stethoscope") }
                 .tag(4)

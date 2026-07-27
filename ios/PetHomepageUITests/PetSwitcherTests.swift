@@ -8,6 +8,9 @@ final class PetSwitcherTests: UITestCase {
     func testPetSwitcherAddAndSwitch() {
         let app = launchApp()
 
+        // The app now launches on the Schedule tab; the pet switcher lives on Home.
+        app.tabBars.buttons["Home"].tap()
+
         let avatar = app.buttons["heroAvatarButton"]
         XCTAssertTrue(avatar.waitForExistence(timeout: 5))
         avatar.tap()

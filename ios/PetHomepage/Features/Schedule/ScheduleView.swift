@@ -3,15 +3,27 @@ import PhotosUI
 import SwiftUI
 import UIKit
 
-/// What the shared time-picker sheet is editing: a "this day only" schedule move, or the
-/// recorded time of a completion.
+/// The wheel time-picker sheet's target: a "this day only" schedule move. (Done-times are set
+/// on the analog clock instead — see ClockTarget.)
 private enum TimeSheetTarget: Identifiable {
     case moveTime(RoutineSlot)
+
+    var id: UUID {
+        switch self {
+        case .moveTime(let slot): slot.id
+        }
+    }
+}
+
+/// What the analog-clock sheet is setting: the done-time of a slot being checked off after the
+/// fact (`setDone`), or a correction to an already-recorded completion (`editDone`).
+private enum ClockTarget: Identifiable {
+    case setDone(RoutineSlot)
     case editDone(RoutineSlot)
 
     var id: UUID {
         switch self {
-        case .moveTime(let slot), .editDone(let slot): slot.id
+        case .setDone(let slot), .editDone(let slot): slot.id
         }
     }
 }
@@ -31,6 +43,7 @@ struct ScheduleView: View {
     @State private var libraryItem: PhotosPickerItem?
     @State private var pendingPhoto: Data?
     @State private var timeSheet: TimeSheetTarget?
+    @State private var clockTarget: ClockTarget?
     @State private var feedingTarget: RoutineSlot?
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("walk.setupCardDismissed") private var walkSetupDismissed = false
@@ -91,7 +104,9 @@ struct ScheduleView: View {
             .onAppear {
                 // Sessions can start/end outside this view (notification actions, auto-end).
                 walkModel.refresh()
-                model.load()
+                // Always land on Today: a left-open past/future day or a midnight rollover must
+                // never be what greets the user. goToToday() reloads; plain load() otherwise.
+                if model.isToday { model.load() } else { model.goToToday() }
                 // Any check-off/skip/time-change must silence or move its pending reminder.
                 model.onDayStateChanged = {
                     Task {
@@ -111,10 +126,11 @@ struct ScheduleView: View {
             }
             .onChange(of: scenePhase) { _, phase in
                 // The geofence can auto-end a walk while we're backgrounded; refresh what's
-                // on screen when the user comes back.
+                // on screen when the user comes back. Re-anchor to Today too, so an overnight
+                // background (or a day left paged forward/back) reopens on the current day.
                 guard phase == .active else { return }
                 walkModel.refresh()
-                model.load()
+                if model.isToday { model.load() } else { model.goToToday() }
             }
             .sheet(isPresented: $showTemplateEditor, onDismiss: { model.load() }) {
                 NavigationStack {
@@ -142,10 +158,33 @@ struct ScheduleView: View {
                                     hour: slot.hour, minute: slot.minute) { hour, minute in
                         model.changeTime(slot, hour: hour, minute: minute)
                     }
+                }
+            }
+            .sheet(item: $clockTarget) { target in
+                switch target {
+                case .setDone(let slot):
+                    let start = nowHM()
+                    ClockTimeSheet(
+                        title: "Done at",
+                        systemImage: "clock.badge.checkmark",
+                        subtitle: "When did “\(slot.task.name)” happen?",
+                        day: model.day,
+                        initialHour: start.hour, initialMinute: start.minute,
+                        clampTo: model.isToday ? Date() : nil
+                    ) { hour, minute in
+                        if let date = Calendar.current.date(bySettingHour: hour, minute: minute,
+                                                            second: 0, of: model.day) {
+                            model.checkOff(slot, at: date)
+                        }
+                    }
                 case .editDone(let slot):
-                    TimeAdjustSheet(title: "Time done", subtitle: "When did it happen?",
-                                    systemImage: "clock",
-                                    hour: doneHour(of: slot), minute: doneMinute(of: slot)) { hour, minute in
+                    ClockTimeSheet(
+                        title: "Time done",
+                        subtitle: "When did “\(slot.task.name)” happen?",
+                        day: model.day,
+                        initialHour: doneHour(of: slot), initialMinute: doneMinute(of: slot),
+                        clampTo: model.isToday ? Date() : nil
+                    ) { hour, minute in
                         model.updateCompletionTime(slot, hour: hour, minute: minute)
                     }
                 }
@@ -249,10 +288,35 @@ struct ScheduleView: View {
                                 .tint(slot.isSkipped ? Theme.primary : .orange)
                             }
                         }
+                        .swipeActions(edge: .leading) { doneAtSwipe(slot) }
                 }
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
+        }
+    }
+
+    /// Leading-swipe shortcut for after-the-fact logging: an open row jumps straight to the
+    /// clock to pick a done-time; a completed row re-opens the clock to correct it. Meals log
+    /// amounts (their own sheet), so they're left out; future days can't be completed.
+    @ViewBuilder
+    private func doneAtSwipe(_ slot: RoutineSlot) -> some View {
+        if !slot.isMeal {
+            if slot.isCompleted {
+                Button {
+                    clockTarget = .editDone(slot)
+                } label: {
+                    Label("Edit time", systemImage: "clock")
+                }
+                .tint(Theme.primary)
+            } else if !slot.isSkipped, !model.isFuture {
+                Button {
+                    clockTarget = .setDone(slot)
+                } label: {
+                    Label("Done at…", systemImage: "clock.badge.checkmark")
+                }
+                .tint(Theme.ok)
+            }
         }
     }
 
@@ -361,7 +425,7 @@ struct ScheduleView: View {
     private func contextActions(for slot: RoutineSlot) -> some View {
         if slot.isCompleted {
             Button {
-                timeSheet = .editDone(slot)
+                clockTarget = .editDone(slot)
             } label: {
                 Label("Edit time done", systemImage: "clock")
             }
@@ -413,6 +477,13 @@ struct ScheduleView: View {
     private func scheduledTime(_ slot: RoutineSlot) -> Date {
         Calendar.current.date(bySettingHour: slot.hour, minute: slot.minute,
                               second: 0, of: model.day) ?? model.day
+    }
+
+    /// Current wall-clock hour/minute, read once so the two components can't straddle a minute
+    /// boundary — the default "done at" start for a fresh check-off.
+    private func nowHM() -> (hour: Int, minute: Int) {
+        let c = Calendar.current.dateComponents([.hour, .minute], from: Date())
+        return (c.hour ?? 9, c.minute ?? 0)
     }
 
     private func doneHour(of slot: RoutineSlot) -> Int {
