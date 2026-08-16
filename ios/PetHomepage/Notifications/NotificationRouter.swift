@@ -15,10 +15,15 @@ final class NotificationRouter {
     var pendingTab: Int?
 
     /// Decide the destination for a tapped notification. Routine (`routine-reminder-…`) and
-    /// walk (`walk-…`) notifications both act on the Schedule tab.
+    /// walk (`walk-…`) notifications both act on the Schedule tab; medication reminders
+    /// (`medication-reminder-…`, `medicationSnooze-reminder-…`) act on the Timeline tab, which
+    /// owns the medication rows and the Log dose flow.
     func route(requestID: String) {
         if requestID.hasPrefix("routine-reminder-") || requestID.hasPrefix("walk-") {
             pendingTab = Tab.schedule.rawValue
+        } else if requestID.hasPrefix("medication-reminder-")
+                    || requestID.hasPrefix("medicationSnooze-reminder-") {
+            pendingTab = Tab.timeline.rawValue
         }
     }
 }

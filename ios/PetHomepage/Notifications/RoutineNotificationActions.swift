@@ -122,12 +122,15 @@ final class RoutineActionHandler {
 final class RoutineNotificationResponder: NSObject, UNUserNotificationCenterDelegate {
     private let handler: RoutineActionHandler
     private let walkHandler: WalkActionHandler?
+    private let medicationHandler: MedicationActionHandler?
     private let router: NotificationRouter?
 
     init(handler: RoutineActionHandler, walkHandler: WalkActionHandler? = nil,
+         medicationHandler: MedicationActionHandler? = nil,
          router: NotificationRouter? = nil) {
         self.handler = handler
         self.walkHandler = walkHandler
+        self.medicationHandler = medicationHandler
         self.router = router
     }
 
@@ -140,6 +143,14 @@ final class RoutineNotificationResponder: NSObject, UNUserNotificationCenterDele
         }
         if requestID.hasPrefix("walk-") {
             await walkHandler?.handle(actionID: response.actionIdentifier, requestID: requestID)
+            return
+        }
+        // Checked before the routine handler: RoutineActionHandler.handle would silently drop a
+        // medication requestID (it guards on kind), so ordering here is what makes Log dose work.
+        if requestID.hasPrefix(ReminderIdentifier.prefix(for: .medication))
+            || requestID.hasPrefix(ReminderIdentifier.prefix(for: .medicationSnooze)) {
+            await medicationHandler?.handle(actionID: response.actionIdentifier,
+                                            requestID: requestID)
             return
         }
         await handler.handle(actionID: response.actionIdentifier, requestID: requestID)

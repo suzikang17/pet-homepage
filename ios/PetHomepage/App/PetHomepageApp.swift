@@ -30,10 +30,13 @@ struct PetHomepageApp: App {
         let handler = RoutineActionHandler(context: context,
                                            scheduler: UNNotificationScheduler())
         let walkHandler = WalkActionHandler(sessions: sessions, context: context)
+        let medicationHandler = MedicationActionHandler(context: context,
+                                                        scheduler: UNNotificationScheduler())
         let router = NotificationRouter()
         deeplinkRouter = router
         notificationResponder = RoutineNotificationResponder(handler: handler,
                                                              walkHandler: walkHandler,
+                                                             medicationHandler: medicationHandler,
                                                              router: router)
         UNUserNotificationCenter.current().delegate = notificationResponder
         NotificationBootstrap.registerCategories()

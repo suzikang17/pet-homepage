@@ -21,9 +21,22 @@ final class NotificationRouterTests: XCTestCase {
         }
     }
 
+    /// Medication reminders land on Timeline, which owns the medication rows and the Log dose
+    /// flow. Previously they routed nowhere, so tapping a dose reminder dumped you on whatever
+    /// tab you happened to leave the app on.
+    func testMedicationReminderRoutesToTimeline() {
+        for id in ["medication-reminder-\(UUID().uuidString)",
+                   "medicationSnooze-reminder-\(UUID().uuidString)"] {
+            let router = NotificationRouter()
+            router.route(requestID: id)
+            XCTAssertEqual(router.pendingTab, NotificationRouter.Tab.timeline.rawValue, id)
+        }
+    }
+
+    /// Vaccination / vet-cadence / activity due reminders are still unrouted — a known gap.
     func testUnknownIdentifierDoesNotNavigate() {
         let router = NotificationRouter()
-        router.route(requestID: "medication-reminder-\(UUID().uuidString)")
+        router.route(requestID: "vaccination-reminder-\(UUID().uuidString)")
         XCTAssertNil(router.pendingTab)
     }
 }

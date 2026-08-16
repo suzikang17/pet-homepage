@@ -13,6 +13,11 @@ enum ReminderKind: String, CaseIterable {
     /// snooze can never replace the task's repeating trigger (they'd share an identifier
     /// otherwise), and so routine re-syncs (cancelAll(.routine)) leave pending snoozes alone.
     case routineSnooze
+    /// A one-shot "snooze 1 hour" re-fire of a medication reminder. Its own kind for the same
+    /// reason as routineSnooze: weekly/monthly medications now carry a REPEATING trigger, and a
+    /// snooze sharing their identifier would replace it — trading the whole future cadence for
+    /// one re-fire an hour later.
+    case medicationSnooze
 }
 
 /// A single pending reminder, expressed independently of UserNotifications so

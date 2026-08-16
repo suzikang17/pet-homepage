@@ -29,6 +29,11 @@ final class UNNotificationScheduler: NotificationScheduling {
         if reminder.kind == .routine || reminder.kind == .routineSnooze {
             content.categoryIdentifier = RoutineNotificationAction.categoryID
         }
+        // Medication reminders (and their snoozed re-fires) carry Log dose / Snooze 1 hour,
+        // handled by MedicationActionHandler.
+        if reminder.kind == .medication || reminder.kind == .medicationSnooze {
+            content.categoryIdentifier = MedicationNotificationAction.categoryID
+        }
 
         let trigger: UNCalendarNotificationTrigger
         if let date = reminder.dateComponents {

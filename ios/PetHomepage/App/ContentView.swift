@@ -201,6 +201,12 @@ struct ContentView: View {
             // Re-sync routine reminders on every launch: completions/skips/overrides (and
             // template edits synced from another device) all change what should fire.
             await RoutineReminderPlanner.resync(context: context, using: routineReminderScheduler)
+            // Re-sync medication reminders on every launch. Cadences the calendar can't express
+            // ("every 3 days", "every 2 months") are one-shot triggers that fire once and are
+            // consumed, so without this they never re-arm; a reinstall or a medication synced
+            // from another device likewise leaves nothing pending at all. Weekly/monthly meds
+            // repeat natively and are merely re-asserted here, which is idempotent.
+            await reminderScheduler.syncAll((try? medicationStore.medications()) ?? [])
             // One-time walk-detection intro (skipped in UI tests: every test would trip it).
             if !UITestSupport.isUITest, !walkIntroShown {
                 walkIntroShown = true

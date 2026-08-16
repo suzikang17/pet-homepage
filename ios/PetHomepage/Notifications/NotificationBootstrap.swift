@@ -5,11 +5,13 @@ import UserNotifications
 /// Single, testable entry point for asking the user for notification permission
 /// and for bulk-cancelling reminders (e.g. during onboarding reset).
 enum NotificationBootstrap {
-    /// Registers every actionable category (routine + walk) in one call —
+    /// Registers every actionable category (routine + walk + medication) in one call —
     /// setNotificationCategories replaces the set, so composition must happen here.
     static func registerCategories(center: UNUserNotificationCenter = .current()) {
         center.setNotificationCategories(
-            RoutineNotificationAction.categories().union(WalkNotificationAction.categories())
+            RoutineNotificationAction.categories()
+                .union(WalkNotificationAction.categories())
+                .union(MedicationNotificationAction.categories())
         )
     }
 
