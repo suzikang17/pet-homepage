@@ -80,8 +80,8 @@ struct CadenceTile: View {
         .accessibilityIdentifier("cadenceTile.\(item.name)")
         .accessibilityLabel("\(item.name), \(item.dueState(now: now).badgeText), last done \(lastDoneText)")
         .accessibilityAction(named: "Log now") { onTap() }
-        // VoiceOver cannot perform a long press, so the backdate affordance needs its own action
-        // or it is unreachable for those users.
-        .accessibilityAction(named: "Log at a different time") { onLongPress() }
+        // VoiceOver cannot perform a long press, so the details route needs its own action or it
+        // is unreachable for those users.
+        .accessibilityAction(named: "Open details") { onLongPress() }
     }
 }

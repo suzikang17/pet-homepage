@@ -13,7 +13,6 @@ struct PetProfileView: View {
     @State private var showPetSwitcher = false
     @State private var showAddPet = false
     @State private var catalogue: CadenceCatalogueViewModel?
-    @State private var backdateTarget: CadenceItem?
     /// "View all" destination — resolves to the medication or care-activity detail screen.
     @State private var detailTarget: CadenceItem?
 
@@ -103,12 +102,6 @@ struct PetProfileView: View {
                     addPet(name: name, species: species)
                 }
             }
-            .sheet(item: $backdateTarget) { item in
-                CadenceBackdateSheet(item: item) { date in
-                    guard let catalogue else { return }
-                    Task { await catalogue.log(item, at: date); refresh() }
-                }
-            }
             .onAppear { model.reload(); refresh() }
         }
     }
@@ -140,7 +133,15 @@ struct PetProfileView: View {
     /// `due >= now` filter hid overdue items entirely.
     private func cadenceGrid(_ model: CadenceCatalogueViewModel) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Care routine").font(Theme.headline()).foregroundStyle(Theme.ink)
+            HStack(alignment: .firstTextBaseline) {
+                Text("Care routine").font(Theme.headline()).foregroundStyle(Theme.ink)
+                Spacer(minLength: 8)
+                // Long-press is invisible without saying so, and it is the only route to a tile's
+                // history, its cadence editor, and backdated logging.
+                Text("Hold a tile for details")
+                    .font(.caption2)
+                    .foregroundStyle(Theme.inkSoft)
+            }
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
                                 GridItem(.flexible(), spacing: 10)], spacing: 10) {
                 ForEach(model.items) { item in
@@ -148,7 +149,11 @@ struct PetProfileView: View {
                         item: item,
                         now: Date(),
                         onTap: { Task { await model.log(item); refresh() } },
-                        onLongPress: { backdateTarget = item })
+                        // Long-press opens the record rather than a bare date picker: that screen
+                        // already has the full log form (date, note, and for activities an end
+                        // time), the cadence editor, and the history with per-entry delete — i.e.
+                        // everything backdating and bookkeeping actually need.
+                        onLongPress: { detailTarget = item })
                 }
             }
             if let logged = model.lastLogged {
@@ -270,30 +275,3 @@ struct PetProfileView: View {
     }
 }
 
-/// Long-press destination: record a recurring thing as done at a time other than now.
-private struct CadenceBackdateSheet: View {
-    let item: CadenceItem
-    let onConfirm: (Date) -> Void
-
-    @Environment(\.dismiss) private var dismiss
-    @State private var when = Date()
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                DatePicker("Done at", selection: $when, in: ...Date())
-                    .datePickerStyle(.graphical)
-            }
-            .navigationTitle(item.name)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Log") { onConfirm(when); dismiss() }
-                }
-            }
-        }
-    }
-}
