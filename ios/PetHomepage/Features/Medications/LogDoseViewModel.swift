@@ -37,7 +37,11 @@ final class LogDoseViewModel {
 
     @MainActor
     func confirm() async {
-        let next = await doseLogger.log(medication, at: givenAt, note: note)
+        // dedupe: false — this is an explicit two-step confirmation where the user chose a time
+        // and may have typed a note. The logger's same-day dedupe defends against a stale
+        // lock-screen banner re-recording a dose; applying it here would silently discard the
+        // user's input while this screen declared success.
+        let next = await doseLogger.log(medication, at: givenAt, note: note, dedupe: false)
         doseCount = (try? logStore.doseCount(for: medication)) ?? 0
         confirmedNextReminder = next ?? nextReminder()
         isConfirmed = true

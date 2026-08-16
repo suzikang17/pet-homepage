@@ -35,7 +35,12 @@ struct CadenceTile: View {
     }
 
     var body: some View {
-        Button(action: onTap) {
+        // Deliberately NOT a Button. A Button's action and an attached .onLongPressGesture can
+        // both fire on the same press, which here would log at `now` AND open the backdate sheet
+        // — recording two doses for one event. Separate tap/long-press gestures on a shaped
+        // container are unambiguous, and match WalkInProgressBanner, the app's only other
+        // long-press surface.
+        Group {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 6) {
                     Image(systemName: item.iconName)
@@ -61,9 +66,16 @@ struct CadenceTile: View {
             .padding(14)
             .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .contentShape(Rectangle())
+        .onTapGesture { onTap() }
         .onLongPressGesture { onLongPress() }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
         .accessibilityIdentifier("cadenceTile.\(item.name)")
         .accessibilityLabel("\(item.name), \(item.dueState(now: now).badgeText), last done \(lastDoneText)")
+        .accessibilityAction(named: "Log now") { onTap() }
+        // VoiceOver cannot perform a long press, so the backdate affordance needs its own action
+        // or it is unreachable for those users.
+        .accessibilityAction(named: "Log at a different time") { onLongPress() }
     }
 }

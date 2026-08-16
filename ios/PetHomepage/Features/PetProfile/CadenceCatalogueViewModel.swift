@@ -111,14 +111,23 @@ final class CadenceCatalogueViewModel {
         case .activityType(let objectID):
             guard let obj = try? activityStore.context.existingObject(with: objectID),
                   let type = obj as? ActivityType else { return }
+            // Capture the prior latest-of-type BEFORE logging, so we can cancel its reminder —
+            // mirrors ActivityLogEditViewModel.save() and CaptureReviewViewModel exactly.
+            // DueReminderScheduler keys activity reminders by the LOG ENTRY's id, not the type's,
+            // so a new entry does NOT replace the old entry's pending reminder: without this
+            // cancel, logging a bath mid-cycle leaves the previous cycle's reminder armed and the
+            // user is told "Time for Sandy's Bath" days after they already did it.
+            let priorLatest = try? logStore.latestLog(of: type)
             // Same-day dedupe, matching MedicationDoseLogger.
-            if let last = try? logStore.latestLog(of: type)?.performedAt,
-               calendar.isDate(last, inSameDayAs: when) {
+            if let last = priorLatest?.performedAt, calendar.isDate(last, inSameDayAs: when) {
                 return
             }
             guard let entry = try? logStore.logActivity(type: type, performedAt: when, note: nil,
                                                         intervalDays: Int(type.defaultIntervalDays))
             else { return }
+            if let prior = priorLatest, prior.id != entry.id {
+                await dueScheduler.cancelActivity(prior)
+            }
             await dueScheduler.syncActivity(entry)
         }
         load()

@@ -41,11 +41,17 @@ final class MedicationDoseLogger {
     /// Returns the new next-due date, or nil if this was deduped. Dedupe is same-calendar-day:
     /// acting on a notification still sitting on the lock screen after an in-app log must not
     /// record a second dose. No medication in this model is scheduled more than once a day.
+    ///
+    /// `dedupe: false` is for paths where the user has *explicitly and deliberately* confirmed
+    /// this dose — the in-app Log-dose sheet, where they picked a time and may have typed a note.
+    /// Silently discarding that input while the sheet declares success is worse than a duplicate:
+    /// the dedupe exists to defend against a stale lock-screen banner, not against a person.
     @MainActor
     @discardableResult
-    func log(_ medication: Medication, at date: Date? = nil, note: String? = nil) async -> Date? {
+    func log(_ medication: Medication, at date: Date? = nil, note: String? = nil,
+             dedupe: Bool = true) async -> Date? {
         let given = date ?? now()
-        if let last = try? logStore.lastDose(for: medication),
+        if dedupe, let last = try? logStore.lastDose(for: medication),
            calendar.isDate(last, inSameDayAs: given) {
             return nil
         }
