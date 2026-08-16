@@ -6,8 +6,6 @@ import UIKit
 struct PetProfileView: View {
     @State private var model: PetProfileViewModel
     @State private var showSettings = false
-    @State private var showAddWeight = false
-    @State private var showAddSymptom = false
     @State private var photoItem: PhotosPickerItem?
     @State private var showPhotoPicker = false
     @State private var cropTarget: PickedImage?
@@ -16,12 +14,11 @@ struct PetProfileView: View {
     @State private var showAddPet = false
     @State private var catalogue: CadenceCatalogueViewModel?
     @State private var backdateTarget: CadenceItem?
+    /// "View all" destination — resolves to the medication or care-activity detail screen.
+    @State private var detailTarget: CadenceItem?
 
     // Dashboard data, refreshed on appear + after any add.
     @State private var recent: [TimelineItem] = []
-    @State private var activeMeds: [Medication] = []
-    @State private var latestWeight: LogEntry?
-    @State private var nextVetVisit: Date?
 
     private let petStore: PetStore
     private let settings: SettingsViewModel?
@@ -48,11 +45,6 @@ struct PetProfileView: View {
                     onSettings: settings != nil ? { showSettings = true } : nil
                 )
 
-                if timelineServices != nil {
-                    atAGlance
-                    quickActions
-                }
-
                 if let catalogue, !catalogue.items.isEmpty {
                     cadenceGrid(catalogue).padding(.horizontal, 18)
                 }
@@ -61,14 +53,28 @@ struct PetProfileView: View {
                 }
 
             }
+            .navigationDestination(item: $detailTarget) { item in
+                if let s = timelineServices {
+                    // A tile is a shortcut; this is the record behind it. Medications already had
+                    // such a screen, so each source routes to its own rather than being forced
+                    // through one shape — dosage and prescriber have no activity equivalent.
+                    switch item.source {
+                    case .medication(let objectID):
+                        if let obj = try? s.medicationStore.context.existingObject(with: objectID),
+                           let med = obj as? Medication {
+                            MedicationDetailView(medication: med, services: s)
+                        }
+                    case .activityType(let objectID):
+                        if let obj = try? s.activityStore.context.existingObject(with: objectID),
+                           let type = obj as? ActivityType {
+                            CareActivityDetailView(type: type, services: s)
+                        }
+                    }
+                }
+            }
+            .onChange(of: detailTarget) { _, new in if new == nil { refresh() } }
             .sheet(isPresented: $showSettings) {
                 if let settings { SettingsView(model: settings, petStore: petStore) }
-            }
-            .sheet(isPresented: $showAddWeight, onDismiss: refresh) {
-                if let s = timelineServices { MarkerEditView(logStore: s.logStore) }
-            }
-            .sheet(isPresented: $showAddSymptom, onDismiss: refresh) {
-                if let s = timelineServices { EpisodeStartView(store: s.logStore) }
             }
             .photosPicker(isPresented: $showPhotoPicker, selection: $photoItem, matching: .images)
             .onChange(of: photoItem) { _, item in if let item { loadPhoto(item) } }
@@ -127,61 +133,6 @@ struct PetProfileView: View {
     }
 
 
-    // MARK: - At a glance
-
-    private var atAGlance: some View {
-        HStack(spacing: 12) {
-            statTile(icon: "scalemass.fill", value: weightText, label: "Weight", tint: .pink)
-            statTile(icon: "pills.fill", value: "\(activeMeds.count)",
-                     label: activeMeds.count == 1 ? "Active med" : "Active meds", tint: Theme.primary)
-            statTile(icon: "stethoscope", value: vetText, label: "Next vet", tint: .indigo)
-        }
-        .padding(.horizontal, 18)
-    }
-
-    private func statTile(icon: String, value: String, label: String, tint: Color) -> some View {
-        VStack(spacing: 4) {
-            Image(systemName: icon).font(.system(size: 15, weight: .bold)).foregroundStyle(tint)
-            Text(value).font(.system(size: 18, weight: .bold)).foregroundStyle(Theme.ink)
-                .lineLimit(1).minimumScaleFactor(0.6)
-            Text(label).font(.caption2).foregroundStyle(Theme.inkSoft).lineLimit(1)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 14)
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-    }
-
-    // MARK: - Quick actions
-
-    private var quickActions: some View {
-        HStack(spacing: 10) {
-            if !activeMeds.isEmpty {
-                Menu {
-                    ForEach(activeMeds, id: \.id) { med in
-                        Button(med.drugName) { logDose(med) }
-                    }
-                } label: {
-                    quickTile("Log dose", "checkmark.circle.fill")
-                }
-            }
-            Button { showAddWeight = true } label: { quickTile("Log weight", "scalemass") }
-                .buttonStyle(.plain)
-            Button { showAddSymptom = true } label: { quickTile("Symptom", "waveform.path.ecg") }
-                .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 18)
-    }
-
-    private func quickTile(_ title: String, _ icon: String) -> some View {
-        VStack(spacing: 6) {
-            Image(systemName: icon).font(.system(size: 17, weight: .semibold)).foregroundStyle(Theme.primary)
-            Text(title).font(.caption.weight(.semibold)).foregroundStyle(Theme.ink).lineLimit(1)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 13)
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-    }
-
     // MARK: - Cadence catalogue
 
     /// A tile per recurring thing. Replaces the old Upcoming card, which was built from the
@@ -200,6 +151,36 @@ struct PetProfileView: View {
                         onLongPress: { backdateTarget = item })
                 }
             }
+            if let logged = model.lastLogged {
+                confirmationStrip(logged.item, model: model)
+            }
+        }
+        .animation(.snappy(duration: 0.25), value: model.lastLogged?.entry.id)
+    }
+
+    /// Sits inline under the grid rather than floating over content: the tile animating IS the
+    /// confirmation, and this only carries the two things the animation can't — the way back out
+    /// of a stray tap, and the way into the full record.
+    private func confirmationStrip(_ item: CadenceItem,
+                                   model: CadenceCatalogueViewModel) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.ok)
+            Text("\(item.name) logged").font(.subheadline).foregroundStyle(Theme.ink)
+            Spacer(minLength: 0)
+            Button("Undo") { Task { await model.undoLastLog(); refresh() } }
+                .font(.subheadline.weight(.semibold))
+            Button("View all") { detailTarget = item }
+                .font(.subheadline.weight(.semibold))
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+        .task(id: model.lastLogged?.entry.id) {
+            // Auto-dismiss, but only this strip: a newer log replaces the id and restarts the
+            // timer rather than letting a stale one cancel the new strip.
+            try? await Task.sleep(for: .seconds(4))
+            model.dismissConfirmation()
         }
     }
 
@@ -244,12 +225,6 @@ struct PetProfileView: View {
         vm.load()
         recent = Array(vm.items.prefix(4))
 
-        let meds = (try? s.medicationStore.medications()) ?? []
-        activeMeds = meds.filter { $0.endedAt == nil || ($0.endedAt.map { $0 > Date() } ?? true) }
-        latestWeight = (try? s.logStore.series(of: .weight))?.last
-        let visits = (try? s.logStore.vetVisits()) ?? []
-        nextVetVisit = visits.compactMap(\.nextDueAt).filter { $0 >= Date() }.min()
-
         let model = catalogue ?? CadenceCatalogueViewModel(
             medicationStore: s.medicationStore,
             activityStore: s.activityStore,
@@ -260,17 +235,6 @@ struct PetProfileView: View {
         catalogue = model
     }
 
-    /// Home's quick action previously logged the dose WITHOUT advancing the cadence or
-    /// re-syncing the reminder, leaving the next reminder pointing at a date already past.
-    private func logDose(_ med: Medication) {
-        guard let s = timelineServices else { return }
-        Task { @MainActor in
-            let logger = MedicationDoseLogger(logStore: s.logStore,
-                                              reminderScheduler: s.reminderScheduler)
-            await logger.log(med)
-            refresh()
-        }
-    }
 
     /// Switches the active pet, seeds its starter activity types (idempotent), then reloads the
     /// hero + dashboard slices so they reflect the newly active pet.
@@ -296,17 +260,7 @@ struct PetProfileView: View {
     }
 
 
-    private var weightText: String {
-        guard let w = latestWeight else { return "—" }
-        let v = w.value == w.value.rounded() ? String(Int(w.value)) : String(format: "%.1f", w.value)
-        return w.unit.map { "\(v) \($0)" } ?? v
-    }
 
-    private var vetText: String {
-        guard let d = nextVetVisit else { return "—" }
-        let days = Calendar.current.dateComponents([.day], from: Date(), to: d).day ?? 0
-        return days <= 0 ? "Today" : "\(days)d"
-    }
 
     private var speciesIcon: String {
         switch model.species {

@@ -1,5 +1,6 @@
 // ios/PetHomepage/Features/PetProfile/CadenceTile.swift
 import SwiftUI
+import UIKit
 
 extension DueState {
     var badgeText: String {
@@ -67,7 +68,12 @@ struct CadenceTile: View {
             .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .contentShape(Rectangle())
-        .onTapGesture { onTap() }
+        .onTapGesture {
+            // Success haptic on the tap itself, not after the async write returns — the feedback
+            // is about the gesture landing, and a delayed buzz reads as lag.
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            onTap()
+        }
         .onLongPressGesture { onLongPress() }
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)

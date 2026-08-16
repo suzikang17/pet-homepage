@@ -96,6 +96,53 @@ final class CadenceCatalogueViewModel {
         }
     }
 
+    /// The log just written from a tile, so the confirmation strip can offer Undo. Cleared when
+    /// the strip is dismissed or undone.
+    ///
+    /// `previousStartedAt` is captured rather than recomputed on undo: for a medication,
+    /// `startedAt` IS the next-reminder date, and recomputing it from whatever dose is newest
+    /// after deletion silently fails when the undone dose was the only one — leaving the reminder
+    /// pushed out for a dose that no longer exists.
+    struct LoggedRecord: Equatable {
+        let item: CadenceItem
+        let entry: LogEntry
+        let previousStartedAt: Date?
+    }
+
+    private(set) var lastLogged: LoggedRecord?
+
+    /// Reverses the most recent tile log: deletes the entry and repairs the cadence + reminder
+    /// the log advanced. One stray tap on a two-column grid is easy; making it unrecoverable is
+    /// what would make one-tap logging a bad trade.
+    @MainActor
+    func undoLastLog() async {
+        guard let record = lastLogged else { return }
+        let (item, entry) = (record.item, record.entry)
+        lastLogged = nil
+        switch item.source {
+        case .medication(let objectID):
+            guard let obj = try? medicationStore.context.existingObject(with: objectID),
+                  let med = obj as? Medication else { return }
+            try? logStore.delete(entry)
+            // Restore the exact next-reminder date the log overwrote.
+            if let previous = record.previousStartedAt {
+                med.startedAt = previous
+            }
+            try? medicationStore.context.save()
+            await reminderScheduler.sync(med)
+        case .activityType:
+            let type = entry.activityType
+            await dueScheduler.cancelActivity(entry)
+            try? logStore.delete(entry)
+            if let type, let newLatest = try? logStore.latestLog(of: type) {
+                await dueScheduler.syncActivity(newLatest)
+            }
+        }
+        load()
+    }
+
+    func dismissConfirmation() { lastLogged = nil }
+
     /// Records the item as done now (or at an explicit date), then reloads.
     @MainActor
     func log(_ item: CadenceItem, at date: Date? = nil) async {
@@ -107,7 +154,13 @@ final class CadenceCatalogueViewModel {
             let logger = MedicationDoseLogger(logStore: logStore,
                                               reminderScheduler: reminderScheduler,
                                               calendar: calendar, now: now)
-            await logger.log(med, at: when)
+            // nil means the same-day dedupe swallowed it — nothing was written, so there is
+            // nothing to offer an Undo for.
+            let previousStartedAt = med.startedAt
+            guard await logger.log(med, at: when) != nil,
+                  let entry = try? logStore.doses(for: med).first else { break }
+            lastLogged = LoggedRecord(item: item, entry: entry,
+                                      previousStartedAt: previousStartedAt)
         case .activityType(let objectID):
             guard let obj = try? activityStore.context.existingObject(with: objectID),
                   let type = obj as? ActivityType else { return }
@@ -129,6 +182,7 @@ final class CadenceCatalogueViewModel {
                 await dueScheduler.cancelActivity(prior)
             }
             await dueScheduler.syncActivity(entry)
+            lastLogged = LoggedRecord(item: item, entry: entry, previousStartedAt: nil)
         }
         load()
     }

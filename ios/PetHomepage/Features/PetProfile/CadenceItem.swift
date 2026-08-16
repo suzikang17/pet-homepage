@@ -15,10 +15,12 @@ enum DueState: Equatable {
 
 /// One recurring thing on Home, projected from either a Medication or an ActivityType so the
 /// view never branches on origin.
-struct CadenceItem: Identifiable, Equatable {
+/// Hashable so it can drive `navigationDestination(item:)` — every stored property already is,
+/// including `NSManagedObjectID`.
+struct CadenceItem: Identifiable, Equatable, Hashable {
     /// The originating entity, held as an object ID rather than the object so this value type
     /// stays inert; the view model re-fetches on the main context when acting.
-    enum Source: Equatable {
+    enum Source: Equatable, Hashable {
         case medication(NSManagedObjectID)
         case activityType(NSManagedObjectID)
     }

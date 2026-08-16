@@ -172,6 +172,63 @@ final class CadenceCatalogueViewModelTests: XCTestCase {
         XCTAssertEqual(try logStore.doseCount(for: med), 0)
     }
 
+    /// A stray tap on a two-column grid is easy; undo has to put things back exactly, including
+    /// the cadence the log advanced — otherwise the history looks right while the reminder stays
+    /// pushed out for a dose that no longer exists.
+    func testUndoRemovesTheDoseAndRollsBackTheCadence() async throws {
+        let med = try makeMed("Simparica", nextDue: date(8, 16))
+        let before = med.startedAt
+        let sut = makeSUT()
+        sut.load()
+        let item = try XCTUnwrap(sut.items.first { $0.name == "Simparica" })
+
+        await sut.log(item)
+        XCTAssertEqual(try logStore.doseCount(for: med), 1)
+        XCTAssertNotEqual(med.startedAt, before, "logging should have advanced the cadence")
+
+        await sut.undoLastLog()
+
+        XCTAssertEqual(try logStore.doseCount(for: med), 0, "the dose should be gone")
+        XCTAssertEqual(med.startedAt, before,
+                       "with no doses left, the cadence must return to where it started")
+    }
+
+    func testUndoAnActivityRestoresThePreviousEntrysReminder() async throws {
+        let type = try makeType("Bath", intervalDays: 30)
+        let fake = FakeNotificationScheduler()
+        let due = DueReminderScheduler(scheduler: fake)
+        let fixed = now!
+        let sut = CadenceCatalogueViewModel(
+            medicationStore: medStore, activityStore: activityStore, logStore: logStore,
+            reminderScheduler: MedicationReminderScheduler(scheduler: fake, calendar: calendar,
+                                                           now: { fixed }),
+            dueScheduler: due, calendar: calendar, now: { fixed })
+
+        let firstEntry = try logStore.logActivity(type: type, performedAt: date(8, 10), note: nil,
+                                                  intervalDays: 30)
+        await due.syncActivity(firstEntry)
+
+        sut.load()
+        let item = try XCTUnwrap(sut.items.first { $0.name == "Bath" })
+        await sut.log(item)
+        await sut.undoLastLog()
+
+        XCTAssertEqual(try logStore.logs(of: type).count, 1, "only the original entry should remain")
+        let pending = await fake.pendingIDs(kind: .activity)
+        XCTAssertEqual(pending, [firstEntry.id],
+                       "undo must re-arm the entry whose reminder the new log displaced")
+    }
+
+    func testUndoWithNothingLoggedIsANoOp() async throws {
+        try makeMed("Simparica", nextDue: date(8, 16))
+        let sut = makeSUT()
+        sut.load()
+
+        await sut.undoLastLog()
+
+        XCTAssertEqual(sut.items.count, 1)
+    }
+
     /// DueReminderScheduler keys activity reminders by the LOG ENTRY's id, not the ActivityType's,
     /// so a newly logged entry does NOT replace the previous entry's pending reminder — it has to
     /// be cancelled explicitly, as ActivityLogEditViewModel and CaptureReviewViewModel both do.
