@@ -18,8 +18,14 @@ final class MedicationReminderScheduler {
 
     /// Builds the reminder for a medication, following its frequency:
     /// - daily (every 1 day) → a self-repeating daily trigger at the scheduled time,
-    /// - any other cadence → a one-shot trigger on the next due date (recomputed each sync,
-    ///   which happens on save, dose log, and app launch).
+    /// - weekly / monthly → a self-repeating calendar trigger (weekday / day-of-month), which
+    ///   iOS re-fires unattended even if the app is never opened again,
+    /// - any other cadence → a one-shot trigger on the next due date, re-armed by the resync
+    ///   on save, dose log, and app launch.
+    ///
+    /// The repeating cases exist because a one-shot fires exactly once and is then consumed:
+    /// a monthly preventative scheduled as a one-shot goes silent forever the moment the user
+    /// dismisses its first banner without logging a dose in-app.
     func reminder(for medication: Medication) -> PendingReminder {
         let freq = MedFrequency(parsing: medication.frequency)
         let time = calendar.dateComponents([.hour, .minute], from: medication.scheduleTime)
@@ -28,18 +34,45 @@ final class MedicationReminderScheduler {
         let title = "Time for meds"
         let body = "Give \(medication.drugName) (\(medication.dosage))"
 
-        if freq.interval <= 1, freq.unit == .day {
-            return PendingReminder(kind: .medication, entityID: medication.id,
-                                   title: title, body: body, hour: hour, minute: minute,
-                                   dateComponents: nil)
+        func pending(_ dateComponents: DateComponents?, repeats: Bool = false) -> PendingReminder {
+            PendingReminder(kind: .medication, entityID: medication.id,
+                            title: title, body: body, hour: hour, minute: minute,
+                            dateComponents: dateComponents, repeats: repeats)
         }
+
+        // A bare hour/minute trigger already repeats daily.
+        if freq.interval <= 1, freq.unit == .day { return pending(nil) }
 
         let next = freq.nextOccurrence(after: now(), start: medication.startedAt,
                                        time: medication.scheduleTime, calendar: calendar)
-        let comps = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: next)
-        return PendingReminder(kind: .medication, entityID: medication.id,
-                               title: title, body: body, hour: hour, minute: minute,
-                               dateComponents: comps)
+
+        // Single-unit cadences the calendar can express natively: let iOS repeat them, so the
+        // chain survives the app being closed for months. Multi-unit intervals ("every 3 days",
+        // "every 2 months") have no calendar equivalent and stay one-shot.
+        if freq.interval == 1 {
+            switch freq.unit {
+            case .week:
+                var comps = DateComponents()
+                comps.weekday = calendar.component(.weekday, from: next)
+                return pending(comps, repeats: true)
+            case .month:
+                // Guard on the ANCHOR's day-of-month, not the computed next occurrence:
+                // nextOccurrence CLAMPS (Jan 31 + 1 month → Feb 28), so reading the day off
+                // `next` would see 28 for a 31st-anchored med and silently pin it to the 28th
+                // of every month thereafter. Days 29–31 have no honest repeating form — a
+                // repeating trigger skips the months that lack them — so they stay one-shot.
+                let anchorDay = calendar.component(.day, from: medication.startedAt)
+                if anchorDay <= 28 {
+                    var comps = DateComponents()
+                    comps.day = anchorDay
+                    return pending(comps, repeats: true)
+                }
+            case .day:
+                break // interval > 1: handled by the one-shot path below.
+            }
+        }
+
+        return pending(calendar.dateComponents([.year, .month, .day, .hour, .minute], from: next))
     }
 
     /// Whether a medication is currently active (should have a reminder).

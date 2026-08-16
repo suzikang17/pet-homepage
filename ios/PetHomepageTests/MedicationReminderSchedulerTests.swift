@@ -62,6 +62,91 @@ final class MedicationReminderSchedulerTests: XCTestCase {
         XCTAssertEqual(utc.date(from: comps), Date(timeIntervalSince1970: 12 * 86_400 + 8 * 3600))
     }
 
+    // MARK: - Calendar-expressible cadences must self-repeat
+    //
+    // A one-shot trigger fires exactly once and is then consumed. Since nothing re-arms
+    // medication reminders (syncAll has no launch call site), a monthly preventative that
+    // schedules a one-shot goes permanently silent after its first fire. Monthly and weekly
+    // ARE expressible as repeating UNCalendarNotificationTriggers, so they must use one.
+
+    func testMonthlyMedicationUsesRepeatingDayOfMonthTrigger() throws {
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = TimeZone(identifier: "UTC")!
+        // 2026-03-14 09:00 UTC
+        let start = utc.date(from: DateComponents(year: 2026, month: 3, day: 14, hour: 9))!
+        let med = try medStore.create(drugName: "Simparica", dosage: "1 chew",
+                                      frequency: "Monthly",
+                                      scheduleTime: start, startedAt: start, refillDueAt: nil)
+        let fixedNow = utc.date(from: DateComponents(year: 2026, month: 3, day: 20))!
+        let scheduler = MedicationReminderScheduler(scheduler: FakeNotificationScheduler(),
+                                                    calendar: utc, now: { fixedNow })
+
+        let reminder = scheduler.reminder(for: med)
+
+        XCTAssertTrue(reminder.repeats, "monthly must self-repeat, not fire once and die")
+        let comps = try XCTUnwrap(reminder.dateComponents)
+        XCTAssertEqual(comps.day, 14, "should repeat on the 14th of every month")
+        XCTAssertNil(comps.year, "a repeating monthly trigger must not pin a year")
+        XCTAssertNil(comps.month, "a repeating monthly trigger must not pin a month")
+    }
+
+    func testWeeklyMedicationUsesRepeatingWeekdayTrigger() throws {
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = TimeZone(identifier: "UTC")!
+        // 2026-03-14 is a Saturday → weekday 7 in the Gregorian calendar.
+        let start = utc.date(from: DateComponents(year: 2026, month: 3, day: 14, hour: 9))!
+        let med = try medStore.create(drugName: "Apoquel", dosage: "16mg",
+                                      frequency: "Weekly",
+                                      scheduleTime: start, startedAt: start, refillDueAt: nil)
+        let fixedNow = utc.date(from: DateComponents(year: 2026, month: 3, day: 16))!
+        let scheduler = MedicationReminderScheduler(scheduler: FakeNotificationScheduler(),
+                                                    calendar: utc, now: { fixedNow })
+
+        let reminder = scheduler.reminder(for: med)
+
+        XCTAssertTrue(reminder.repeats, "weekly must self-repeat")
+        let comps = try XCTUnwrap(reminder.dateComponents)
+        XCTAssertEqual(comps.weekday, 7, "should repeat every Saturday")
+        XCTAssertNil(comps.day, "a repeating weekly trigger must not pin a day-of-month")
+    }
+
+    /// Day-of-month 29–31 doesn't exist in every month, so a repeating trigger would skip
+    /// those months entirely. Those fall back to the one-shot + launch-resync path.
+    func testMonthlyOnDay31FallsBackToOneShot() throws {
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = TimeZone(identifier: "UTC")!
+        let start = utc.date(from: DateComponents(year: 2026, month: 1, day: 31, hour: 9))!
+        let med = try medStore.create(drugName: "Interceptor", dosage: "1",
+                                      frequency: "Monthly",
+                                      scheduleTime: start, startedAt: start, refillDueAt: nil)
+        let fixedNow = utc.date(from: DateComponents(year: 2026, month: 2, day: 2))!
+        let scheduler = MedicationReminderScheduler(scheduler: FakeNotificationScheduler(),
+                                                    calendar: utc, now: { fixedNow })
+
+        let reminder = scheduler.reminder(for: med)
+
+        XCTAssertFalse(reminder.repeats, "day 31 can't repeat monthly — must stay a dated one-shot")
+        let comps = try XCTUnwrap(reminder.dateComponents)
+        XCTAssertNotNil(comps.year, "a one-shot must pin a full date")
+    }
+
+    /// "Every 3 days" is not expressible as a repeating calendar trigger, so it keeps the
+    /// one-shot behaviour and relies on the launch resync to re-arm.
+    func testArbitraryIntervalStaysOneShot() throws {
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = TimeZone(identifier: "UTC")!
+        let start = Date(timeIntervalSince1970: 0)
+        let med = try medStore.create(drugName: "Heartgard", dosage: "1",
+                                      frequency: "Every 3 days",
+                                      scheduleTime: Date(timeIntervalSince1970: 8 * 3600),
+                                      startedAt: start, refillDueAt: nil)
+        let scheduler = MedicationReminderScheduler(
+            scheduler: FakeNotificationScheduler(), calendar: utc,
+            now: { Date(timeIntervalSince1970: 10 * 86_400 + 9 * 3600) })
+
+        XCTAssertFalse(scheduler.reminder(for: med).repeats)
+    }
+
     func testReminderExtractsHourAndMinuteFromScheduleTime() throws {
         let scheduler = MedicationReminderScheduler(scheduler: FakeNotificationScheduler(), calendar: calendar)
         let med = try makeMed(hour: 18, minute: 30)
