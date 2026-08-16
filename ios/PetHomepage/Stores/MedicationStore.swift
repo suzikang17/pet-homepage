@@ -3,7 +3,7 @@ import CoreData
 
 /// CRUD for medications, scoped to the single current pet (v1).
 final class MedicationStore {
-    private let context: NSManagedObjectContext
+    let context: NSManagedObjectContext
     private let petStore: PetStore
 
     init(context: NSManagedObjectContext, petStore: PetStore) {

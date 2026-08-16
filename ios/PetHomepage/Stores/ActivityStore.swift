@@ -5,7 +5,7 @@ import CoreData
 /// HealthMarkerStore / VaccinationStore. Logged occurrences live in LogStore now; this store
 /// only owns the ActivityType definitions.
 final class ActivityStore {
-    private let context: NSManagedObjectContext
+    let context: NSManagedObjectContext
     private let petStore: PetStore
 
     init(context: NSManagedObjectContext, petStore: PetStore) {
