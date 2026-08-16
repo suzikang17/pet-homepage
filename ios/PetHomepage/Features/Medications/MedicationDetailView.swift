@@ -13,7 +13,8 @@ struct MedicationDetailView: View {
     init(medication: Medication, services: TimelineServices) {
         _model = State(initialValue: MedicationDetailViewModel(
             medication: medication,
-            logStore: services.logStore
+            logStore: services.logStore,
+            reminderScheduler: services.reminderScheduler
         ))
         self.services = services
     }
@@ -64,7 +65,9 @@ struct MedicationDetailView: View {
                             }
                         }
                         .swipeActions(edge: .trailing) {
-                            Button(role: .destructive) { model.deleteDose(dose) } label: {
+                            Button(role: .destructive) {
+                                Task { await model.deleteDose(dose) }
+                            } label: {
                                 Label("Delete", systemImage: "trash")
                             }
                         }
