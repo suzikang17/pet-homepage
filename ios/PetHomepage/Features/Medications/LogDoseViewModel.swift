@@ -24,26 +24,22 @@ final class LogDoseViewModel {
 
     var frequency: MedFrequency { MedFrequency(parsing: medication.frequency) }
 
-    /// When the next reminder lands if this dose is logged: one cadence-interval after the dose,
-    /// at the medication's scheduled time of day.
+    private var doseLogger: MedicationDoseLogger {
+        MedicationDoseLogger(logStore: logStore, reminderScheduler: reminderScheduler)
+    }
+
+    /// When the next reminder lands if this dose is logged.
     func nextReminder(after dose: Date? = nil, calendar: Calendar = .current) -> Date {
-        let d = dose ?? givenAt
-        let stepped = calendar.date(byAdding: frequency.unit.calendarComponent,
-                                    value: frequency.interval, to: d) ?? d
-        let t = calendar.dateComponents([.hour, .minute], from: medication.scheduleTime)
-        return calendar.date(bySettingHour: t.hour ?? 9, minute: t.minute ?? 0, second: 0, of: stepped) ?? stepped
+        MedicationDoseLogger(logStore: logStore, reminderScheduler: reminderScheduler,
+                             calendar: calendar)
+            .nextDue(for: medication, after: dose ?? givenAt)
     }
 
     @MainActor
     func confirm() async {
-        let next = nextReminder()
-        try? logStore.logDose(for: medication, at: givenAt, note: note)
-        // Reschedule the next reminder to follow this dose.
-        medication.startedAt = next
-        try? medication.managedObjectContext?.save()
-        await reminderScheduler.sync(medication)
+        let next = await doseLogger.log(medication, at: givenAt, note: note)
         doseCount = (try? logStore.doseCount(for: medication)) ?? 0
-        confirmedNextReminder = next
+        confirmedNextReminder = next ?? nextReminder()
         isConfirmed = true
     }
 }

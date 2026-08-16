@@ -235,10 +235,16 @@ struct PetProfileView: View {
         nextVetVisit = visits.compactMap(\.nextDueAt).filter { $0 >= Date() }.min()
     }
 
+    /// Home's quick action previously logged the dose WITHOUT advancing the cadence or
+    /// re-syncing the reminder, leaving the next reminder pointing at a date already past.
     private func logDose(_ med: Medication) {
         guard let s = timelineServices else { return }
-        _ = try? s.logStore.logDose(for: med, at: Date())
-        refresh()
+        Task { @MainActor in
+            let logger = MedicationDoseLogger(logStore: s.logStore,
+                                              reminderScheduler: s.reminderScheduler)
+            await logger.log(med)
+            refresh()
+        }
     }
 
     /// Switches the active pet, seeds its starter activity types (idempotent), then reloads the

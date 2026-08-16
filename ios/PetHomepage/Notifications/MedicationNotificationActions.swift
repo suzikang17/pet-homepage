@@ -62,36 +62,16 @@ final class MedicationActionHandler {
         }
     }
 
-    /// Records the dose and advances the cadence to follow it — mirroring LogDoseViewModel.confirm()
-    /// so the notification path and the in-app path leave identical state behind.
     @MainActor
     private func logDose(for medication: Medication) async {
         let logStore = LogStore(context: context, petStore: PetStore(context: context))
-
-        // Dedupe: acting on a stale notification after the dose was already logged in-app must
-        // not record a second one. Same-calendar-day is the right granularity — no medication in
-        // this model is scheduled more than once a day.
-        if let last = try? logStore.lastDose(for: medication),
-           calendar.isDate(last, inSameDayAs: now()) {
-            return
-        }
-
-        let given = now()
-        try? logStore.logDose(for: medication, at: given, note: nil)
-        // `startedAt` is this model's "next reminder date" (see MedicationDetailView), so stepping
-        // it forward is what moves the cadence along.
-        let freq = MedFrequency(parsing: medication.frequency)
-        let stepped = calendar.date(byAdding: freq.unit.calendarComponent,
-                                    value: freq.interval, to: given) ?? given
-        let time = calendar.dateComponents([.hour, .minute], from: medication.scheduleTime)
-        medication.startedAt = calendar.date(bySettingHour: time.hour ?? 9,
-                                             minute: time.minute ?? 0,
-                                             second: 0, of: stepped) ?? stepped
-        try? context.save()
-
-        let reminderScheduler = MedicationReminderScheduler(scheduler: scheduler,
-                                                            calendar: calendar, now: now)
-        await reminderScheduler.sync(medication)
+        let logger = MedicationDoseLogger(
+            logStore: logStore,
+            reminderScheduler: MedicationReminderScheduler(scheduler: scheduler,
+                                                           calendar: calendar, now: now),
+            calendar: calendar,
+            now: now)
+        await logger.log(medication)
     }
 
     /// One-shot re-fire an hour from now, under the dedicated snooze kind so it can never replace
