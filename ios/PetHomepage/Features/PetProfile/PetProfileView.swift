@@ -14,9 +14,10 @@ struct PetProfileView: View {
     @State private var showAvatarActions = false
     @State private var showPetSwitcher = false
     @State private var showAddPet = false
+    @State private var catalogue: CadenceCatalogueViewModel?
+    @State private var backdateTarget: CadenceItem?
 
     // Dashboard data, refreshed on appear + after any add.
-    @State private var upcoming: [TimelineItem] = []
     @State private var recent: [TimelineItem] = []
     @State private var activeMeds: [Medication] = []
     @State private var latestWeight: LogEntry?
@@ -52,8 +53,8 @@ struct PetProfileView: View {
                     quickActions
                 }
 
-                if !upcoming.isEmpty {
-                    upcomingCard.padding(.horizontal, 18)
+                if let catalogue, !catalogue.items.isEmpty {
+                    cadenceGrid(catalogue).padding(.horizontal, 18)
                 }
                 if !recent.isEmpty {
                     recentCard.padding(.horizontal, 18)
@@ -94,6 +95,12 @@ struct PetProfileView: View {
             .sheet(isPresented: $showAddPet) {
                 AddPetSheet { name, species in
                     addPet(name: name, species: species)
+                }
+            }
+            .sheet(item: $backdateTarget) { item in
+                CadenceBackdateSheet(item: item) { date in
+                    guard let catalogue else { return }
+                    Task { await catalogue.log(item, at: date); refresh() }
                 }
             }
             .onAppear { model.reload(); refresh() }
@@ -175,18 +182,28 @@ struct PetProfileView: View {
         .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
-    // MARK: - Upcoming + Recent
+    // MARK: - Cadence catalogue
 
-    private var upcomingCard: some View {
-        BrandCard {
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Upcoming").font(Theme.headline()).foregroundStyle(Theme.ink)
-                ForEach(upcoming.prefix(5)) { item in
-                    miniRow(item, trailing: item.nextDue, tint: Theme.primary)
+    /// A tile per recurring thing. Replaces the old Upcoming card, which was built from the
+    /// Timeline stream and so could only show things already logged at least once — and whose
+    /// `due >= now` filter hid overdue items entirely.
+    private func cadenceGrid(_ model: CadenceCatalogueViewModel) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Care routine").font(Theme.headline()).foregroundStyle(Theme.ink)
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
+                                GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                ForEach(model.items) { item in
+                    CadenceTile(
+                        item: item,
+                        now: Date(),
+                        onTap: { Task { await model.log(item); refresh() } },
+                        onLongPress: { backdateTarget = item })
                 }
             }
         }
     }
+
+    // MARK: - Recent
 
     private var recentCard: some View {
         BrandCard {
@@ -225,7 +242,6 @@ struct PetProfileView: View {
             logStore: s.logStore
         )
         vm.load()
-        upcoming = vm.dueSoon(within: 60)
         recent = Array(vm.items.prefix(4))
 
         let meds = (try? s.medicationStore.medications()) ?? []
@@ -233,6 +249,15 @@ struct PetProfileView: View {
         latestWeight = (try? s.logStore.series(of: .weight))?.last
         let visits = (try? s.logStore.vetVisits()) ?? []
         nextVetVisit = visits.compactMap(\.nextDueAt).filter { $0 >= Date() }.min()
+
+        let model = catalogue ?? CadenceCatalogueViewModel(
+            medicationStore: s.medicationStore,
+            activityStore: s.activityStore,
+            logStore: s.logStore,
+            reminderScheduler: s.reminderScheduler,
+            dueScheduler: s.dueScheduler)
+        model.load()
+        catalogue = model
     }
 
     /// Home's quick action previously logged the dose WITHOUT advancing the cadence or
@@ -287,6 +312,34 @@ struct PetProfileView: View {
         switch model.species {
         case "cat": "cat.fill"
         default: "pawprint.fill"
+        }
+    }
+}
+
+/// Long-press destination: record a recurring thing as done at a time other than now.
+private struct CadenceBackdateSheet: View {
+    let item: CadenceItem
+    let onConfirm: (Date) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var when = Date()
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                DatePicker("Done at", selection: $when, in: ...Date())
+                    .datePickerStyle(.graphical)
+            }
+            .navigationTitle(item.name)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Log") { onConfirm(when); dismiss() }
+                }
+            }
         }
     }
 }
