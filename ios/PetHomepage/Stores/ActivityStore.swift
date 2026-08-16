@@ -84,8 +84,9 @@ final class ActivityStore {
         ("Teeth brushing", .care, "mouth", 1),
         ("Brushing", .care, "comb", 7),
         ("Grooming", .care, "dog", 42),
-        ("Flea & tick", .health, "ladybug", 30),
-        ("Deworming", .health, "pills", 90),
+        // Preventatives (flea & tick, deworming) are deliberately NOT seeded here: they are
+        // prescribed drugs with a dosage and a prescriber, so they belong to Medication. Seeding
+        // them as activity types too gave every pet a duplicate tile on Home.
     ]
 
     /// Seeds any default types that don't already exist (by case-insensitive name). Idempotent,

@@ -45,4 +45,17 @@ final class ActivityStoreSeedingTests: XCTestCase {
         try emptyStore.seedDefaultsIfNeeded()
         XCTAssertEqual(try emptyStore.types(includeArchived: true).count, 0)
     }
+
+    /// Preventatives are modelled as Medications (they carry a dosage and a prescriber), so
+    /// seeding them as activity types too would give every pet a duplicate tile on Home.
+    func testDefaultSeedsDoNotIncludePreventatives() {
+        let names = Set(ActivityStore.defaultSeeds.map { $0.name.lowercased() })
+        XCTAssertFalse(names.contains("flea & tick"))
+        XCTAssertFalse(names.contains("deworming"))
+    }
+
+    func testDefaultSeedsStillIncludeGroomingCare() {
+        let names = Set(ActivityStore.defaultSeeds.map { $0.name })
+        XCTAssertEqual(names, ["Bath", "Nail trim", "Teeth brushing", "Brushing", "Grooming"])
+    }
 }
