@@ -32,7 +32,9 @@ struct ContentView: View {
     // Launches on Schedule (tag 3): it's the daily driver, so it's both the first tab and the
     // opening screen. Tab *tags* stay fixed (NotificationRouter routes by tag) — only the
     // declaration order below puts Schedule leftmost.
-    @State private var selectedTab = 3
+    /// Home (tag 0) is the launch tab: it now carries the cadence catalogue, so it answers
+    /// "what does this pet need" on open. Tags are NotificationRouter's deep-link targets.
+    @State private var selectedTab = 0
     @State private var showCamera = false
     @State private var showLibraryFallback = false
     @State private var libraryItem: PhotosPickerItem?
@@ -165,15 +167,17 @@ struct ContentView: View {
         )
 
         return TabView(selection: $selectedTab) {
+            // Display order only — the .tag values are load-bearing: NotificationRouter.Tab maps
+            // raw values to these tags, so reordering must never renumber them.
+            PetProfileView(store: petStore, settings: settingsViewModel,
+                           timelineServices: timelineServices)
+                .tabItem { Label("Home", systemImage: "house") }
+                .tag(0)
             ScheduleView(store: routineStore, logStore: logStore,
                          reminderScheduler: routineReminderScheduler, petStore: petStore,
                          walkSessions: walkSessions)
                 .tabItem { Label("Schedule", systemImage: "checklist") }
                 .tag(3)
-            PetProfileView(store: petStore, settings: settingsViewModel,
-                           timelineServices: timelineServices)
-                .tabItem { Label("Home", systemImage: "house") }
-                .tag(0)
             TimelineView(services: timelineServices, onCapture: { startCapture() },
                          onImport: { showLibraryFallback = true })
                 .tabItem { Label("Timeline", systemImage: "calendar") }

@@ -8,7 +8,7 @@ final class PetSwitcherTests: UITestCase {
     func testPetSwitcherAddAndSwitch() {
         let app = launchApp()
 
-        // The app now launches on the Schedule tab; the pet switcher lives on Home.
+        // The app launches on Home, where the pet switcher lives; the tap is a no-op safeguard.
         app.tabBars.buttons["Home"].tap()
 
         let avatar = app.buttons["heroAvatarButton"]
