@@ -13,7 +13,7 @@ extension DueState {
 
     var badgeTint: Color {
         switch self {
-        case .overdue: return .red
+        case .overdue: return Theme.danger
         case .dueToday: return Theme.primary
         case .dueIn: return Theme.inkSoft
         case .noCadence: return Theme.inkSoft
