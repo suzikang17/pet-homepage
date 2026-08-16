@@ -102,13 +102,15 @@ final class CadenceCatalogueViewModel {
         let when = date ?? now()
         switch item.source {
         case .medication(let objectID):
-            guard let med = medicationStore.context.object(with: objectID) as? Medication else { return }
+            guard let obj = try? medicationStore.context.existingObject(with: objectID),
+                  let med = obj as? Medication else { return }
             let logger = MedicationDoseLogger(logStore: logStore,
                                               reminderScheduler: reminderScheduler,
                                               calendar: calendar, now: now)
             await logger.log(med, at: when)
         case .activityType(let objectID):
-            guard let type = activityStore.context.object(with: objectID) as? ActivityType else { return }
+            guard let obj = try? activityStore.context.existingObject(with: objectID),
+                  let type = obj as? ActivityType else { return }
             // Same-day dedupe, matching MedicationDoseLogger.
             if let last = try? logStore.latestLog(of: type)?.performedAt,
                calendar.isDate(last, inSameDayAs: when) {

@@ -153,4 +153,22 @@ final class CadenceCatalogueViewModelTests: XCTestCase {
         let due = try XCTUnwrap(latest.nextDueAt)
         XCTAssertEqual(calendar.dateComponents([.day], from: now, to: due).day, 30)
     }
+
+    /// If the row backing a tile is deleted between `load()` populating `items` and the user
+    /// tapping "log" on that now-stale tile, the re-fetch must fail gracefully rather than crash.
+    /// `NSManagedObjectContext.object(with:)` never returns nil for a missing row — it hands back
+    /// a faulted object whose first property access throws `NSObjectInaccessibleException` — so
+    /// this pins `existingObject(with:)`, which does fail with nil for a missing row.
+    func testLoggingAMedicationDeletedAfterLoadDoesNotCrashOrRecord() async throws {
+        let med = try makeMed("Simparica", nextDue: date(8, 16))
+        let sut = makeSUT()
+        sut.load()
+        let item = try XCTUnwrap(sut.items.first { $0.name == "Simparica" })
+
+        try medStore.delete(med)
+
+        await sut.log(item)
+
+        XCTAssertEqual(try logStore.doseCount(for: med), 0)
+    }
 }
