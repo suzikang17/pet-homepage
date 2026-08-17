@@ -16,12 +16,30 @@ final class DueReminderScheduler {
     private let calendar: Calendar
     private let hour: Int
     private let minute: Int
+    private let now: () -> Date
 
-    init(scheduler: NotificationScheduling, calendar: Calendar = .current, hour: Int = 9, minute: Int = 0) {
+    init(scheduler: NotificationScheduling, calendar: Calendar = .current, hour: Int = 9,
+         minute: Int = 0, now: @escaping () -> Date = Date.init) {
         self.scheduler = scheduler
         self.calendar = calendar
         self.hour = hour
         self.minute = minute
+        self.now = now
+    }
+
+    /// The trigger components for a due date, shared by all three kinds.
+    ///
+    /// Returns the due date's components while it is still ahead — a one-shot on that day. Once
+    /// the date has PASSED, returns nil, which PendingReminder treats as a daily repeating
+    /// trigger at the reminder's hour/minute. A one-shot on a past date never fires at all, so
+    /// an ignored due date used to go permanently silent: a vaccination three weeks overdue said
+    /// nothing. Overdue things should keep asking until they are actually done, and logging the
+    /// thing replaces this with the next one-shot.
+    ///
+    /// Day granularity, matching CadenceItem.dueState: due today is not overdue.
+    private func triggerComponents(for due: Date) -> DateComponents? {
+        guard calendar.startOfDay(for: due) >= calendar.startOfDay(for: now()) else { return nil }
+        return calendar.dateComponents([.year, .month, .day], from: due)
     }
 
     // MARK: - Vaccinations
@@ -31,7 +49,7 @@ final class DueReminderScheduler {
     /// to the pet-agnostic copy ("Rabies is due").
     func vaccinationReminder(for vaccine: LogEntry) -> PendingReminder? {
         guard let due = vaccine.nextDueAt else { return nil }
-        let dateComponents = calendar.dateComponents([.year, .month, .day], from: due)
+        let dateComponents = triggerComponents(for: due)
         let title = vaccine.title ?? "Vaccine"
         let body: String
         if let petName = vaccine.pet?.name, !petName.isEmpty {
@@ -77,7 +95,7 @@ final class DueReminderScheduler {
     func vetCadenceReminder(petID: UUID, petName: String?, lastVisit: Date?, cadence: VetCadence) -> PendingReminder? {
         guard let lastVisit else { return nil }
         guard let dueDate = calendar.date(byAdding: .month, value: cadence.months, to: lastVisit) else { return nil }
-        let dateComponents = calendar.dateComponents([.year, .month, .day], from: dueDate)
+        let dateComponents = triggerComponents(for: dueDate)
         let body: String
         if let petName, !petName.isEmpty {
             body = "It's been \(cadence.months) months — time for \(petName)'s vet visit"
@@ -115,7 +133,7 @@ final class DueReminderScheduler {
     func activityReminder(for log: LogEntry) -> PendingReminder? {
         guard let due = log.nextDueAt else { return nil }
         let name = log.activityType?.name ?? "Activity"
-        let dateComponents = calendar.dateComponents([.year, .month, .day], from: due)
+        let dateComponents = triggerComponents(for: due)
         // Use the activity type's own reminder time when available; otherwise the scheduler default.
         let reminderHour = log.activityType.map { Int($0.reminderHour) } ?? hour
         let reminderMinute = log.activityType.map { Int($0.reminderMinute) } ?? minute

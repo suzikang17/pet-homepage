@@ -211,6 +211,11 @@ struct ContentView: View {
             // from another device likewise leaves nothing pending at all. Weekly/monthly meds
             // repeat natively and are merely re-asserted here, which is idempotent.
             await reminderScheduler.syncAll((try? medicationStore.medications()) ?? [])
+            // Same for vaccination / vet-cadence / activity due reminders, which had no resync at
+            // all: they were armed once when a record was saved and never re-derived, so a
+            // reinstall or a record synced from another device left them silently missing.
+            await DueReminderPlanner.resync(context: context, using: dueScheduler,
+                                            cadenceMonths: vetCadenceMonths)
             // One-time walk-detection intro (skipped in UI tests: every test would trip it).
             if !UITestSupport.isUITest, !walkIntroShown {
                 walkIntroShown = true
