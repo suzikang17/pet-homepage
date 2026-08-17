@@ -35,11 +35,30 @@ struct CadenceItem: Identifiable, Equatable, Hashable {
     let nextDue: Date?
 
     func dueState(now: Date, calendar: Calendar = .current) -> DueState {
-        guard let nextDue else { return .noCadence }
+        DueState.from(due: nextDue, now: now, calendar: calendar)
+    }
+}
+
+extension DueState {
+    /// The single day-granularity due computation, shared by cadence tiles and the upcoming list.
+    /// Kept in one place deliberately: this codebase has repeatedly been bitten by the same rule
+    /// existing in several copies that drifted apart.
+    static func from(due: Date?, now: Date, calendar: Calendar = .current) -> DueState {
+        guard let due else { return .noCadence }
         let today = calendar.startOfDay(for: now)
-        let due = calendar.startOfDay(for: nextDue)
-        let days = calendar.dateComponents([.day], from: today, to: due).day ?? 0
+        let dueDay = calendar.startOfDay(for: due)
+        let days = calendar.dateComponents([.day], from: today, to: dueDay).day ?? 0
         if days == 0 { return .dueToday }
         return days < 0 ? .overdue(days: -days) : .dueIn(days: days)
+    }
+
+    /// Sort rank: overdue first, then due today, then future, then undated.
+    var sortRank: Int {
+        switch self {
+        case .overdue: 0
+        case .dueToday: 1
+        case .dueIn: 2
+        case .noCadence: 3
+        }
     }
 }

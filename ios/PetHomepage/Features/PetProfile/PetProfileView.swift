@@ -47,6 +47,9 @@ struct PetProfileView: View {
                 if let catalogue, !catalogue.items.isEmpty {
                     cadenceGrid(catalogue).padding(.horizontal, 18)
                 }
+                if let catalogue, !catalogue.upcoming.isEmpty {
+                    upcomingCard(catalogue.upcoming).padding(.horizontal, 18)
+                }
                 if !recent.isEmpty {
                     recentCard.padding(.horizontal, 18)
                 }
@@ -186,6 +189,40 @@ struct PetProfileView: View {
             // timer rather than letting a stale one cancel the new strip.
             try? await Task.sleep(for: .seconds(4))
             model.dismissConfirmation()
+        }
+    }
+
+    // MARK: - Upcoming reminders
+
+    /// Everything dated, most urgent first. Separate from "Recent activity" because they answer
+    /// opposite questions — what is coming versus what already happened — and the two were
+    /// previously conflated into one card that showed future reminder dates under the heading
+    /// "Recent activity".
+    private func upcomingCard(_ reminders: [UpcomingReminder]) -> some View {
+        BrandCard {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Upcoming reminders").font(Theme.headline()).foregroundStyle(Theme.ink)
+                ForEach(reminders.prefix(6)) { reminder in
+                    let state = reminder.dueState(now: Date())
+                    HStack(spacing: 10) {
+                        Image(systemName: reminder.iconName)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(state.badgeTint)
+                            .frame(width: 18)
+                        Text(reminder.name)
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.ink)
+                            .lineLimit(1)
+                        Spacer(minLength: 8)
+                        Text(state.badgeText)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(state.badgeTint)
+                            .lineLimit(1)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("\(reminder.name), \(state.badgeText)")
+                }
+            }
         }
     }
 

@@ -14,6 +14,10 @@ import Observation
 final class CadenceCatalogueViewModel {
     private(set) var items: [CadenceItem] = []
 
+    /// Everything with a due date, most urgent first — including the vaccinations, vet visits and
+    /// refills that have no tile in the grid.
+    private(set) var upcoming: [UpcomingReminder] = []
+
     private let medicationStore: MedicationStore
     private let activityStore: ActivityStore
     private let logStore: LogStore
@@ -72,6 +76,58 @@ final class CadenceCatalogueViewModel {
             }
 
         items = (medications + activities).sorted(by: Self.ordering(now: now(), calendar: calendar))
+        loadUpcoming()
+    }
+
+    /// Builds the dated list. The grid's own items supply doses and activities; the three sources
+    /// below have due dates but no tile, and were previously invisible on Home entirely.
+    private func loadUpcoming() {
+        var out: [UpcomingReminder] = items.compactMap { item in
+            guard let due = item.nextDue else { return nil }
+            let source: UpcomingReminder.Source
+            switch item.source {
+            case .medication: source = .dose
+            case .activityType: source = .activity
+            }
+            return UpcomingReminder(id: "\(source.rawValue):\(item.id.uuidString)", source: source,
+                                    name: item.name, iconName: item.iconName, due: due)
+        }
+
+        for vaccine in (try? logStore.vaccines()) ?? [] {
+            guard let due = vaccine.nextDueAt else { continue }
+            out.append(UpcomingReminder(id: "vaccination:\(vaccine.id.uuidString)",
+                                        source: .vaccination,
+                                        name: vaccine.title ?? "Vaccination",
+                                        iconName: "syringe", due: due))
+        }
+
+        for visit in (try? logStore.vetVisits()) ?? [] {
+            guard let due = visit.nextDueAt else { continue }
+            out.append(UpcomingReminder(id: "vet:\(visit.id.uuidString)", source: .vetVisit,
+                                        name: visit.title ?? "Vet visit",
+                                        iconName: "stethoscope", due: due))
+        }
+
+        for med in (try? medicationStore.medications()) ?? [] {
+            guard let refill = med.refillDueAt,
+                  med.endedAt == nil || (med.endedAt.map { $0 > now() } ?? true) else { continue }
+            out.append(UpcomingReminder(id: "refill:\(med.id.uuidString)", source: .refill,
+                                        name: "Refill \(med.drugName)",
+                                        iconName: "pills.circle", due: refill))
+        }
+
+        // Overdue first (most overdue at the top), then due today, then soonest. Deliberately
+        // NOT filtered to `due >= now` — the card this replaces did that and so hid every
+        // overdue item, which is the one thing a reminder list must never do.
+        let clock = now()
+        out.sort { lhs, rhs in
+            let (l, r) = (lhs.dueState(now: clock, calendar: calendar).sortRank,
+                          rhs.dueState(now: clock, calendar: calendar).sortRank)
+            if l != r { return l < r }
+            if lhs.due != rhs.due { return lhs.due < rhs.due }
+            return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
+        }
+        upcoming = out
     }
 
     /// Overdue first (most overdue at the top), then due today, then soonest, then things with no
