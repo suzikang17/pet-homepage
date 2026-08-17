@@ -123,7 +123,15 @@ final class TimelineViewModel {
 
     /// The current filter applied (nil = everything).
     var filtered: [TimelineItem] {
-        guard let filter else { return items }
+        guard let filter else {
+            // A medication row is a prescription RECORD, not an event: it has no date of its own,
+            // so TimelineItem borrows `startedAt` — the NEXT REMINDER date, which is in the
+            // future. Left in the unfiltered feed those records sort above everything that
+            // actually happened, so a history view opens on a list of things that haven't
+            // occurred yet. Doses are first-class rows now, so the medication's real activity is
+            // still represented. The records stay reachable under the "Meds" filter below.
+            return items.filter { $0.kind != .medication }
+        }
         return items.filter { $0.kind == filter }
     }
 

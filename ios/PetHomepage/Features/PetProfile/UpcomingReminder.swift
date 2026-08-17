@@ -1,5 +1,5 @@
 // ios/PetHomepage/Features/PetProfile/UpcomingReminder.swift
-import Foundation
+import SwiftUI
 
 /// One dated thing on Home's "Upcoming reminders" list.
 ///
@@ -22,5 +22,33 @@ struct UpcomingReminder: Identifiable, Equatable {
 
     func dueState(now: Date, calendar: Calendar = .current) -> DueState {
         DueState.from(due: due, now: now, calendar: calendar)
+    }
+}
+
+/// One row of the upcoming list. Shared by Home's card and the Schedule tab's Upcoming subtab so
+/// the two can never drift into showing the same reminder differently.
+struct UpcomingReminderRow: View {
+    let reminder: UpcomingReminder
+    var now: Date = Date()
+
+    var body: some View {
+        let state = reminder.dueState(now: now)
+        HStack(spacing: 10) {
+            Image(systemName: reminder.iconName)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(state.badgeTint)
+                .frame(width: 18)
+            Text(reminder.name)
+                .font(.subheadline)
+                .foregroundStyle(Theme.ink)
+                .lineLimit(1)
+            Spacer(minLength: 8)
+            Text(state.badgeText)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(state.badgeTint)
+                .lineLimit(1)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(reminder.name), \(state.badgeText)")
     }
 }

@@ -203,24 +203,7 @@ struct PetProfileView: View {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Upcoming reminders").font(Theme.headline()).foregroundStyle(Theme.ink)
                 ForEach(reminders.prefix(6)) { reminder in
-                    let state = reminder.dueState(now: Date())
-                    HStack(spacing: 10) {
-                        Image(systemName: reminder.iconName)
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(state.badgeTint)
-                            .frame(width: 18)
-                        Text(reminder.name)
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.ink)
-                            .lineLimit(1)
-                        Spacer(minLength: 8)
-                        Text(state.badgeText)
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(state.badgeTint)
-                            .lineLimit(1)
-                    }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel("\(reminder.name), \(state.badgeText)")
+                    UpcomingReminderRow(reminder: reminder)
                 }
             }
         }

@@ -57,9 +57,17 @@ struct ScheduleView: View {
     private let petStore: PetStore
     @State private var walkModel: WalkSessionModel
 
+    /// Which subtab is showing. "Today" is the day-pager routine; "Upcoming" is every dated
+    /// reminder, including the vaccinations, vet visits and refills that have no routine slot.
+    private enum Tab: String, CaseIterable { case today = "Today", upcoming = "Upcoming" }
+    @State private var tab: Tab = .today
+    @State private var catalogue: CadenceCatalogueViewModel?
+    private let timelineServices: TimelineServices?
+
     init(store: RoutineStore, logStore: LogStore,
          reminderScheduler: RoutineReminderScheduler, petStore: PetStore,
-         walkSessions: WalkSessionStore) {
+         walkSessions: WalkSessionStore, timelineServices: TimelineServices? = nil) {
+        self.timelineServices = timelineServices
         self.store = store
         self.reminderScheduler = reminderScheduler
         self.petStore = petStore
@@ -81,18 +89,27 @@ struct ScheduleView: View {
                         onSettings: { showTemplateEditor = true },
                         settingsSymbol: "slider.horizontal.3"
                     )
-                    dayBar
-                    // Auto-detect setup nudge: only while a walk slot exists but detection
-                    // was never configured, and never after "Not now".
-                    if !walkSetupDismissed, walkHomeLat.isNaN,
-                       model.slots.contains(where: { $0.task.isWalk }) {
-                        WalkSetupCard(onSetUp: { showWalkSetup = true },
-                                      onDismiss: { walkSetupDismissed = true })
-                            .padding(.horizontal, 16)
+                    Picker("", selection: $tab) {
+                        ForEach(Tab.allCases, id: \.self) { Text($0.rawValue).tag($0) }
                     }
-                    WalkInProgressBanner(model: walkModel)
-                        .padding(.horizontal, 16)
-                    content
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal, 16)
+                    if tab == .today {
+                        dayBar
+                        // Auto-detect setup nudge: only while a walk slot exists but detection
+                        // was never configured, and never after "Not now".
+                        if !walkSetupDismissed, walkHomeLat.isNaN,
+                           model.slots.contains(where: { $0.task.isWalk }) {
+                            WalkSetupCard(onSetUp: { showWalkSetup = true },
+                                          onDismiss: { walkSetupDismissed = true })
+                                .padding(.horizontal, 16)
+                        }
+                        WalkInProgressBanner(model: walkModel)
+                            .padding(.horizontal, 16)
+                        content
+                    } else {
+                        upcomingList
+                    }
                 }
                 if let completion = model.toastCompletion {
                     photoToast(for: completion)
@@ -102,6 +119,7 @@ struct ScheduleView: View {
             .ignoresSafeArea(edges: .top)
             .toolbar(.hidden, for: .navigationBar)
             .onAppear {
+                refreshUpcoming()
                 // Sessions can start/end outside this view (notification actions, auto-end).
                 walkModel.refresh()
                 // Always land on Today: a left-open past/future day or a midnight rollover must
@@ -262,6 +280,39 @@ struct ScheduleView: View {
     }
 
     // MARK: - Checklist
+
+    @ViewBuilder
+    /// Rebuilds the upcoming list, reusing the view model across appearances so it is not
+    /// reconstructed on every tab switch.
+    private func refreshUpcoming() {
+        guard let s = timelineServices else { return }
+        let vm = catalogue ?? CadenceCatalogueViewModel(
+            medicationStore: s.medicationStore,
+            activityStore: s.activityStore,
+            logStore: s.logStore,
+            reminderScheduler: s.reminderScheduler,
+            dueScheduler: s.dueScheduler)
+        vm.load()
+        catalogue = vm
+    }
+
+    /// Every dated reminder, most urgent first. The day-pager answers "what is left today";
+    /// this answers "what is coming", including the vaccinations, vet visits and refills that
+    /// have no routine slot and therefore never appeared on this tab at all.
+    @ViewBuilder
+    private var upcomingList: some View {
+        if let reminders = catalogue?.upcoming, !reminders.isEmpty {
+            List(reminders) { UpcomingReminderRow(reminder: $0) }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+        } else {
+            ContentUnavailableView(
+                "Nothing coming up",
+                systemImage: "bell.slash",
+                description: Text("Vaccinations, vet visits, refills and anything on a cadence will show up here.")
+            )
+        }
+    }
 
     @ViewBuilder
     private var content: some View {

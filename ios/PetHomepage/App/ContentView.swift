@@ -175,7 +175,7 @@ struct ContentView: View {
                 .tag(0)
             ScheduleView(store: routineStore, logStore: logStore,
                          reminderScheduler: routineReminderScheduler, petStore: petStore,
-                         walkSessions: walkSessions)
+                         walkSessions: walkSessions, timelineServices: timelineServices)
                 .tabItem { Label("Schedule", systemImage: "checklist") }
                 .tag(3)
             TimelineView(services: timelineServices, onCapture: { startCapture() },

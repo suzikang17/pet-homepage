@@ -210,12 +210,9 @@ struct TimelineView: View {
                 .font(.caption).foregroundStyle(Theme.inkSoft)
             }
             Spacer(minLength: 6)
-            if let due = item.nextDue {
-                VStack(alignment: .trailing, spacing: 1) {
-                    Text("NEXT").font(.system(size: 9, weight: .heavy)).foregroundStyle(Theme.inkSoft)
-                    Text(due, format: .dateTime.month().day()).font(.caption.weight(.bold)).foregroundStyle(Theme.primary)
-                }
-            }
+            // No "NEXT <date>" badge: the Timeline is a record of what HAPPENED. Upcoming due
+            // dates live on Home's "Upcoming reminders" and the Schedule tab's Upcoming subtab,
+            // so a row here never mixes the two.
         }
         .padding(.vertical, 4)
         .contentShape(Rectangle())
