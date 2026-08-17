@@ -56,9 +56,8 @@ final class MedicationDoseLogger {
             return nil
         }
         try? logStore.logDose(for: medication, at: given, note: note)
-        // `startedAt` is this model's "next reminder date", not when the course began.
         let next = nextDue(for: medication, after: given)
-        medication.startedAt = next
+        medication.nextReminder = next
         try? medication.managedObjectContext?.save()
         await reminderScheduler.sync(medication)
         return next

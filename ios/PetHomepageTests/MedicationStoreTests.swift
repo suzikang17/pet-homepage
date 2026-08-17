@@ -26,7 +26,7 @@ final class MedicationStoreTests: XCTestCase {
 
         let store = MedicationStore(context: freshContext, petStore: freshPetStore)
         try store.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily",
-                         scheduleTime: Date(), startedAt: Date(), endedAt: nil, refillDueAt: nil)
+                         scheduleTime: Date(), nextReminderAt: Date(), endedAt: nil, refillDueAt: nil)
 
         let meds = try store.medications()
         XCTAssertEqual(meds.count, 1, "med must save + list even with no pre-existing pet")
@@ -41,7 +41,7 @@ final class MedicationStoreTests: XCTestCase {
                          dosage: "1 chew",
                          frequency: "monthly",
                          scheduleTime: scheduleTime,
-                         startedAt: scheduleTime,
+                         nextReminderAt: scheduleTime,
                          refillDueAt: nil)
 
         let meds = try store.medications()
@@ -54,8 +54,8 @@ final class MedicationStoreTests: XCTestCase {
     func testMedicationsAreSortedByDrugName() throws {
         let store = MedicationStore(context: context, petStore: petStore)
         let t = Date(timeIntervalSince1970: 0)
-        try store.create(drugName: "Zyrtec", dosage: "5mg", frequency: "daily", scheduleTime: t, startedAt: t, refillDueAt: nil)
-        try store.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily", scheduleTime: t, startedAt: t, refillDueAt: nil)
+        try store.create(drugName: "Zyrtec", dosage: "5mg", frequency: "daily", scheduleTime: t, nextReminderAt: t, refillDueAt: nil)
+        try store.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily", scheduleTime: t, nextReminderAt: t, refillDueAt: nil)
 
         let names = try store.medications().map(\.drugName)
         XCTAssertEqual(names, ["Apoquel", "Zyrtec"])
@@ -64,11 +64,11 @@ final class MedicationStoreTests: XCTestCase {
     func testUpdateChangesFields() throws {
         let store = MedicationStore(context: context, petStore: petStore)
         let t = Date(timeIntervalSince1970: 0)
-        let med = try store.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily", scheduleTime: t, startedAt: t, refillDueAt: nil)
+        let med = try store.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily", scheduleTime: t, nextReminderAt: t, refillDueAt: nil)
 
         let later = Date(timeIntervalSince1970: 86_400)
         try store.update(med, drugName: "Apoquel", dosage: "8mg", frequency: "twice daily",
-                         scheduleTime: t, startedAt: t, endedAt: nil, refillDueAt: later)
+                         scheduleTime: t, nextReminderAt: t, endedAt: nil, refillDueAt: later)
 
         let fetched = try store.medications().first
         XCTAssertEqual(fetched?.dosage, "8mg")
@@ -79,7 +79,7 @@ final class MedicationStoreTests: XCTestCase {
     func testDeleteRemovesMedication() throws {
         let store = MedicationStore(context: context, petStore: petStore)
         let t = Date(timeIntervalSince1970: 0)
-        let med = try store.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily", scheduleTime: t, startedAt: t, refillDueAt: nil)
+        let med = try store.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily", scheduleTime: t, nextReminderAt: t, refillDueAt: nil)
 
         try store.delete(med)
 

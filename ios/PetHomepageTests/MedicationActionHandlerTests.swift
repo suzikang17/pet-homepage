@@ -32,7 +32,7 @@ final class MedicationActionHandlerTests: XCTestCase {
     private func makeMonthlyMed() throws -> Medication {
         let start = calendar.date(from: DateComponents(year: 2026, month: 3, day: 14, hour: 9))!
         return try medStore.create(drugName: "Simparica", dosage: "1 chew", frequency: "Monthly",
-                                   scheduleTime: start, startedAt: start, refillDueAt: nil)
+                                   scheduleTime: start, nextReminderAt: start, refillDueAt: nil)
     }
 
     private func handler(now: @escaping () -> Date,
@@ -52,7 +52,7 @@ final class MedicationActionHandlerTests: XCTestCase {
 
         XCTAssertEqual(try logStore.doseCount(for: med), 1, "the action should record one dose")
         // Cadence advances a month from the dose, at the medication's scheduled time.
-        let next = try XCTUnwrap(calendar.dateComponents([.year, .month, .day], from: med.startedAt) as DateComponents?)
+        let next = try XCTUnwrap(calendar.dateComponents([.year, .month, .day], from: med.nextReminder) as DateComponents?)
         XCTAssertEqual(next.month, 4)
         XCTAssertEqual(next.day, 14)
     }

@@ -25,7 +25,7 @@ final class LogDoseViewModelTests: XCTestCase {
         let cal = Calendar(identifier: .gregorian)
         let eightAM = cal.date(from: DateComponents(year: 2026, month: 1, day: 1, hour: 8))!
         return try store.create(drugName: "Apoquel", dosage: "16mg", frequency: frequency,
-                                scheduleTime: eightAM, startedAt: eightAM, endedAt: nil, refillDueAt: nil)
+                                scheduleTime: eightAM, nextReminderAt: eightAM, endedAt: nil, refillDueAt: nil)
     }
 
     override func tearDownWithError() throws {
@@ -59,7 +59,7 @@ final class LogDoseViewModelTests: XCTestCase {
         XCTAssertTrue(vm.isConfirmed)
         XCTAssertEqual(vm.doseCount, 1)
         XCTAssertNotNil(vm.confirmedNextReminder)
-        XCTAssertEqual(med.startedAt, vm.confirmedNextReminder, "logging a dose reschedules the next reminder")
+        XCTAssertEqual(med.nextReminder, vm.confirmedNextReminder, "logging a dose reschedules the next reminder")
         let logs = try logStore.doses(for: med)
         XCTAssertEqual(logs.first?.note, "with food")
         XCTAssertEqual(logs.first?.performedAt, Date(timeIntervalSince1970: 1_000_000))

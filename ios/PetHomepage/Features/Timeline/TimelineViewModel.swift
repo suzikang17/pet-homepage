@@ -125,7 +125,7 @@ final class TimelineViewModel {
     var filtered: [TimelineItem] {
         guard let filter else {
             // A medication row is a prescription RECORD, not an event: it has no date of its own,
-            // so TimelineItem borrows `startedAt` — the NEXT REMINDER date, which is in the
+            // so TimelineItem borrows `nextReminder` — a FUTURE date, which is in the
             // future. Left in the unfiltered feed those records sort above everything that
             // actually happened, so a history view opens on a list of things that haven't
             // occurred yet. Doses are first-class rows now, so the medication's real activity is
@@ -188,7 +188,7 @@ final class TimelineViewModel {
             try? services.medicationStore.delete(m)
         case .dose(let d):
             // Deleting a dose must move the cadence back to follow whatever dose is now newest —
-            // `startedAt` IS the next-reminder date, so leaving it advanced points the reminder a
+            // `nextReminder` is exactly that, so leaving it advanced points the reminder a
             // full interval past a dose that no longer exists. Same repair as
             // MedicationDetailViewModel.deleteDose.
             let med = d.medication
@@ -197,7 +197,7 @@ final class TimelineViewModel {
                 let logger = MedicationDoseLogger(logStore: services.logStore,
                                                   reminderScheduler: services.reminderScheduler)
                 if let newest = try? services.logStore.doses(for: med).first {
-                    med.startedAt = logger.nextDue(for: med, after: newest.performedAt)
+                    med.nextReminder = logger.nextDue(for: med, after: newest.performedAt)
                     try? med.managedObjectContext?.save()
                 }
                 await services.reminderScheduler.sync(med)
@@ -273,7 +273,7 @@ extension TimelineItem {
         self.init(
             id: "med:\(m.id.uuidString)",
             kind: .medication,
-            date: m.startedAt,
+            date: m.nextReminder,
             title: m.drugName,
             subtitle: [m.dosage, m.frequency].filter { !$0.isEmpty }.joined(separator: " · "),
             nextDue: m.refillDueAt,

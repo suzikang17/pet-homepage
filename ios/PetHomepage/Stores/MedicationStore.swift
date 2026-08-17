@@ -16,7 +16,7 @@ final class MedicationStore {
                 dosage: String,
                 frequency: String,
                 scheduleTime: Date,
-                startedAt: Date,
+                nextReminderAt: Date,
                 endedAt: Date? = nil,
                 refillDueAt: Date?) throws -> Medication {
         let med = Medication(context: context)
@@ -25,7 +25,7 @@ final class MedicationStore {
         med.dosage = dosage
         med.frequency = frequency
         med.scheduleTime = scheduleTime
-        med.startedAt = startedAt
+        med.nextReminder = nextReminderAt
         med.endedAt = endedAt
         med.refillDueAt = refillDueAt
         med.pet = try petStore.ensurePet()
@@ -47,14 +47,14 @@ final class MedicationStore {
                 dosage: String,
                 frequency: String,
                 scheduleTime: Date,
-                startedAt: Date,
+                nextReminderAt: Date,
                 endedAt: Date?,
                 refillDueAt: Date?) throws {
         medication.drugName = drugName
         medication.dosage = dosage
         medication.frequency = frequency
         medication.scheduleTime = scheduleTime
-        medication.startedAt = startedAt
+        medication.nextReminder = nextReminderAt
         medication.endedAt = endedAt
         medication.refillDueAt = refillDueAt
         try context.save()

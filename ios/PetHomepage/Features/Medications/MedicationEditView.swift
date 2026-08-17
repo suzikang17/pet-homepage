@@ -53,7 +53,7 @@ struct MedicationEditView: View {
             }
             Section {
                 DatePicker("Reminder time", selection: $model.scheduleTime, displayedComponents: .hourAndMinute)
-                DatePicker("Next reminder", selection: $model.startedAt, displayedComponents: .date)
+                DatePicker("Next reminder", selection: $model.nextReminder, displayedComponents: .date)
             } header: {
                 Text("Reminder")
             } footer: {

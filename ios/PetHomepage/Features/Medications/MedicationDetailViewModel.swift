@@ -52,7 +52,7 @@ final class MedicationDetailViewModel {
     /// Deletes one logged dose and moves the cadence back to follow whatever dose is now newest.
     ///
     /// Without this the delete was a half-undo: the dose vanished from history while
-    /// `medication.startedAt` — this model's next-reminder date — stayed advanced, so the next
+    /// `medication.nextReminder` stayed advanced, so the next
     /// reminder pointed a full interval past a dose that no longer existed. Deleting an older
     /// dose recomputes to the same value, so this is safe to run unconditionally.
     @MainActor
@@ -60,7 +60,7 @@ final class MedicationDetailViewModel {
         try? logStore.delete(log)
         load()
         if let newest = doses.first {
-            medication.startedAt = doseLogger.nextDue(for: medication, after: newest.performedAt)
+            medication.nextReminder = doseLogger.nextDue(for: medication, after: newest.performedAt)
             try? medication.managedObjectContext?.save()
         }
         await reminderScheduler.sync(medication)

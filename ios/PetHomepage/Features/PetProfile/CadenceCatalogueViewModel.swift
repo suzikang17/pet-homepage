@@ -55,8 +55,7 @@ final class CadenceCatalogueViewModel {
                     iconName: "pills.fill",
                     subtitle: med.dosage,
                     lastDone: try? logStore.lastDose(for: med),
-                    // `startedAt` is this model's "next reminder date", not when the course began.
-                    nextDue: med.startedAt)
+                    nextDue: med.nextReminder)
             }
 
         // Only types with a real cadence. defaultIntervalDays == 0 means a one-off log type,
@@ -156,7 +155,7 @@ final class CadenceCatalogueViewModel {
     /// the strip is dismissed or undone.
     ///
     /// `previousStartedAt` is captured rather than recomputed on undo: for a medication,
-    /// `startedAt` IS the next-reminder date, and recomputing it from whatever dose is newest
+    /// `nextReminder` is the next-reminder date, and recomputing it from whatever dose is newest
     /// after deletion silently fails when the undone dose was the only one — leaving the reminder
     /// pushed out for a dose that no longer exists.
     struct LoggedRecord: Equatable {
@@ -182,7 +181,7 @@ final class CadenceCatalogueViewModel {
             try? logStore.delete(entry)
             // Restore the exact next-reminder date the log overwrote.
             if let previous = record.previousStartedAt {
-                med.startedAt = previous
+                med.nextReminder = previous
             }
             try? medicationStore.context.save()
             await reminderScheduler.sync(med)
@@ -212,7 +211,7 @@ final class CadenceCatalogueViewModel {
                                               calendar: calendar, now: now)
             // nil means the same-day dedupe swallowed it — nothing was written, so there is
             // nothing to offer an Undo for.
-            let previousStartedAt = med.startedAt
+            let previousStartedAt = med.nextReminder
             guard await logger.log(med, at: when) != nil,
                   let entry = try? logStore.doses(for: med).first else { break }
             lastLogged = LoggedRecord(item: item, entry: entry,

@@ -23,7 +23,7 @@ final class DiaryStoreTests: XCTestCase {
     private func makeMedication() throws -> Medication {
         let medStore = MedicationStore(context: context, petStore: petStore)
         return try medStore.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily",
-                                   scheduleTime: Date(), startedAt: Date(), endedAt: nil, refillDueAt: nil)
+                                   scheduleTime: Date(), nextReminderAt: Date(), endedAt: nil, refillDueAt: nil)
     }
 
     override func tearDownWithError() throws {

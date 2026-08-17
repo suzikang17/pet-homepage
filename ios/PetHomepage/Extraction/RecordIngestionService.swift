@@ -82,7 +82,10 @@ final class RecordIngestionService {
                 dosage: f.dosage ?? "",
                 frequency: f.frequency ?? "daily",
                 scheduleTime: result.occurredAt,
-                startedAt: parseDay(f.startedAt) ?? result.occurredAt,
+                // The extracted record's start date seeds the first reminder; behaviour
+                // unchanged by the rename, though seeding from a PAST start date is a
+                // separate latent issue (the reminder then fires immediately).
+                nextReminderAt: parseDay(f.startedAt) ?? result.occurredAt,
                 endedAt: nil,
                 refillDueAt: parseDay(f.refillDueAt)
             )

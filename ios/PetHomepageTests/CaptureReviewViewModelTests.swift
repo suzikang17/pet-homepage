@@ -100,7 +100,7 @@ final class CaptureReviewViewModelTests: XCTestCase {
             dosage: "50mg",
             frequency: "Once daily",
             scheduleTime: Date(timeIntervalSince1970: 0),
-            startedAt: Date(timeIntervalSince1970: 0),
+            nextReminderAt: Date(timeIntervalSince1970: 0),
             endedAt: nil,
             refillDueAt: nil
         )
@@ -175,7 +175,7 @@ final class CaptureReviewViewModelTests: XCTestCase {
             dosage: "10mg",
             frequency: "Once daily",
             scheduleTime: Date(),
-            startedAt: Date(timeIntervalSinceNow: -1000),
+            nextReminderAt: Date(timeIntervalSinceNow: -1000),
             endedAt: Date(timeIntervalSinceNow: -100),
             refillDueAt: nil
         )
@@ -184,7 +184,7 @@ final class CaptureReviewViewModelTests: XCTestCase {
             dosage: "20mg",
             frequency: "Twice daily",
             scheduleTime: Date(),
-            startedAt: Date(timeIntervalSinceNow: -1000),
+            nextReminderAt: Date(timeIntervalSinceNow: -1000),
             endedAt: nil,
             refillDueAt: nil
         )

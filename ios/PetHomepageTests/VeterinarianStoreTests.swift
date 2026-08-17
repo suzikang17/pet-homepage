@@ -43,7 +43,7 @@ final class VeterinarianStoreTests: XCTestCase {
         let vet = try store.create(name: "Dr. Ruth")
         let medStore = MedicationStore(context: context, petStore: petStore)
         let med = try medStore.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily",
-                                      scheduleTime: Date(), startedAt: Date(), endedAt: nil, refillDueAt: nil)
+                                      scheduleTime: Date(), nextReminderAt: Date(), endedAt: nil, refillDueAt: nil)
         med.veterinarian = vet
         try context.save()
 

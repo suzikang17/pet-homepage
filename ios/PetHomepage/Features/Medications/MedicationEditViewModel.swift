@@ -19,10 +19,10 @@ final class MedicationEditViewModel {
     /// frequency rather than defaulting to today. Called when the user changes the frequency.
     func resetNextReminderFromFrequency(now: Date = Date()) {
         let component = frequencyUnit.calendarComponent
-        startedAt = Calendar.current.date(byAdding: component, value: max(1, frequencyInterval), to: now) ?? now
+        nextReminder = Calendar.current.date(byAdding: component, value: max(1, frequencyInterval), to: now) ?? now
     }
 
-    var startedAt: Date = Date()
+    var nextReminder: Date = Date()
     var hasRefillDue: Bool = false
     var refillDueAt: Date = Date()
     var hasEnded: Bool = false
@@ -49,7 +49,7 @@ final class MedicationEditViewModel {
             frequencyInterval = parsed.interval
             frequencyUnit = parsed.unit
             scheduleTime = med.scheduleTime
-            startedAt = med.startedAt
+            nextReminder = med.nextReminder
             if let refill = med.refillDueAt {
                 hasRefillDue = true
                 refillDueAt = refill
@@ -78,7 +78,7 @@ final class MedicationEditViewModel {
                              dosage: dosage,
                              frequency: frequencyLabel,
                              scheduleTime: scheduleTime,
-                             startedAt: startedAt,
+                             nextReminderAt: nextReminder,
                              endedAt: ended,
                              refillDueAt: refill)
             medication = existing
@@ -92,7 +92,7 @@ final class MedicationEditViewModel {
                                           dosage: dosage,
                                           frequency: frequencyLabel,
                                           scheduleTime: scheduleTime,
-                                          startedAt: startedAt,
+                                          nextReminderAt: nextReminder,
                                           endedAt: ended,
                                           refillDueAt: refill)
         }

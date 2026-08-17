@@ -56,7 +56,7 @@ final class LogStoreTests: XCTestCase {
 
     func testLogDoseIsDoseKindAndQueryable() throws {
         let med = Medication(context: context)
-        med.id = UUID(); med.drugName = "Apoquel"; med.dosage = "16mg"; med.frequency = "daily"; med.startedAt = Date()
+        med.id = UUID(); med.drugName = "Apoquel"; med.dosage = "16mg"; med.frequency = "daily"; med.nextReminder = Date()
         med.pet = try petStore.ensurePet()
         try store.logDose(for: med, at: Date(timeIntervalSince1970: 100), note: nil)
         try store.logDose(for: med, at: Date(timeIntervalSince1970: 300), note: nil)
@@ -86,7 +86,7 @@ final class LogStoreTests: XCTestCase {
 
     func testBackfillKindsIfNeededCorrectsEntriesButLeavesDiaryAlone() throws {
         let med = Medication(context: context)
-        med.id = UUID(); med.drugName = "Apoquel"; med.dosage = "16mg"; med.frequency = "daily"; med.startedAt = Date()
+        med.id = UUID(); med.drugName = "Apoquel"; med.dosage = "16mg"; med.frequency = "daily"; med.nextReminder = Date()
         med.pet = try petStore.ensurePet()
 
         let type = ActivityType(context: context)

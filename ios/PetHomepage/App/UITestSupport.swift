@@ -31,7 +31,7 @@ enum UITestSupport {
             dosage: "16mg",
             frequency: "daily",
             scheduleTime: now,
-            startedAt: now,
+            nextReminderAt: now,
             endedAt: nil,
             refillDueAt: nil
         )

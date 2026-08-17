@@ -22,7 +22,7 @@ final class MedicationDoseLoggerTests: XCTestCase {
     private func monthlyMed() throws -> Medication {
         let start = calendar.date(from: DateComponents(year: 2026, month: 3, day: 14, hour: 9))!
         return try medStore.create(drugName: "Simparica", dosage: "1 chew", frequency: "Monthly",
-                                   scheduleTime: start, startedAt: start, refillDueAt: nil)
+                                   scheduleTime: start, nextReminderAt: start, refillDueAt: nil)
     }
 
     private func logger(now: @escaping () -> Date) -> MedicationDoseLogger {
@@ -45,7 +45,7 @@ final class MedicationDoseLoggerTests: XCTestCase {
         XCTAssertEqual(comps.month, 4)
         XCTAssertEqual(comps.day, 14)
         XCTAssertEqual(comps.hour, 9, "next due keeps the medication's scheduled time of day")
-        XCTAssertEqual(med.startedAt, next, "startedAt IS the next-reminder date in this model")
+        XCTAssertEqual(med.nextReminder, next, "nextReminder is advanced to follow the dose")
     }
 
     func testSecondLogOnSameDayIsDeduped() async throws {
@@ -75,11 +75,11 @@ final class MedicationDoseLoggerTests: XCTestCase {
     func testNextDueIsPureAndDoesNotMutate() throws {
         let med = try monthlyMed()
         let now = calendar.date(from: DateComponents(year: 2026, month: 3, day: 14, hour: 9))!
-        let before = med.startedAt
+        let before = med.nextReminder
 
         _ = logger(now: { now }).nextDue(for: med, after: now)
 
-        XCTAssertEqual(med.startedAt, before, "nextDue must not write to the medication")
+        XCTAssertEqual(med.nextReminder, before, "nextDue must not write to the medication")
         XCTAssertEqual(try logStore.doseCount(for: med), 0)
     }
 }

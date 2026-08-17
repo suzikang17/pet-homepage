@@ -23,7 +23,7 @@ final class MedicationReminderSchedulerTests: XCTestCase {
         comps.minute = minute
         let scheduleTime = calendar.date(from: comps)!
         let med = try medStore.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily",
-                                      scheduleTime: scheduleTime, startedAt: scheduleTime, refillDueAt: nil)
+                                      scheduleTime: scheduleTime, nextReminderAt: scheduleTime, refillDueAt: nil)
         if ended {
             med.endedAt = Date(timeIntervalSince1970: 0) // far in the past
             try context.save()
@@ -51,7 +51,7 @@ final class MedicationReminderSchedulerTests: XCTestCase {
         let scheduleTime = Date(timeIntervalSince1970: 8 * 3600)    // 08:00
         let med = try medStore.create(drugName: "Heartgard", dosage: "1",
                                       frequency: "Every 3 days",
-                                      scheduleTime: scheduleTime, startedAt: start, refillDueAt: nil)
+                                      scheduleTime: scheduleTime, nextReminderAt: start, refillDueAt: nil)
         let fixedNow = Date(timeIntervalSince1970: 10 * 86_400 + 9 * 3600) // day 10, 09:00
         let scheduler = MedicationReminderScheduler(scheduler: FakeNotificationScheduler(),
                                                     calendar: utc, now: { fixedNow })
@@ -76,7 +76,7 @@ final class MedicationReminderSchedulerTests: XCTestCase {
         let start = utc.date(from: DateComponents(year: 2026, month: 3, day: 14, hour: 9))!
         let med = try medStore.create(drugName: "Simparica", dosage: "1 chew",
                                       frequency: "Monthly",
-                                      scheduleTime: start, startedAt: start, refillDueAt: nil)
+                                      scheduleTime: start, nextReminderAt: start, refillDueAt: nil)
         let fixedNow = utc.date(from: DateComponents(year: 2026, month: 3, day: 20))!
         let scheduler = MedicationReminderScheduler(scheduler: FakeNotificationScheduler(),
                                                     calendar: utc, now: { fixedNow })
@@ -97,7 +97,7 @@ final class MedicationReminderSchedulerTests: XCTestCase {
         let start = utc.date(from: DateComponents(year: 2026, month: 3, day: 14, hour: 9))!
         let med = try medStore.create(drugName: "Apoquel", dosage: "16mg",
                                       frequency: "Weekly",
-                                      scheduleTime: start, startedAt: start, refillDueAt: nil)
+                                      scheduleTime: start, nextReminderAt: start, refillDueAt: nil)
         let fixedNow = utc.date(from: DateComponents(year: 2026, month: 3, day: 16))!
         let scheduler = MedicationReminderScheduler(scheduler: FakeNotificationScheduler(),
                                                     calendar: utc, now: { fixedNow })
@@ -118,7 +118,7 @@ final class MedicationReminderSchedulerTests: XCTestCase {
         let start = utc.date(from: DateComponents(year: 2026, month: 1, day: 31, hour: 9))!
         let med = try medStore.create(drugName: "Interceptor", dosage: "1",
                                       frequency: "Monthly",
-                                      scheduleTime: start, startedAt: start, refillDueAt: nil)
+                                      scheduleTime: start, nextReminderAt: start, refillDueAt: nil)
         let fixedNow = utc.date(from: DateComponents(year: 2026, month: 2, day: 2))!
         let scheduler = MedicationReminderScheduler(scheduler: FakeNotificationScheduler(),
                                                     calendar: utc, now: { fixedNow })
@@ -139,7 +139,7 @@ final class MedicationReminderSchedulerTests: XCTestCase {
         let med = try medStore.create(drugName: "Heartgard", dosage: "1",
                                       frequency: "Every 3 days",
                                       scheduleTime: Date(timeIntervalSince1970: 8 * 3600),
-                                      startedAt: start, refillDueAt: nil)
+                                      nextReminderAt: start, refillDueAt: nil)
         let scheduler = MedicationReminderScheduler(
             scheduler: FakeNotificationScheduler(), calendar: utc,
             now: { Date(timeIntervalSince1970: 10 * 86_400 + 9 * 3600) })

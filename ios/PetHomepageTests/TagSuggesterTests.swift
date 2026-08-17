@@ -132,7 +132,7 @@ final class TagSuggesterViewModelTests: XCTestCase {
             dosage: "1 chew",
             frequency: "Monthly",
             scheduleTime: Date(),
-            startedAt: Date(timeIntervalSinceNow: -1000),
+            nextReminderAt: Date(timeIntervalSinceNow: -1000),
             endedAt: nil,
             refillDueAt: nil
         )
@@ -151,7 +151,7 @@ final class TagSuggesterViewModelTests: XCTestCase {
             dosage: "1 chew",
             frequency: "Monthly",
             scheduleTime: Date(),
-            startedAt: Date(timeIntervalSinceNow: -1000),
+            nextReminderAt: Date(timeIntervalSinceNow: -1000),
             endedAt: nil,
             refillDueAt: nil
         )

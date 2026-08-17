@@ -30,7 +30,7 @@ struct MedicationDetailView: View {
                     LabeledContent("Veterinarian", value: vet.name)
                 }
                 LabeledContent("Next reminder") {
-                    Text(med.startedAt, format: .dateTime.month().day().year())
+                    Text(med.nextReminder, format: .dateTime.month().day().year())
                 }
                 if let refill = med.refillDueAt {
                     LabeledContent("Refill due") { Text(refill, format: .dateTime.month().day().year()) }

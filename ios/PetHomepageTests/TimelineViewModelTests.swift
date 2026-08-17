@@ -39,7 +39,7 @@ final class TimelineViewModelTests: XCTestCase {
     func testLoadAggregatesEveryTypeNewestFirst() throws {
         _ = try logStore.logVaccine(name: "Rabies", performedAt: day(10), nextDueAt: nil, lotNumber: nil, administeredBy: nil)
         _ = try logStore.logVetVisit(occurredAt: day(30), clinicName: "Bayside", vetName: nil, reason: "Checkup", diagnosis: nil, treatmentNotes: nil, nextVisitDate: nil)
-        _ = try medicationStore.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily", scheduleTime: day(20), startedAt: day(20), endedAt: nil, refillDueAt: nil)
+        _ = try medicationStore.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily", scheduleTime: day(20), nextReminderAt: day(20), endedAt: nil, refillDueAt: nil)
         try logStore.logMarker(type: .weight, value: 31, unit: "kg", recordedAt: day(5))
 
         let vm = makeVM()
@@ -65,7 +65,7 @@ final class TimelineViewModelTests: XCTestCase {
 
     func testFilterRestrictsToOneKind() throws {
         _ = try logStore.logVaccine(name: "Rabies", performedAt: day(1), nextDueAt: nil, lotNumber: nil, administeredBy: nil)
-        _ = try medicationStore.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily", scheduleTime: day(1), startedAt: day(1), endedAt: nil, refillDueAt: nil)
+        _ = try medicationStore.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily", scheduleTime: day(1), nextReminderAt: day(1), endedAt: nil, refillDueAt: nil)
 
         let vm = makeVM()
         vm.load()
@@ -79,7 +79,7 @@ final class TimelineViewModelTests: XCTestCase {
         let inDays: (Int) -> Date = { now.addingTimeInterval(Double($0) * 86_400) }
         _ = try logStore.logVaccine(name: "DHPP", performedAt: now, nextDueAt: inDays(20), lotNumber: nil, administeredBy: nil)
         _ = try logStore.logVetVisit(occurredAt: now, clinicName: "Bayside", vetName: nil, reason: nil, diagnosis: nil, treatmentNotes: nil, nextVisitDate: inDays(5))
-        _ = try medicationStore.create(drugName: "X", dosage: "", frequency: "", scheduleTime: now, startedAt: now, endedAt: nil, refillDueAt: inDays(90))
+        _ = try medicationStore.create(drugName: "X", dosage: "", frequency: "", scheduleTime: now, nextReminderAt: now, endedAt: nil, refillDueAt: inDays(90))
 
         let vm = makeVM()
         vm.load()
@@ -111,7 +111,7 @@ final class TimelineViewModelTests: XCTestCase {
         let fake = FakeNotificationScheduler()
         let reminderScheduler = MedicationReminderScheduler(scheduler: fake)
         let med = try medicationStore.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily",
-                                             scheduleTime: day(1), startedAt: day(1), endedAt: nil, refillDueAt: nil)
+                                             scheduleTime: day(1), nextReminderAt: day(1), endedAt: nil, refillDueAt: nil)
         await reminderScheduler.sync(med)
         let before = await fake.pendingIDs(kind: .medication)
         XCTAssertEqual(before, [med.id])
@@ -293,7 +293,7 @@ final class TimelineViewModelTests: XCTestCase {
     func testDosesAppearInTheStreamDatedWhenTheyWereGiven() throws {
         let med = try medicationStore.create(drugName: "Simparica", dosage: "1 chew",
                                              frequency: "Monthly", scheduleTime: day(1),
-                                             startedAt: day(40), endedAt: nil, refillDueAt: nil)
+                                             nextReminderAt: day(40), endedAt: nil, refillDueAt: nil)
         _ = try logStore.logDose(for: med, at: day(10), note: "with food")
 
         let vm = makeVM()
@@ -307,13 +307,13 @@ final class TimelineViewModelTests: XCTestCase {
         XCTAssertNil(dose.nextDue, "a dose is an event; it has no due date of its own")
     }
 
-    /// The medication ROW borrows `startedAt` — the next-reminder date — because a prescription
+    /// The medication ROW borrows `nextReminder` — a future date — because a prescription
     /// has no event date. That is why it must never be mistaken for recent history: it sorts into
     /// the future. This pins the distinction the Home card now relies on.
     func testMedicationRowIsDatedInTheFutureWhileItsDoseIsNot() throws {
         let med = try medicationStore.create(drugName: "Simparica", dosage: "1 chew",
                                              frequency: "Monthly", scheduleTime: day(1),
-                                             startedAt: day(40), endedAt: nil, refillDueAt: nil)
+                                             nextReminderAt: day(40), endedAt: nil, refillDueAt: nil)
         _ = try logStore.logDose(for: med, at: day(10))
 
         let vm = makeVM()
@@ -331,11 +331,11 @@ final class TimelineViewModelTests: XCTestCase {
         let reminderScheduler = MedicationReminderScheduler(scheduler: fake)
         let med = try medicationStore.create(drugName: "Simparica", dosage: "1 chew",
                                              frequency: "Monthly", scheduleTime: day(1),
-                                             startedAt: day(1), endedAt: nil, refillDueAt: nil)
+                                             nextReminderAt: day(1), endedAt: nil, refillDueAt: nil)
         let logger = MedicationDoseLogger(logStore: logStore, reminderScheduler: reminderScheduler)
         await logger.log(med, at: day(10))
         await logger.log(med, at: day(50))
-        let advanced = med.startedAt
+        let advanced = med.nextReminder
 
         let vm = makeVM()
         vm.load()
@@ -346,9 +346,9 @@ final class TimelineViewModelTests: XCTestCase {
             dueScheduler: DueReminderScheduler(scheduler: FakeNotificationScheduler())))
 
         XCTAssertEqual(try logStore.doses(for: med).count, 1)
-        XCTAssertNotEqual(med.startedAt, advanced,
+        XCTAssertNotEqual(med.nextReminder, advanced,
                           "the cadence must not stay pinned to the deleted dose")
-        XCTAssertEqual(med.startedAt, logger.nextDue(for: med, after: day(10)),
+        XCTAssertEqual(med.nextReminder, logger.nextDue(for: med, after: day(10)),
                        "it should follow the dose that is now newest")
     }
 }

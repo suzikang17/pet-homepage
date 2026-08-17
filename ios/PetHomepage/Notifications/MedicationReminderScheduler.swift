@@ -43,7 +43,7 @@ final class MedicationReminderScheduler {
         // A bare hour/minute trigger already repeats daily.
         if freq.interval <= 1, freq.unit == .day { return pending(nil) }
 
-        let next = freq.nextOccurrence(after: now(), start: medication.startedAt,
+        let next = freq.nextOccurrence(after: now(), start: medication.nextReminder,
                                        time: medication.scheduleTime, calendar: calendar)
 
         // Single-unit cadences the calendar can express natively: let iOS repeat them, so the
@@ -61,7 +61,7 @@ final class MedicationReminderScheduler {
                 // `next` would see 28 for a 31st-anchored med and silently pin it to the 28th
                 // of every month thereafter. Days 29–31 have no honest repeating form — a
                 // repeating trigger skips the months that lack them — so they stay one-shot.
-                let anchorDay = calendar.component(.day, from: medication.startedAt)
+                let anchorDay = calendar.component(.day, from: medication.nextReminder)
                 if anchorDay <= 28 {
                     var comps = DateComponents()
                     comps.day = anchorDay

@@ -26,14 +26,9 @@ struct ContentView: View {
     /// v1 default vet-visit cadence: see the vet every 6 months.
     private let vetCadenceMonths = 6
 
-    // Center camera tab: it's a pseudo-tab (index 2) that never actually gets selected — picking
-    // it snaps back to whatever was selected before and opens the camera (or the library picker
-    // fallback on Simulator, where there's no camera) full-screen instead.
-    // Launches on Schedule (tag 3): it's the daily driver, so it's both the first tab and the
-    // opening screen. Tab *tags* stay fixed (NotificationRouter routes by tag) — only the
-    // declaration order below puts Schedule leftmost.
-    /// Home (tag 0) is the launch tab: it now carries the cadence catalogue, so it answers
-    /// "what does this pet need" on open. Tags are NotificationRouter's deep-link targets.
+    /// Home (tag 0) is the launch tab: it carries the cadence catalogue, so it answers "what
+    /// does this pet need" on open. Tab *tags* are NotificationRouter's deep-link targets and
+    /// must stay fixed — only the declaration order below controls display order.
     @State private var selectedTab = 0
     @State private var showCamera = false
     @State private var showLibraryFallback = false
@@ -193,6 +188,10 @@ struct ContentView: View {
             deeplinkRouter?.pendingTab = nil
         }
         .task {
+            // v1 -> v2: carry the mis-named `startedAt` into `nextReminderAt`. Keyed on nil
+            // rather than a run-once flag, so records arriving later from a device still on the
+            // old build get carried across too.
+            PersistenceController.backfillNextReminderAt(in: context)
             try? activityStore.seedDefaultsIfNeeded()
             try? logStore.backfillKindsIfNeeded()
             try? routineStore.seedDefaultsIfNeeded()

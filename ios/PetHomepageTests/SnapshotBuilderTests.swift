@@ -56,7 +56,7 @@ final class SnapshotBuilderTests: XCTestCase {
         let vetStore = VeterinarianStore(context: context, petStore: petStore)
         let vet = try vetStore.create(name: "Dr. Ruth", clinic: "Maple Vet")
         let med = try medicationStore.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily",
-                                             scheduleTime: date, startedAt: date, refillDueAt: nil)
+                                             scheduleTime: date, nextReminderAt: date, refillDueAt: nil)
         med.veterinarian = vet
         try context.save()
 
@@ -109,7 +109,7 @@ final class SnapshotBuilderTests: XCTestCase {
 
         let med = try medicationStore.create(drugName: "Apoquel", dosage: "16mg",
                                              frequency: "daily", scheduleTime: date,
-                                             startedAt: date, refillDueAt: date)
+                                             nextReminderAt: date, refillDueAt: date)
         try logStore.logDose(for: med, at: date)
         try logStore.logDose(for: med, at: date.addingTimeInterval(86_400))
 

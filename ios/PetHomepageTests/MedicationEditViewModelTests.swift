@@ -40,7 +40,7 @@ final class MedicationEditViewModelTests: XCTestCase {
         vm.resetNextReminderFromFrequency(now: now)
 
         let expected = Calendar.current.date(byAdding: .day, value: 3, to: now)!
-        XCTAssertEqual(vm.startedAt, expected)
+        XCTAssertEqual(vm.nextReminder, expected)
     }
 
     func testSaveCreatesMedicationAndSchedulesReminder() async throws {
@@ -68,7 +68,7 @@ final class MedicationEditViewModelTests: XCTestCase {
     func testInitLoadsExistingMedicationForEditing() async throws {
         let t = Date(timeIntervalSince1970: 0)
         let med = try store.create(drugName: "Zyrtec", dosage: "5mg", frequency: "daily",
-                                   scheduleTime: t, startedAt: t, refillDueAt: nil)
+                                   scheduleTime: t, nextReminderAt: t, refillDueAt: nil)
 
         let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, veterinarianStore: veterinarianStore, editing: med)
 
@@ -81,7 +81,7 @@ final class MedicationEditViewModelTests: XCTestCase {
     func testSaveUpdatesExistingMedication() async throws {
         let t = Date(timeIntervalSince1970: 0)
         let med = try store.create(drugName: "Zyrtec", dosage: "5mg", frequency: "daily",
-                                   scheduleTime: t, startedAt: t, refillDueAt: nil)
+                                   scheduleTime: t, nextReminderAt: t, refillDueAt: nil)
         let vm = MedicationEditViewModel(store: store, reminderScheduler: reminderScheduler, veterinarianStore: veterinarianStore, editing: med)
         vm.dosage = "10mg"
         vm.hasRefillDue = true

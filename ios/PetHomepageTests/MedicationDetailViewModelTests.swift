@@ -25,7 +25,7 @@ final class MedicationDetailViewModelTests: XCTestCase {
 
     private func makeMed() throws -> Medication {
         try store.create(drugName: "Apoquel", dosage: "16mg", frequency: "daily",
-                         scheduleTime: Date(), startedAt: Date(), endedAt: nil, refillDueAt: nil)
+                         scheduleTime: Date(), nextReminderAt: Date(), endedAt: nil, refillDueAt: nil)
     }
 
     override func tearDownWithError() throws {
@@ -58,7 +58,7 @@ final class MedicationDetailViewModelTests: XCTestCase {
         XCTAssertNil(vm.lastGiven)
     }
 
-    /// Deleting a dose used to be a half-undo: the entry vanished but `startedAt` — this model's
+    /// Deleting a dose used to be a half-undo: the entry vanished but `nextReminder` — this model's
     /// next-reminder date — stayed advanced, so the reminder pointed a full interval past a dose
     /// that no longer existed.
     func testDeletingTheNewestDoseMovesTheCadenceBackToThePreviousOne() async throws {
@@ -66,7 +66,7 @@ final class MedicationDetailViewModelTests: XCTestCase {
         let day1 = cal.date(from: DateComponents(year: 2026, month: 3, day: 1, hour: 9))!
         let day5 = cal.date(from: DateComponents(year: 2026, month: 3, day: 5, hour: 9))!
         let med = try store.create(drugName: "Simparica", dosage: "1 chew", frequency: "Monthly",
-                                   scheduleTime: day1, startedAt: day1, endedAt: nil,
+                                   scheduleTime: day1, nextReminderAt: day1, endedAt: nil,
                                    refillDueAt: nil)
         let vm = MedicationDetailViewModel(
             medication: med, logStore: logStore,
@@ -76,12 +76,12 @@ final class MedicationDetailViewModelTests: XCTestCase {
 
         await vm.logDose(at: day1)
         await vm.logDose(at: day5)
-        XCTAssertEqual(cal.dateComponents([.month, .day], from: med.startedAt).day, 5,
+        XCTAssertEqual(cal.dateComponents([.month, .day], from: med.nextReminder).day, 5,
                        "cadence follows the newest dose (5 Mar + 1 month)")
 
         await vm.deleteDose(try XCTUnwrap(vm.doses.first))   // remove the 5 Mar dose
 
-        let comps = cal.dateComponents([.month, .day], from: med.startedAt)
+        let comps = cal.dateComponents([.month, .day], from: med.nextReminder)
         XCTAssertEqual(comps.month, 4)
         XCTAssertEqual(comps.day, 1, "cadence must fall back to follow the 1 Mar dose")
     }

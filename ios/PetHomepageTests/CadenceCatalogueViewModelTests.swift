@@ -44,7 +44,7 @@ final class CadenceCatalogueViewModelTests: XCTestCase {
     @discardableResult
     private func makeMed(_ name: String, nextDue: Date, ended: Date? = nil) throws -> Medication {
         let med = try medStore.create(drugName: name, dosage: "1 chew", frequency: "Monthly",
-                                      scheduleTime: nextDue, startedAt: nextDue, refillDueAt: nil)
+                                      scheduleTime: nextDue, nextReminderAt: nextDue, refillDueAt: nil)
         med.endedAt = ended
         try context.save()
         return med
@@ -135,7 +135,7 @@ final class CadenceCatalogueViewModelTests: XCTestCase {
         await sut.log(item)
 
         XCTAssertEqual(try logStore.doseCount(for: med), 1)
-        let comps = calendar.dateComponents([.month, .day], from: med.startedAt)
+        let comps = calendar.dateComponents([.month, .day], from: med.nextReminder)
         XCTAssertEqual(comps.month, 9)
         XCTAssertEqual(comps.day, 16)
     }
@@ -177,19 +177,19 @@ final class CadenceCatalogueViewModelTests: XCTestCase {
     /// pushed out for a dose that no longer exists.
     func testUndoRemovesTheDoseAndRollsBackTheCadence() async throws {
         let med = try makeMed("Simparica", nextDue: date(8, 16))
-        let before = med.startedAt
+        let before = med.nextReminder
         let sut = makeSUT()
         sut.load()
         let item = try XCTUnwrap(sut.items.first { $0.name == "Simparica" })
 
         await sut.log(item)
         XCTAssertEqual(try logStore.doseCount(for: med), 1)
-        XCTAssertNotEqual(med.startedAt, before, "logging should have advanced the cadence")
+        XCTAssertNotEqual(med.nextReminder, before, "logging should have advanced the cadence")
 
         await sut.undoLastLog()
 
         XCTAssertEqual(try logStore.doseCount(for: med), 0, "the dose should be gone")
-        XCTAssertEqual(med.startedAt, before,
+        XCTAssertEqual(med.nextReminder, before,
                        "with no doses left, the cadence must return to where it started")
     }
 

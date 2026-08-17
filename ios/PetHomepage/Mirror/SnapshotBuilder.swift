@@ -53,7 +53,7 @@ final class SnapshotBuilder {
                 dosage: med.dosage,
                 frequency: med.frequency,
                 scheduleTime: med.scheduleTime,
-                startedAt: med.startedAt,
+                startedAt: med.nextReminder,
                 endedAt: med.endedAt,
                 refillDueAt: med.refillDueAt,
                 doseLogs: try doseLogs(for: med).map { DoseLogSnapshot(id: $0.id, givenAt: $0.performedAt) },

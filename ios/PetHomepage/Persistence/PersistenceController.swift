@@ -51,4 +51,26 @@ struct PersistenceController {
         container.viewContext.automaticallyMergesChangesFromParent = true
         container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
     }
+
+    /// Copies the legacy `startedAt` into `nextReminderAt` for any medication that lacks one.
+    ///
+    /// `startedAt` never meant what its name says — it held the next reminder date all along —
+    /// so v2 introduces an honestly-named attribute and this carries the values across. Both
+    /// fields exist because CloudKit's schema is append-only: the old one can never be removed,
+    /// only abandoned.
+    ///
+    /// Deliberately NOT guarded by a one-time flag, unlike the walk backfill. It is keyed on
+    /// `nextReminderAt == nil`, so it is idempotent AND it keeps working for records that arrive
+    /// later from a device still running the old build — a run-once flag would strand those.
+    @discardableResult
+    static func backfillNextReminderAt(in context: NSManagedObjectContext) -> Int {
+        let request = Medication.fetchRequest()
+        request.predicate = NSPredicate(format: "nextReminderAt == nil")
+        guard let stale = try? context.fetch(request), !stale.isEmpty else { return 0 }
+        for medication in stale {
+            medication.nextReminderAt = medication.startedAt
+        }
+        try? context.save()
+        return stale.count
+    }
 }
