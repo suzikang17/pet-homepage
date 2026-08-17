@@ -284,4 +284,71 @@ final class TimelineViewModelTests: XCTestCase {
         XCTAssertFalse(vm.items.contains { $0.kind == .symptom })
         XCTAssertEqual(try logStore.episodes().count, 0)
     }
+
+    // MARK: - Doses in the stream
+
+    /// Doses were absent from the timeline entirely: TimelineKind had no `.dose` case and
+    /// `load()` never queried them. So the app's core action — logging a preventative dose —
+    /// produced no visible history anywhere except inside that one medication's detail screen.
+    func testDosesAppearInTheStreamDatedWhenTheyWereGiven() throws {
+        let med = try medicationStore.create(drugName: "Simparica", dosage: "1 chew",
+                                             frequency: "Monthly", scheduleTime: day(1),
+                                             startedAt: day(40), endedAt: nil, refillDueAt: nil)
+        _ = try logStore.logDose(for: med, at: day(10), note: "with food")
+
+        let vm = makeVM()
+        vm.load()
+
+        let dose = try XCTUnwrap(vm.items.first { $0.kind == .dose })
+        XCTAssertEqual(dose.date, day(10), "a dose is dated when it was GIVEN")
+        XCTAssertTrue(dose.title.contains("Simparica"), "title was: \(dose.title)")
+        XCTAssertTrue(dose.subtitle?.contains("with food") ?? false,
+                      "the note should survive into the row: \(dose.subtitle ?? "nil")")
+        XCTAssertNil(dose.nextDue, "a dose is an event; it has no due date of its own")
+    }
+
+    /// The medication ROW borrows `startedAt` — the next-reminder date — because a prescription
+    /// has no event date. That is why it must never be mistaken for recent history: it sorts into
+    /// the future. This pins the distinction the Home card now relies on.
+    func testMedicationRowIsDatedInTheFutureWhileItsDoseIsNot() throws {
+        let med = try medicationStore.create(drugName: "Simparica", dosage: "1 chew",
+                                             frequency: "Monthly", scheduleTime: day(1),
+                                             startedAt: day(40), endedAt: nil, refillDueAt: nil)
+        _ = try logStore.logDose(for: med, at: day(10))
+
+        let vm = makeVM()
+        vm.load()
+
+        let medRow = try XCTUnwrap(vm.items.first { $0.kind == .medication })
+        let doseRow = try XCTUnwrap(vm.items.first { $0.kind == .dose })
+        XCTAssertEqual(medRow.date, day(40), "the medication row carries its next-reminder date")
+        XCTAssertTrue(medRow.date > doseRow.date,
+                      "which is why an unfiltered newest-first feed puts records above real history")
+    }
+
+    func testDeletingADoseFromTheTimelineRollsBackTheCadence() async throws {
+        let fake = FakeNotificationScheduler()
+        let reminderScheduler = MedicationReminderScheduler(scheduler: fake)
+        let med = try medicationStore.create(drugName: "Simparica", dosage: "1 chew",
+                                             frequency: "Monthly", scheduleTime: day(1),
+                                             startedAt: day(1), endedAt: nil, refillDueAt: nil)
+        let logger = MedicationDoseLogger(logStore: logStore, reminderScheduler: reminderScheduler)
+        await logger.log(med, at: day(10))
+        await logger.log(med, at: day(50))
+        let advanced = med.startedAt
+
+        let vm = makeVM()
+        vm.load()
+        let newest = try XCTUnwrap(vm.items.filter { $0.kind == .dose }
+            .max(by: { $0.date < $1.date }))
+        await vm.delete(newest, using: makeServices(
+            reminderScheduler: reminderScheduler,
+            dueScheduler: DueReminderScheduler(scheduler: FakeNotificationScheduler())))
+
+        XCTAssertEqual(try logStore.doses(for: med).count, 1)
+        XCTAssertNotEqual(med.startedAt, advanced,
+                          "the cadence must not stay pinned to the deleted dose")
+        XCTAssertEqual(med.startedAt, logger.nextDue(for: med, after: day(10)),
+                       "it should follow the dose that is now newest")
+    }
 }

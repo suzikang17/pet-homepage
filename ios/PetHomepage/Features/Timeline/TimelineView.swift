@@ -278,6 +278,14 @@ struct TimelineView: View {
         case .medication(let m):
             MedicationEditView(store: services.medicationStore, reminderScheduler: services.reminderScheduler,
                                veterinarianStore: services.veterinarianStore, editing: m)
+        case .dose(let d):
+            // A dose has no editor of its own; its medication's detail screen owns the dose
+            // history (and its swipe-to-delete). Nothing to show if the medication is gone.
+            if let med = d.medication {
+                NavigationStack { MedicationDetailView(medication: med, services: services) }
+            } else {
+                EmptyView()
+            }
         case .symptom(let ep):
             EpisodeDetailView(episode: ep, logStore: services.logStore, entryStore: services.symptomEntryStore)
         case .marker:
@@ -297,6 +305,10 @@ struct TimelineView: View {
     @ViewBuilder
     private func addEditor(for kind: TimelineKind) -> some View {
         switch kind {
+        // A dose belongs to a medication, so it is logged from a Home tile, a notification, or
+        // the medication's own screen — never created standalone from the Timeline's add menu.
+        case .dose:
+            EmptyView()
         case .vaccine:
             VaccinationEditView(logStore: services.logStore, dueScheduler: services.dueScheduler,
                                 veterinarianStore: services.veterinarianStore, editing: nil)
@@ -328,6 +340,7 @@ struct TimelineView: View {
         case .vaccine: .teal
         case .vet: .indigo
         case .medication: Theme.primary
+        case .dose: Theme.primary
         case .marker: .pink
         case .symptom: .orange
         case .activity: .cyan

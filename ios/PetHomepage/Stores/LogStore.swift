@@ -123,6 +123,13 @@ final class LogStore {
         return try fetch(NSPredicate(format: "pet == %@ AND kindRaw == %@", pet, LogKind.routine.rawValue))
     }
 
+    /// Every logged dose for the current pet, across all medications — the Timeline's source.
+    /// `doses(for:)` is the per-medication variant used by a medication's own detail screen.
+    func doses() throws -> [LogEntry] {
+        guard let pet = try petStore.currentPet() else { return [] }
+        return try fetch(NSPredicate(format: "pet == %@ AND kindRaw == %@", pet, LogKind.dose.rawValue))
+    }
+
     func logs(of type: ActivityType) throws -> [LogEntry] {
         try fetch(NSPredicate(format: "activityType == %@", type))
     }

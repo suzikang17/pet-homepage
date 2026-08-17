@@ -228,7 +228,17 @@ struct PetProfileView: View {
             logStore: s.logStore
         )
         vm.load()
-        recent = Array(vm.items.prefix(4))
+        // "Recent activity" means things that HAPPENED. Two exclusions, both load-bearing:
+        //
+        // `.medication` rows are prescription RECORDS, not events — they have no event date, so
+        // TimelineItem borrows `startedAt`, which is the next-reminder date and therefore in the
+        // FUTURE. Sorted newest-first, every active medication outranked real history and filled
+        // this card with next-reminder dates instead of anything the user had done.
+        //
+        // The future-date filter then catches the same class of thing generally, so a record that
+        // borrows a due date can never masquerade as recent history again.
+        let now = Date()
+        recent = Array(vm.items.lazy.filter { $0.kind != .medication && $0.date <= now }.prefix(4))
 
         let model = catalogue ?? CadenceCatalogueViewModel(
             medicationStore: s.medicationStore,

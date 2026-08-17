@@ -6,7 +6,7 @@ import Observation
 /// date, maybe with a next-one-due." This is the read-side projection over the existing stores
 /// (the data model itself stays five entities for now — see the planned HealthEvent unification).
 enum TimelineKind: String, CaseIterable, Identifiable {
-    case vaccine, vet, medication, marker, symptom, activity, diary, routine
+    case vaccine, vet, medication, dose, marker, symptom, activity, diary, routine
     var id: String { rawValue }
 
     var label: String {
@@ -14,6 +14,7 @@ enum TimelineKind: String, CaseIterable, Identifiable {
         case .vaccine: "Vaccines"
         case .vet: "Vet"
         case .medication: "Meds"
+        case .dose: "Doses"
         case .marker: "Health"
         case .symptom: "Symptoms"
         case .activity: "Activities"
@@ -27,6 +28,7 @@ enum TimelineKind: String, CaseIterable, Identifiable {
         case .vaccine: "syringe"
         case .vet: "stethoscope"
         case .medication: "pills"
+        case .dose: "pills.fill"
         case .marker: "chart.xyaxis.line"
         case .symptom: "waveform.path.ecg"
         case .activity: "shower"
@@ -41,6 +43,7 @@ enum TimelineReference {
     case vaccine(LogEntry)
     case vet(LogEntry)
     case medication(Medication)
+    case dose(LogEntry)
     case marker(LogEntry)
     case symptom(LogEntry)
     case activity(LogEntry)
@@ -104,6 +107,7 @@ final class TimelineViewModel {
             out += try logStore.vaccines().map(TimelineItem.init(vaccine:))
             out += try logStore.vetVisits().map(TimelineItem.init(vet:))
             out += try medicationStore.medications().map(TimelineItem.init(medication:))
+            out += try logStore.doses().map(TimelineItem.init(dose:))
             out += try logStore.markers().map(TimelineItem.init(marker:))
             out += try logStore.episodes().map(TimelineItem.init(symptom:))
             out += try logStore.activityLogs().map(TimelineItem.init(activity:))
@@ -174,6 +178,22 @@ final class TimelineViewModel {
         case .medication(let m):
             await services.reminderScheduler.cancel(m)
             try? services.medicationStore.delete(m)
+        case .dose(let d):
+            // Deleting a dose must move the cadence back to follow whatever dose is now newest —
+            // `startedAt` IS the next-reminder date, so leaving it advanced points the reminder a
+            // full interval past a dose that no longer exists. Same repair as
+            // MedicationDetailViewModel.deleteDose.
+            let med = d.medication
+            try? services.logStore.delete(d)
+            if let med {
+                let logger = MedicationDoseLogger(logStore: services.logStore,
+                                                  reminderScheduler: services.reminderScheduler)
+                if let newest = try? services.logStore.doses(for: med).first {
+                    med.startedAt = logger.nextDue(for: med, after: newest.performedAt)
+                    try? med.managedObjectContext?.save()
+                }
+                await services.reminderScheduler.sync(med)
+            }
         case .marker(let mk):
             try? services.logStore.delete(mk)
         case .symptom(let ep):
@@ -222,6 +242,22 @@ extension TimelineItem {
             subtitle: v.title ?? v.vetName,
             nextDue: v.nextDueAt,
             reference: .vet(v)
+        )
+    }
+
+    /// A dose that was actually GIVEN — an event, dated when it happened. Distinct from the
+    /// `.medication` row, which is the prescription record and carries no event date at all.
+    init(dose d: LogEntry) {
+        let drug = d.medication?.drugName ?? "Medication"
+        self.init(
+            id: "dose:\(d.id.uuidString)",
+            kind: .dose,
+            date: d.performedAt,
+            title: "Gave \(drug)",
+            subtitle: [d.medication?.dosage, d.note]
+                .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "),
+            nextDue: nil,
+            reference: .dose(d)
         )
     }
 
