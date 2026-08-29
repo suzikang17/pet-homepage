@@ -139,6 +139,29 @@ struct SettingsView: View {
 
                     BrandCard {
                         VStack(alignment: .leading, spacing: 14) {
+                            BrandCardTitle("Ideas")
+                            NavigationLink {
+                                IdeaListView(store: FileIdeaStore.documents(), screen: nil)
+                            } label: {
+                                HStack {
+                                    Label("Idea scratchpad", systemImage: "lightbulb")
+                                        .font(Theme.body().weight(.semibold))
+                                        .foregroundStyle(Theme.ink)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption.weight(.bold))
+                                        .foregroundStyle(Theme.inkSoft)
+                                }
+                            }
+                            .accessibilityIdentifier("settings.ideas")
+                            Text("Jot down improvements as you use the app — or just shake the phone from any screen.")
+                                .font(.footnote).foregroundStyle(Theme.inkSoft)
+                        }
+                    }
+                    .padding(.horizontal, 18)
+
+                    BrandCard {
+                        VStack(alignment: .leading, spacing: 14) {
                             BrandCardTitle("AI record extraction")
                             field {
                                 TextField("Endpoint URL", text: $extractEndpoint,
