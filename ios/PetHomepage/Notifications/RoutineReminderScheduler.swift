@@ -38,21 +38,58 @@ final class RoutineReminderScheduler {
         self.photoPool = photoPool
     }
 
+    /// Per-`syncAll` memo for the attachment lookup. See `syncAll` for why it exists.
+    private struct AttachmentMemo {
+        /// Pool photos by task LINEAGE id — the key `PhotoPool` itself queries on.
+        var pools: [UUID: [Photo]] = [:]
+        /// Resolved thumbnail (or a cached nil) by photo id.
+        var thumbnails: [UUID: URL?] = [:]
+    }
+
     /// Today's attachment photo for a routine/walk-slot occurrence, or nil if there is no pool,
-    /// no photos, or no cached thumbnail. Salted with the task's own id, matching
-    /// DueReminderScheduler's per-activity-type salting.
-    private func attachmentURL(for task: RoutineTask, on day: Date) -> URL? {
+    /// no photos, or no thumbnail could be produced.
+    ///
+    /// Salted with the task's LINEAGE id, not its per-version `id`. `PhotoPool` queries
+    /// `routineLineageID`, so the pool is lineage-scoped; a version-scoped salt meant that
+    /// editing a template at midday spawned a successor with a fresh `id` and re-derived a
+    /// different pick against an identical pool — the reminder photo changing for the rest of
+    /// the same day, which is exactly the "changes under your finger" behaviour the design
+    /// rejected. The salt and the pool are now keyed on the same identity.
+    private func attachmentURL(for task: RoutineTask, on day: Date,
+                               memo: inout AttachmentMemo) -> URL? {
         guard let photoPool else { return nil }
-        let photos = (try? photoPool.photos(for: .routineTask(task))) ?? []
-        guard let photo = DailyShuffle.pick(photos, on: day, salt: task.id, calendar: calendar)
-        else { return nil }
-        return ThumbnailCache.shared.url(for: photo, size: .notification)
+        let lineage = task.lineageID
+        let photos: [Photo]
+        if let cached = memo.pools[lineage] {
+            photos = cached
+        } else {
+            photos = (try? photoPool.photos(for: .routineTask(task))) ?? []
+            memo.pools[lineage] = photos
+        }
+        guard let photo = DailyShuffle.pick(photos, on: day, salt: lineage, calendar: calendar),
+              let photoID = ThumbnailCache.identifier(of: photo) else { return nil }
+        if let cached = memo.thumbnails[photoID] { return cached }
+        let url = ThumbnailCache.shared.url(forPhotoID: photoID, size: .notification,
+                                            imageData: photo.imageData)
+        memo.thumbnails[photoID] = url
+        return url
     }
 
     /// Full re-sync: clears the whole routine kind, then schedules the given occurrences.
     /// Pending snoozed re-fires (their own kind) are left alone.
     func syncAll(occurrences: [RoutineReminderOccurrence], petName: String?) async {
         await scheduler.cancelAll(kind: .routine)
+        // The attachment lookup is memoised across the whole resync rather than recomputed per
+        // occurrence. The horizon is 5 days, so a handful of slots produces up to ~30
+        // occurrences, and every one of them used to run its own pair of Core Data fetches plus
+        // a possible 800px downsample and JPEG write. `resync` runs on launch, on every schedule
+        // mutation, on every check-off, and from the notification-action handler, so that cost
+        // sat directly behind the app's most-tapped control.
+        //
+        // Two keys, because there are two distinct units of work: the pool query is per task
+        // lineage (5 days of one slot share one pool), and the thumbnail is per photo (a small
+        // pool means the same photo is picked for several days).
+        var memo = AttachmentMemo()
         for occurrence in occurrences {
             let body: String
             if let petName, !petName.isEmpty {
@@ -61,6 +98,7 @@ final class RoutineReminderScheduler {
                 body = "Time for \(occurrence.task.name)"
             }
             let components = calendar.dateComponents([.year, .month, .day], from: occurrence.day)
+            let attachment = attachmentURL(for: occurrence.task, on: occurrence.day, memo: &memo)
             await scheduler.schedule(PendingReminder(
                 kind: .routine,
                 entityID: occurrence.task.id,
@@ -70,7 +108,7 @@ final class RoutineReminderScheduler {
                 minute: occurrence.minute,
                 dateComponents: components,
                 repeats: false,
-                attachmentURL: attachmentURL(for: occurrence.task, on: occurrence.day)))
+                attachmentURL: attachment))
         }
     }
 
