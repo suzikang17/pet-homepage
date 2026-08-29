@@ -54,6 +54,8 @@ struct ContentView: View {
     @State private var showWalkSetupSheet = false
     /// Set by the camera's library shortcut; promoted to the picker on camera dismissal.
     @State private var pendingLibraryFromCamera = false
+    /// Development scratchpad, opened by shaking the phone from any tab.
+    @State private var showIdeas = false
 
     /// Opens the capture flow from the Timeline + menu: staged stub photo under
     /// `--uitest-stub-camera`, the camera when available, else the photo-library picker.
@@ -68,6 +70,18 @@ struct ContentView: View {
             showCamera = true
         } else {
             showLibraryFallback = true
+        }
+    }
+
+    /// Tab tags are load-bearing (`NotificationRouter` deep links) — this only reads them, to
+    /// label an idea with where it was captured.
+    private static func screenLabel(for tag: Int) -> String? {
+        switch tag {
+        case 0: return "Home"
+        case 1: return "Timeline"
+        case 3: return "Schedule"
+        case 4: return "Care Team"
+        default: return nil
         }
     }
 
@@ -182,6 +196,18 @@ struct ContentView: View {
                 .tag(4)
         }
         .tint(Theme.primary)
+        .background(ShakeDetector { showIdeas = true })
+        .sheet(isPresented: $showIdeas) {
+            NavigationStack {
+                IdeaListView(store: FileIdeaStore.documents(),
+                             screen: Self.screenLabel(for: selectedTab))
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("Done") { showIdeas = false }
+                        }
+                    }
+            }
+        }
         .onChange(of: deeplinkRouter?.pendingTab) { _, tab in
             guard let tab else { return }
             selectedTab = tab
