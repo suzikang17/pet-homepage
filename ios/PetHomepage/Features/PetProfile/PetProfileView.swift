@@ -232,7 +232,7 @@ struct PetProfileView: View {
             Text(item.title).font(.subheadline).foregroundStyle(Theme.ink).lineLimit(1)
             Spacer(minLength: 6)
             if let trailing {
-                Text(trailing, format: .dateTime.month().day())
+                Text(trailing, format: .dateTime.month().day().hour().minute())
                     .font(.caption.weight(.semibold)).foregroundStyle(tint)
             }
         }
