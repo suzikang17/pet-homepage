@@ -233,6 +233,8 @@ private func formatMarker(_ value: Double) -> String {
 
 extension TimelineItem {
     init(vaccine v: LogEntry) {
+        let thumbnailURL = v.photoArray.first
+            .flatMap { ThumbnailCache.shared.url(for: $0, size: .row) }
         self.init(
             id: "vaccine:\(v.id.uuidString)",
             kind: .vaccine,
@@ -241,11 +243,13 @@ extension TimelineItem {
             subtitle: v.administeredBy.map { "by \($0)" },
             nextDue: v.nextDueAt,
             reference: .vaccine(v),
-            thumbnailURL: nil
+            thumbnailURL: thumbnailURL
         )
     }
 
     init(vet v: LogEntry) {
+        let thumbnailURL = v.photoArray.first
+            .flatMap { ThumbnailCache.shared.url(for: $0, size: .row) }
         self.init(
             id: "vet:\(v.id.uuidString)",
             kind: .vet,
@@ -254,7 +258,7 @@ extension TimelineItem {
             subtitle: v.title ?? v.vetName,
             nextDue: v.nextDueAt,
             reference: .vet(v),
-            thumbnailURL: nil
+            thumbnailURL: thumbnailURL
         )
     }
 
@@ -319,6 +323,8 @@ extension TimelineItem {
         let base = (log.note?.isEmpty == false) ? log.note : log.activityType?.category.displayName
         let duration = log.durationMinutes.map { "\($0) min" }
         let combined = [duration, base].compactMap { $0 }.joined(separator: " · ")
+        let thumbnailURL = log.photoArray.first
+            .flatMap { ThumbnailCache.shared.url(for: $0, size: .row) }
         self.init(
             id: "activity:\(log.id.uuidString)",
             kind: .activity,
@@ -327,7 +333,7 @@ extension TimelineItem {
             subtitle: combined.isEmpty ? nil : combined,
             nextDue: log.nextDueAt,
             reference: .activity(log),
-            thumbnailURL: nil
+            thumbnailURL: thumbnailURL
         )
     }
 
