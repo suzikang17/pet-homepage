@@ -16,6 +16,11 @@ enum WalkNotificationAction {
     static let autoStartedCategoryID = "walkAutoStarted"
     static let cancelStart = "walkCancelStart"
 
+    /// Retroactive detection with auto-log off: the walk is already over, so the actions log
+    /// a completed span rather than starting a session (same action IDs, different category
+    /// so the titles fit the past tense).
+    static let retroDetectedCategoryID = "walkRetroDetected"
+
     /// UserDefaults flag set by "Not now": suppresses re-prompting until the next home exit
     /// (the detector clears it on exit). Lives in defaults because the action can arrive in a
     /// background launch where the detector's in-memory state is fresh.
@@ -39,7 +44,12 @@ enum WalkNotificationAction {
         let autoStarted = UNNotificationCategory(identifier: autoStartedCategoryID,
                                                  actions: [cancel],
                                                  intentIdentifiers: [])
-        return [detected, ended, autoStarted]
+        let logRetro = UNNotificationAction(identifier: Self.start, title: "Log walk")
+        let dismissRetro = UNNotificationAction(identifier: Self.dismiss, title: "Not now")
+        let retroDetected = UNNotificationCategory(identifier: retroDetectedCategoryID,
+                                                   actions: [logRetro, dismissRetro],
+                                                   intentIdentifiers: [])
+        return [detected, ended, autoStarted, retroDetected]
     }
 }
 
@@ -49,12 +59,22 @@ enum WalkNotificationAction {
 /// - prompt: "walk-detected-a-<activityTypeUUID>-<exitEpoch>" or
 ///           "walk-detected-r-<routineTaskUUID>-<exitEpoch>"
 /// - ended:  "walk-ended-<logEntryUUID>-<startEpoch>"
+/// - retro prompt: "walk-retro-a-<activityTypeUUID>-<exitEpoch>-<enterEpoch>" or
+///                 "walk-retro-r-<routineTaskUUID>-<exitEpoch>-<enterEpoch>"
+/// - retro logged: "walk-retrologged-<logEntryUUID>"
 enum WalkRequestID {
     case detectedActivity(typeID: UUID, exitedAt: Date)
     case detectedRoutine(taskID: UUID, exitedAt: Date)
     case ended(entryID: UUID, startedAt: Date)
     case autoStarted(taskID: UUID)
     case autoStartedActivity(typeID: UUID)
+    /// Retro prompt (auto-log off): carries the full span because the walk is already over —
+    /// "Log walk" writes a completed entry instead of starting a session.
+    case retroActivity(typeID: UUID, exitedAt: Date, enteredAt: Date)
+    case retroRoutine(taskID: UUID, exitedAt: Date, enteredAt: Date)
+    /// Receipt for a walk logged after the fact (retro detection, watch import). Undo just
+    /// deletes the entry — unlike `.ended`, there is no session to resume.
+    case retroLogged(entryID: UUID)
 
     var string: String {
         switch self {
@@ -68,6 +88,12 @@ enum WalkRequestID {
             "walk-autostarted-\(taskID.uuidString)"
         case let .autoStartedActivity(typeID):
             "walk-autostarted-a-\(typeID.uuidString)"
+        case let .retroActivity(typeID, exitedAt, enteredAt):
+            "walk-retro-a-\(typeID.uuidString)-\(Int(exitedAt.timeIntervalSince1970))-\(Int(enteredAt.timeIntervalSince1970))"
+        case let .retroRoutine(taskID, exitedAt, enteredAt):
+            "walk-retro-r-\(taskID.uuidString)-\(Int(exitedAt.timeIntervalSince1970))-\(Int(enteredAt.timeIntervalSince1970))"
+        case let .retroLogged(entryID):
+            "walk-retrologged-\(entryID.uuidString)"
         }
     }
 
@@ -88,6 +114,18 @@ enum WalkRequestID {
             guard parts.count == 8, let epoch = Int(parts[7]),
                   let id = uuid(from: parts[2...6]) else { return nil }
             return .ended(entryID: id, startedAt: Date(timeIntervalSince1970: TimeInterval(epoch)))
+        }
+        if requestID.hasPrefix("walk-retro-a-") || requestID.hasPrefix("walk-retro-r-") {
+            guard parts.count == 10, let exitEpoch = Int(parts[8]), let enterEpoch = Int(parts[9]),
+                  let id = uuid(from: parts[3...7]) else { return nil }
+            let exited = Date(timeIntervalSince1970: TimeInterval(exitEpoch))
+            let entered = Date(timeIntervalSince1970: TimeInterval(enterEpoch))
+            return parts[2] == "a" ? .retroActivity(typeID: id, exitedAt: exited, enteredAt: entered)
+                                   : .retroRoutine(taskID: id, exitedAt: exited, enteredAt: entered)
+        }
+        if requestID.hasPrefix("walk-retrologged-") {
+            guard parts.count == 7, let id = uuid(from: parts[2...6]) else { return nil }
+            return .retroLogged(entryID: id)
         }
         // Activity variant ("-a-") must be checked before the routine one — it shares the
         // "walk-autostarted-" prefix but carries an extra segment.
@@ -138,6 +176,20 @@ final class WalkActionHandler {
             defaults.set(true, forKey: WalkNotificationAction.dismissedFlagKey)
         case let (WalkNotificationAction.undo, .ended(entryID, startedAt)):
             undoEnd(entryID: entryID, startedAt: startedAt)
+        case let (WalkNotificationAction.start, .retroActivity(typeID, exitedAt, enteredAt)):
+            _ = try? sessions.logCompleted(activityTypeID: typeID, routineTaskID: nil,
+                                           startedAt: exitedAt, endedAt: enteredAt,
+                                           source: .detected)
+        case let (WalkNotificationAction.start, .retroRoutine(taskID, exitedAt, enteredAt)):
+            _ = try? sessions.logCompleted(activityTypeID: nil, routineTaskID: taskID,
+                                           startedAt: exitedAt, endedAt: enteredAt,
+                                           source: .detected)
+        case (WalkNotificationAction.dismiss, .retroActivity),
+             (WalkNotificationAction.dismiss, .retroRoutine):
+            break // the walk is over — declining just dismisses, nothing to suppress
+        case let (WalkNotificationAction.undo, .retroLogged(entryID)):
+            // Logged after the fact, so there's no session to resume — delete the entry.
+            deleteEntry(entryID: entryID)
         case (WalkNotificationAction.cancelStart, .autoStarted),
              (WalkNotificationAction.cancelStart, .autoStartedActivity):
             // A false auto-start: discard the running session without logging.
@@ -153,6 +205,15 @@ final class WalkActionHandler {
             return pet.name
         }
         return "Your pet"
+    }
+
+    private func deleteEntry(entryID: UUID) {
+        let request = LogEntry.fetchRequest()
+        request.predicate = NSPredicate(format: "id == %@", entryID as CVarArg)
+        request.fetchLimit = 1
+        guard let entry = try? context.fetch(request).first else { return }
+        context.delete(entry)
+        try? context.save()
     }
 
     /// Deletes the auto-ended entry and re-opens the session with its original start, so an

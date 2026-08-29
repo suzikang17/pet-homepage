@@ -11,6 +11,19 @@ struct WalkDetectionTuning {
     var slotAttachWindowMinutes: Int = 90
     /// "Only near scheduled walks" prompt rule: how far from a slot still counts as near.
     var scheduledPromptWindowMinutes: Int = 60
+    /// Retroactive detection (motion history checked on returning home): a non-walking gap
+    /// this short doesn't break a sustained-walking run — waiting at a crossing, a long sniff.
+    var retroGapToleranceSeconds: TimeInterval = 90
+    /// Retroactive detection ignores excursions longer than this: an all-day absence with
+    /// some walking in it (commute, errands) is not a dog walk from door to door.
+    var maxRetroExcursionSeconds: TimeInterval = 4 * 60 * 60
+    /// A retro walk's sustained run must begin within this window of leaving home — dog
+    /// walks start at the door (with room for a neighbor chat), while walking that begins
+    /// deep into an excursion is a store or an office, not a walk.
+    var retroWalkStartWindowSeconds: TimeInterval = 15 * 60
+    /// Watch import: a workout overlapping an already-logged walk within this padding is a
+    /// duplicate (the phone detected the same walk, or the user logged it by hand).
+    var watchImportOverlapToleranceMinutes: Int = 30
 
     static let `default` = WalkDetectionTuning()
 }

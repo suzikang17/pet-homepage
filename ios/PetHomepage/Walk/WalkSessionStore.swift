@@ -56,6 +56,18 @@ final class WalkSessionStore {
 
     func cancel() { clear() }
 
+    /// Logs a walk that already happened (retroactive detection, watch import) through the
+    /// same slot-reconciliation path as a live session, without ever touching the active
+    /// session — a walk that is over must not occupy the one live slot.
+    @discardableResult
+    func logCompleted(activityTypeID: UUID?, routineTaskID: UUID?, startedAt: Date,
+                      endedAt: Date, source: WalkSession.Source) throws -> LogEntry {
+        try writeEntry(
+            for: WalkSession(id: UUID(), petID: nil, activityTypeID: activityTypeID,
+                             routineTaskID: routineTaskID, startedAt: startedAt, source: source),
+            endedAt: max(endedAt, startedAt))
+    }
+
     /// A forgotten session (older than maxSessionAge) is saved open-ended so the walk isn't
     /// lost, and cleared so a new one can start. The caller decides whether to notify.
     @discardableResult

@@ -46,6 +46,29 @@ final class WalkSessionStoreTests: XCTestCase {
         XCTAssertNil(endStore.active)
     }
 
+    func testLogCompletedWritesSpanWithoutTouchingActiveSession() throws {
+        let t0 = Date(timeIntervalSince1970: 1_700_000_000)
+        let t1 = t0.addingTimeInterval(35 * 60)
+        let store = makeStore(now: t1)
+        let entry = try store.logCompleted(activityTypeID: walkType.id, routineTaskID: nil,
+                                           startedAt: t0, endedAt: t1, source: .watch)
+        XCTAssertEqual(entry.performedAt, t0)
+        XCTAssertEqual(entry.endedAt, t1)
+        XCTAssertEqual(entry.kind, .activity)
+        XCTAssertNil(store.active)
+    }
+
+    func testLogCompletedDoesNotDisturbARunningSession() throws {
+        let t0 = Date(timeIntervalSince1970: 1_700_000_000)
+        let store = makeStore(now: t0)
+        _ = try store.startActivity(typeID: walkType.id, source: .manual)
+        // A watch import landing mid-session must leave the live session running.
+        _ = try store.logCompleted(activityTypeID: walkType.id, routineTaskID: nil,
+                                   startedAt: t0.addingTimeInterval(-2 * 60 * 60),
+                                   endedAt: t0.addingTimeInterval(-90 * 60), source: .watch)
+        XCTAssertNotNil(store.active)
+    }
+
     func testSecondStartThrows() throws {
         let store = makeStore(now: Date())
         _ = try store.startActivity(typeID: walkType.id, source: .manual)

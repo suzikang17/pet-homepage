@@ -3,6 +3,7 @@ import CoreData
 import CoreLocation
 import CoreMotion
 import Foundation
+import UIKit
 import UserNotifications
 
 /// The impure shell around WalkDetectorState: owns the home geofence (CLLocationManager
@@ -11,6 +12,9 @@ import UserNotifications
 /// All decision logic lives in WalkDetectorState; this file should stay boring.
 final class WalkDetector: NSObject {
     private static let regionID = "walk.home"
+    /// The last home-exit time, persisted so the return-home wake can evaluate the excursion
+    /// retroactively even when the process died in between (the in-memory reducer state does).
+    static let lastExitKey = "walk.lastHomeExit"
 
     private let context: NSManagedObjectContext
     private let sessions: WalkSessionStore
@@ -225,20 +229,132 @@ final class WalkDetector: NSObject {
         motionActive = false
         motionManager.stopActivityUpdates()
     }
+
+    // MARK: - Retroactive detection
+
+    /// The live path needs the app alive for `sustainedWalkSeconds` of motion samples — a
+    /// geofence wake lasts seconds, so a walk begun while the app was suspended is invisible
+    /// to it. This path runs on the return-home wake instead: the whole excursion is already
+    /// in CoreMotion's history, so query it and log the walk after the fact.
+    private func evaluateRetroWalk(exitedAt: Date, enteredAt: Date,
+                                   hadActiveSession: Bool, promptDismissed: Bool) {
+        let nearSlot = (try? WalkSlotFinder.openWalkSlot(
+            near: exitedAt, withinMinutes: tuning.scheduledPromptWindowMinutes,
+            context: context, defaults: defaults, calendar: calendar)) != nil
+            || (try? WalkSlotFinder.openWalkSlot(
+                near: enteredAt, withinMinutes: tuning.scheduledPromptWindowMinutes,
+                context: context, defaults: defaults, calendar: calendar)) != nil
+        guard RetroWalkDecision.shouldEvaluate(
+            exitedAt: exitedAt, enteredAt: enteredAt, hadActiveSession: hadActiveSession,
+            promptDismissed: promptDismissed, rule: home.promptRule,
+            isNearScheduledSlot: nearSlot, tuning: tuning),
+            CMMotionActivityManager.isActivityAvailable() else { return }
+
+        // The geofence wake is short; the history query is async — buy time to finish it.
+        let bgTask = UIApplication.shared.beginBackgroundTask(withName: "walk.retro")
+        motionManager.queryActivityStarting(from: exitedAt, to: enteredAt,
+                                            to: .main) { [weak self] activities, _ in
+            defer { if bgTask != .invalid { UIApplication.shared.endBackgroundTask(bgTask) } }
+            guard let self else { return }
+            let samples = (activities ?? []).map {
+                MotionSample(startDate: $0.startDate, isWalking: $0.walking)
+            }
+            guard RetroWalkClassifier.sustainedWalk(in: samples, from: exitedAt,
+                                                    until: enteredAt,
+                                                    tuning: self.tuning) else { return }
+            self.logRetroWalk(exitedAt: exitedAt, enteredAt: enteredAt)
+        }
+    }
+
+    private func logRetroWalk(exitedAt: Date, enteredAt: Date) {
+        guard sessions.active == nil else { return }
+        let slotTask = try? WalkSlotFinder.openWalkSlot(
+            near: exitedAt, withinMinutes: tuning.slotAttachWindowMinutes,
+            context: context, defaults: defaults, calendar: calendar)
+        let resolvedTypeID = slotTask == nil
+            ? WalkActivityResolver.resolve(context: context, home: home, defaults: defaults)
+            : nil
+
+        // A live "Out for a walk?" prompt may still be sitting on the lock screen from this
+        // excursion; its Start action would open a session for a walk that's over.
+        removeDeliveredDetectedPrompts()
+
+        if home.autoLog {
+            guard let entry = try? sessions.logCompleted(
+                activityTypeID: resolvedTypeID, routineTaskID: slotTask?.id,
+                startedAt: exitedAt, endedAt: enteredAt, source: .detected) else { return }
+            let minutes = entry.durationMinutes ?? 0
+            let content = UNMutableNotificationContent()
+            content.title = "Walk logged"
+            content.body = "\(minutes) min with \(currentPetName()) while you were out — tap to edit, or undo."
+            content.categoryIdentifier = WalkNotificationAction.endedCategoryID
+            content.sound = nil
+            let request = UNNotificationRequest(
+                identifier: WalkRequestID.retroLogged(entryID: entry.id).string,
+                content: content, trigger: nil)
+            UNUserNotificationCenter.current().add(request)
+        } else {
+            let requestID: WalkRequestID
+            if let slotTask {
+                requestID = .retroRoutine(taskID: slotTask.id, exitedAt: exitedAt,
+                                          enteredAt: enteredAt)
+            } else if let typeID = resolvedTypeID {
+                requestID = .retroActivity(typeID: typeID, exitedAt: exitedAt,
+                                           enteredAt: enteredAt)
+            } else {
+                return
+            }
+            let minutes = Int(enteredAt.timeIntervalSince(exitedAt) / 60)
+            let content = UNMutableNotificationContent()
+            content.title = "Log that walk?"
+            content.body = "Looks like \(currentPetName()) got a \(minutes) min walk — log it?"
+            content.categoryIdentifier = WalkNotificationAction.retroDetectedCategoryID
+            content.sound = nil
+            let request = UNNotificationRequest(identifier: requestID.string, content: content,
+                                                trigger: nil)
+            UNUserNotificationCenter.current().add(request)
+        }
+    }
+
+    /// Clears any still-delivered live prompts from this excursion so a retro log/prompt
+    /// can't coexist with a stale "Start logging" button.
+    private func removeDeliveredDetectedPrompts() {
+        let center = UNUserNotificationCenter.current()
+        center.getDeliveredNotifications { delivered in
+            let stale = delivered.map(\.request.identifier)
+                .filter { $0.hasPrefix("walk-detected-") }
+            guard !stale.isEmpty else { return }
+            center.removeDeliveredNotifications(withIdentifiers: stale)
+        }
+    }
 }
 
 extension WalkDetector: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
         guard region.identifier == Self.regionID else { return }
+        let exitedAt = Date()
         defaults.removeObject(forKey: WalkNotificationAction.dismissedFlagKey)
-        dispatch(.exitedHome(at: Date()))
+        defaults.set(exitedAt, forKey: Self.lastExitKey)
+        dispatch(.exitedHome(at: exitedAt))
         // Motion checks only matter for prompting; auto-end needs just the geofence.
         if home.promptRule != .off, sessions.active == nil { startMotion() }
     }
 
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
         guard region.identifier == Self.regionID else { return }
-        dispatch(.enteredHome(at: Date()))
+        let enteredAt = Date()
+        // Capture before dispatch: dispatch consumes the "Not now" flag, and the reducer
+        // ends the live session — both inputs the retro decision needs as they were.
+        let exitedAt = defaults.object(forKey: Self.lastExitKey) as? Date
+        defaults.removeObject(forKey: Self.lastExitKey)
+        let hadActiveSession = sessions.active != nil
+        let promptDismissed = defaults.bool(forKey: WalkNotificationAction.dismissedFlagKey)
+        dispatch(.enteredHome(at: enteredAt))
+        if let exitedAt {
+            evaluateRetroWalk(exitedAt: exitedAt, enteredAt: enteredAt,
+                              hadActiveSession: hadActiveSession,
+                              promptDismissed: promptDismissed)
+        }
     }
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {

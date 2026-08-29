@@ -139,4 +139,66 @@ final class WalkActionHandlerTests: XCTestCase {
         }
         XCTAssertEqual(parsedAutoType, autoType)
     }
+
+    func testRetroRequestIDRoundTrip() throws {
+        let entered = start.addingTimeInterval(1800)
+        let a = WalkRequestID.retroActivity(typeID: walkType.id, exitedAt: start,
+                                            enteredAt: entered)
+        guard case let .retroActivity(typeID, exitedAt, enteredAt)? =
+                WalkRequestID.parse(a.string) else {
+            return XCTFail("failed to parse \(a.string)")
+        }
+        XCTAssertEqual(typeID, walkType.id)
+        XCTAssertEqual(exitedAt.timeIntervalSince1970, start.timeIntervalSince1970, accuracy: 1)
+        XCTAssertEqual(enteredAt.timeIntervalSince1970, entered.timeIntervalSince1970, accuracy: 1)
+
+        let taskID = UUID()
+        let r = WalkRequestID.retroRoutine(taskID: taskID, exitedAt: start, enteredAt: entered)
+        guard case let .retroRoutine(parsedTask, _, _)? = WalkRequestID.parse(r.string) else {
+            return XCTFail("failed to parse \(r.string)")
+        }
+        XCTAssertEqual(parsedTask, taskID)
+
+        let entryID = UUID()
+        let logged = WalkRequestID.retroLogged(entryID: entryID)
+        guard case let .retroLogged(parsedEntry)? = WalkRequestID.parse(logged.string) else {
+            return XCTFail("failed to parse \(logged.string)")
+        }
+        XCTAssertEqual(parsedEntry, entryID)
+    }
+
+    func testRetroLogActionWritesCompletedEntryWithoutSession() throws {
+        let entered = start.addingTimeInterval(1800)
+        let requestID = WalkRequestID.retroActivity(typeID: walkType.id, exitedAt: start,
+                                                    enteredAt: entered).string
+        handler.handle(actionID: WalkNotificationAction.start, requestID: requestID)
+
+        XCTAssertNil(sessions.active) // the walk is over — nothing should be running
+        let entry = try XCTUnwrap(logStore.fetch(NSPredicate(value: true)).first)
+        XCTAssertEqual(entry.performedAt.timeIntervalSince1970,
+                       start.timeIntervalSince1970, accuracy: 1)
+        XCTAssertEqual(try XCTUnwrap(entry.endedAt).timeIntervalSince1970,
+                       entered.timeIntervalSince1970, accuracy: 1)
+    }
+
+    func testRetroDismissLogsNothing() throws {
+        let requestID = WalkRequestID.retroActivity(typeID: walkType.id, exitedAt: start,
+                                                    enteredAt: start.addingTimeInterval(1800)).string
+        handler.handle(actionID: WalkNotificationAction.dismiss, requestID: requestID)
+        XCTAssertNil(sessions.active)
+        XCTAssertEqual(try logStore.fetch(NSPredicate(value: true)).count, 0)
+        // Unlike the live prompt's "Not now", nothing to suppress — the excursion is over.
+        XCTAssertFalse(defaults.bool(forKey: WalkNotificationAction.dismissedFlagKey))
+    }
+
+    func testRetroUndoDeletesEntryWithoutReopeningSession() throws {
+        let entry = try sessions.logCompleted(activityTypeID: walkType.id, routineTaskID: nil,
+                                              startedAt: start,
+                                              endedAt: start.addingTimeInterval(1800),
+                                              source: .detected)
+        let requestID = WalkRequestID.retroLogged(entryID: entry.id).string
+        handler.handle(actionID: WalkNotificationAction.undo, requestID: requestID)
+        XCTAssertEqual(try logStore.fetch(NSPredicate(value: true)).count, 0)
+        XCTAssertNil(sessions.active) // .ended undo resumes the session; retro undo must not
+    }
 }
