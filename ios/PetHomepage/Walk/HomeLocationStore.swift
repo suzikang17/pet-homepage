@@ -9,6 +9,8 @@ struct HomeLocationStore {
     private static let ruleKey = "walk.promptRule"
     private static let typeKey = "walk.defaultActivityTypeID"
     private static let autoLogKey = "walk.autoLog"
+    private static let watchImportKey = "walk.importWatchWalks"
+    private static let watchImportSinceKey = "walk.watchImportSince"
 
     private let defaults: UserDefaults
 
@@ -55,6 +57,20 @@ struct HomeLocationStore {
     var autoLog: Bool {
         get { !defaults.bool(forKey: Self.autoLogKey + ".disabled") }
         nonmutating set { defaults.set(!newValue, forKey: Self.autoLogKey + ".disabled") }
+    }
+
+    /// Import Outdoor Walk workouts recorded on Apple Watch as pet walks. Off by default —
+    /// it needs a Health read permission the user grants from Settings → Walk detection.
+    var importWatchWalks: Bool {
+        get { defaults.bool(forKey: Self.watchImportKey) }
+        nonmutating set { defaults.set(newValue, forKey: Self.watchImportKey) }
+    }
+
+    /// Set when watch import is first enabled: only workouts ending after this are imported,
+    /// so flipping the toggle can't flood the log with months of workout history.
+    var watchImportSince: Date? {
+        get { defaults.object(forKey: Self.watchImportSinceKey) as? Date }
+        nonmutating set { defaults.set(newValue, forKey: Self.watchImportSinceKey) }
     }
 
     var isConfigured: Bool { homeCoordinate != nil }

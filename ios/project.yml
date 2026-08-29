@@ -26,6 +26,9 @@ targets:
     entitlements:
       path: PetHomepage/PetHomepage.entitlements
       properties:
+        # Apple Watch walk import: read workouts, and let new ones wake the app.
+        com.apple.developer.healthkit: true
+        com.apple.developer.healthkit.background-delivery: true
         com.apple.developer.icloud-container-identifiers:
           - iCloud.pet.homepage
         com.apple.developer.icloud-services:
@@ -58,6 +61,8 @@ targets:
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Detect when a walk starts so the app can offer to log it."
         INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription: "End the walk automatically the moment you arrive back home, even when the app is closed."
         INFOPLIST_KEY_NSMotionUsageDescription: "Recognize walking so short trips to the car don't trigger walk prompts."
+        # Apple Watch walk import (Settings → Walk detection → Apple Watch).
+        INFOPLIST_KEY_NSHealthShareUsageDescription: "Import walks recorded on your Apple Watch so they're logged for your pet."
         # Lock-screen walk timer (WalkLiveActivityWidget in the PetHomepageWidgets extension).
         INFOPLIST_KEY_NSSupportsLiveActivities: "YES"
         # CloudKit sync pushes silent change notifications; without this mode other devices

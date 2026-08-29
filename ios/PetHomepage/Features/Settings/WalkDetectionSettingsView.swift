@@ -1,5 +1,6 @@
 // ios/PetHomepage/Features/Settings/WalkDetectionSettingsView.swift
 import CoreLocation
+import HealthKit
 import SwiftUI
 import UIKit
 
@@ -50,6 +51,7 @@ struct WalkDetectionSettingsView: View {
     @State private var promptRule: WalkPromptRule = .anyWalk
     @State private var defaultTypeID: UUID?
     @State private var autoLog: Bool = true
+    @State private var importWatchWalks: Bool = false
     @State private var showHomePicker = false
     @State private var showAlwaysExplainer = false
 
@@ -125,6 +127,27 @@ struct WalkDetectionSettingsView: View {
                     }
                 }
 
+                if HKHealthStore.isHealthDataAvailable() {
+                    BrandCard {
+                        VStack(alignment: .leading, spacing: 14) {
+                            BrandCardTitle("Apple Watch")
+                            Toggle("Import watch walks", isOn: $importWatchWalks)
+                                .font(Theme.body().weight(.semibold)).tint(Theme.primary)
+                                .onChange(of: importWatchWalks) { _, new in
+                                    if new {
+                                        enableWatchImport()
+                                    } else {
+                                        home.importWatchWalks = false
+                                        NotificationCenter.default.post(
+                                            name: .walkSettingsChanged, object: nil)
+                                    }
+                                }
+                            Text("Outdoor Walk workouts recorded on your Apple Watch are logged as walks — even when your phone stays home. Only new workouts import, and anything already logged isn't duplicated. Needs permission to read workouts from Health.")
+                                .font(.footnote).foregroundStyle(Theme.inkSoft)
+                        }
+                    }
+                }
+
                 BrandCard {
                     VStack(alignment: .leading, spacing: 14) {
                         BrandCardTitle("Permissions")
@@ -162,6 +185,7 @@ struct WalkDetectionSettingsView: View {
             promptRule = home.promptRule
             defaultTypeID = home.defaultActivityTypeID
             autoLog = home.autoLog
+            importWatchWalks = home.importWatchWalks
         }
         .sheet(isPresented: $showHomePicker) {
             HomeLocationPickerView(permissions: permissions,
@@ -176,6 +200,21 @@ struct WalkDetectionSettingsView: View {
             Button("Not now", role: .cancel) {}
         } message: {
             Text("“Always” access lets the walk end itself the moment you're home, even with the app closed. That's all it's used for.")
+        }
+    }
+
+    /// Asks Health for workout read access, then arms the importer. The import-since stamp
+    /// is set once, on first enable, so re-enabling later can't pull in the gap's history.
+    /// HealthKit hides read-authorization status, so the toggle reflects the preference —
+    /// if the user denies in the Health sheet, imports silently find nothing.
+    private func enableWatchImport() {
+        let store = HKHealthStore()
+        store.requestAuthorization(toShare: nil, read: [HKObjectType.workoutType()]) { _, _ in
+            DispatchQueue.main.async {
+                if home.watchImportSince == nil { home.watchImportSince = Date() }
+                home.importWatchWalks = true
+                NotificationCenter.default.post(name: .walkSettingsChanged, object: nil)
+            }
         }
     }
 

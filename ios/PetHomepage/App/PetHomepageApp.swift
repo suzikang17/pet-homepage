@@ -15,6 +15,8 @@ struct PetHomepageApp: App {
     let deeplinkRouter: NotificationRouter
     /// Retained for the app's lifetime — owns the home geofence + motion feed.
     let walkDetector: WalkDetector
+    /// Retained for the app's lifetime — owns the HealthKit workout observer (watch walks).
+    let watchImporter: WatchWalkImporter
     let walkSessions: WalkSessionStore
 
     init() {
@@ -46,7 +48,13 @@ struct PetHomepageApp: App {
         // Walk auto-detection: home geofence + motion prompts (no-op until the user sets a
         // home location and grants Always in Settings → Walk detection).
         walkDetector = WalkDetector(context: context, sessions: sessions)
-        if !UITestSupport.isUITest { walkDetector.refreshMonitoring() }
+        // Apple Watch walk import: re-arms the workout observer each launch (no-op until the
+        // user turns it on in Settings → Walk detection).
+        watchImporter = WatchWalkImporter(context: context, sessions: sessions)
+        if !UITestSupport.isUITest {
+            walkDetector.refreshMonitoring()
+            watchImporter.refresh()
+        }
     }
 
     var body: some Scene {

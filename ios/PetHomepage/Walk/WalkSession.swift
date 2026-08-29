@@ -5,7 +5,7 @@ import Foundation
 /// survive app kill and be readable synchronously from notification handlers, and it is
 /// device-local by design — a session on your phone shouldn't sync to a partner's phone.
 struct WalkSession: Codable, Equatable {
-    enum Source: String, Codable { case manual, detected }
+    enum Source: String, Codable { case manual, detected, watch }
 
     let id: UUID
     let petID: UUID?
