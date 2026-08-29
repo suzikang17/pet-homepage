@@ -125,40 +125,16 @@ final class WatchWalkImporter {
     }
 
     /// Spans of walks already logged near the workout, for the duplicate check. Only
-    /// walk-ish entries count — a meal check-off minutes before the workout must not block
-    /// the import, so activity entries qualify by walk-named type and routine entries by
-    /// their task's isWalk flag.
+    /// walk-ish entries count (WalkLogQuery) — a meal check-off minutes before the workout
+    /// must not block the import.
     private func loggedWalkSpans(around workout: HKWorkout) -> [LoggedWalkSpan] {
         let tolerance = TimeInterval(tuning.watchImportOverlapToleranceMinutes * 60)
         // Reach back far enough to catch a span entry that started before the window.
         let fetchStart = workout.startDate.addingTimeInterval(-tolerance - 6 * 60 * 60)
         let fetchEnd = workout.endDate.addingTimeInterval(tolerance)
-        let request = LogEntry.fetchRequest()
-        request.predicate = NSPredicate(
-            format: "performedAt >= %@ AND performedAt <= %@ AND kindRaw IN %@",
-            fetchStart as CVarArg, fetchEnd as CVarArg,
-            [LogKind.activity.rawValue, LogKind.routine.rawValue])
-        let entries = (try? context.fetch(request)) ?? []
-        return entries.filter { isWalkEntry($0) }
+        return WalkLogQuery.walkEntries(from: fetchStart, to: fetchEnd,
+                                        context: context, home: home)
             .map { LoggedWalkSpan(start: $0.performedAt, end: $0.endedAt) }
-    }
-
-    private func isWalkEntry(_ entry: LogEntry) -> Bool {
-        switch entry.kind {
-        case .activity:
-            guard let type = entry.activityType else { return false }
-            return type.id == home.defaultActivityTypeID
-                || type.name.localizedCaseInsensitiveContains("walk")
-        case .routine:
-            guard let lineage = entry.routineLineageID else { return false }
-            let request = RoutineTask.fetchRequest()
-            request.predicate = NSPredicate(format: "lineageID == %@ AND effectiveUntil == nil",
-                                            lineage as CVarArg)
-            request.fetchLimit = 1
-            return (try? context.fetch(request))?.first?.isWalk ?? false
-        default:
-            return false
-        }
     }
 
     // MARK: - Anchor persistence

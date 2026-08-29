@@ -27,6 +27,9 @@ final class WalkDetector: NSObject {
     private let motionManager = CMMotionActivityManager()
     private var state = WalkDetectorState.initial
     private var motionActive = false
+    /// Computed once per excursion, at the home exit: did we leave near a scheduled slot or
+    /// a learned habit time? Feeds the reducer's fast-confirm threshold on every sample.
+    private var nearExpectedWalkThisExcursion = false
 
     init(context: NSManagedObjectContext, sessions: WalkSessionStore,
          home: HomeLocationStore = HomeLocationStore(),
@@ -87,7 +90,9 @@ final class WalkDetector: NSObject {
             context: context, defaults: defaults, calendar: calendar)) != nil
         let effect = state.apply(event, rule: home.promptRule,
                                  hasActiveSession: sessions.active != nil,
-                                 isNearScheduledSlot: nearSlot, tuning: tuning)
+                                 isNearScheduledSlot: nearSlot,
+                                 isNearExpectedWalk: nearExpectedWalkThisExcursion,
+                                 tuning: tuning)
         execute(effect)
     }
 
@@ -335,6 +340,16 @@ extension WalkDetector: CLLocationManagerDelegate {
         let exitedAt = Date()
         defaults.removeObject(forKey: WalkNotificationAction.dismissedFlagKey)
         defaults.set(exitedAt, forKey: Self.lastExitKey)
+        // Leaving near a scheduled slot or a learned habit time? Then this is probably the
+        // walk, and the short confirmation threshold applies for the rest of the excursion.
+        let nearSlot = (try? WalkSlotFinder.openWalkSlot(
+            near: exitedAt, withinMinutes: tuning.scheduledPromptWindowMinutes,
+            context: context, defaults: defaults, calendar: calendar)) != nil
+        nearExpectedWalkThisExcursion = nearSlot || WalkHabitLearner.isNear(
+            exitedAt,
+            learned: WalkHabitLearner.learnedTimes(context: context, home: home,
+                                                   calendar: calendar, tuning: tuning),
+            windowMinutes: tuning.habitPriorWindowMinutes, calendar: calendar)
         dispatch(.exitedHome(at: exitedAt))
         // Motion checks only matter for prompting; auto-end needs just the geofence.
         if home.promptRule != .off, sessions.active == nil { startMotion() }
@@ -350,6 +365,7 @@ extension WalkDetector: CLLocationManagerDelegate {
         let hadActiveSession = sessions.active != nil
         let promptDismissed = defaults.bool(forKey: WalkNotificationAction.dismissedFlagKey)
         dispatch(.enteredHome(at: enteredAt))
+        nearExpectedWalkThisExcursion = false
         if let exitedAt {
             evaluateRetroWalk(exitedAt: exitedAt, enteredAt: enteredAt,
                               hadActiveSession: hadActiveSession,

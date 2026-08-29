@@ -24,6 +24,21 @@ struct WalkDetectionTuning {
     /// Watch import: a workout overlapping an already-logged walk within this padding is a
     /// duplicate (the phone detected the same walk, or the user logged it by hand).
     var watchImportOverlapToleranceMinutes: Int = 30
+    /// Sustained walking required when the home exit lands near an EXPECTED walk time (a
+    /// scheduled slot or a learned habit): the prior does the confirming, so the timer and
+    /// "Walk started" notice can appear fast instead of waiting out the full threshold.
+    var fastConfirmSeconds: TimeInterval = 90
+    /// Habit learning looks at logged walks over this many trailing days.
+    var habitLookbackDays: Int = 30
+    /// A time-of-day cluster needs this many walks landing near its median to be a habit.
+    var habitMinSamples: Int = 4
+    /// How far from the cluster median a walk can start and still support the habit.
+    var habitSpreadMinutes: Int = 45
+    /// A home exit within this window of a learned habit time gets the fast confirm.
+    var habitPriorWindowMinutes: Int = 45
+    /// Suggest re-timing a walk slot when its scheduled time drifts further than this from
+    /// the learned habit.
+    var habitSuggestDriftMinutes: Int = 30
 
     static let `default` = WalkDetectionTuning()
 }

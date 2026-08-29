@@ -10,23 +10,50 @@ final class WalkDetectorStateTests: XCTestCase {
     /// Applies an event with defaults suitable for most tests.
     private func apply(_ state: inout WalkDetectorState, _ event: WalkDetectorEvent,
                        rule: WalkPromptRule = .anyWalk, hasActiveSession: Bool = false,
-                       isNearScheduledSlot: Bool = false) -> WalkDetectorEffect {
+                       isNearScheduledSlot: Bool = false,
+                       isNearExpectedWalk: Bool = false) -> WalkDetectorEffect {
         state.apply(event, rule: rule, hasActiveSession: hasActiveSession,
-                    isNearScheduledSlot: isNearScheduledSlot, tuning: tuning)
+                    isNearScheduledSlot: isNearScheduledSlot,
+                    isNearExpectedWalk: isNearExpectedWalk, tuning: tuning)
     }
 
     /// Walks the clock forward in 30 s samples; returns the first non-.none effect.
     private func sustainedWalk(_ state: inout WalkDetectorState, from start: Date,
                                seconds: TimeInterval, rule: WalkPromptRule = .anyWalk,
-                               isNearScheduledSlot: Bool = false) -> WalkDetectorEffect {
+                               isNearScheduledSlot: Bool = false,
+                               isNearExpectedWalk: Bool = false) -> WalkDetectorEffect {
         var at = start
         while at.timeIntervalSince(start) <= seconds {
             let effect = apply(&state, .walkingSample(at: at, isWalking: true), rule: rule,
-                               isNearScheduledSlot: isNearScheduledSlot)
+                               isNearScheduledSlot: isNearScheduledSlot,
+                               isNearExpectedWalk: isNearExpectedWalk)
             if effect != .none { return effect }
             at = at.addingTimeInterval(30)
         }
         return .none
+    }
+
+    // MARK: - Fast confirm near expected walks
+
+    func testNearExpectedWalkConfirmsFast() {
+        var state = WalkDetectorState.initial
+        _ = apply(&state, .exitedHome(at: t0))
+        // 90 s of walking suffices when the exit landed near a slot or learned habit time…
+        let effect = sustainedWalk(&state, from: t0, seconds: tuning.fastConfirmSeconds,
+                                   isNearExpectedWalk: true)
+        XCTAssertEqual(effect, .promptStart(exitedAt: t0))
+    }
+
+    func testUnexpectedExitStillNeedsTheFullThreshold() {
+        var state = WalkDetectorState.initial
+        _ = apply(&state, .exitedHome(at: t0))
+        // …but the same 90 s means nothing for a random 2 PM exit.
+        let effect = sustainedWalk(&state, from: t0, seconds: tuning.fastConfirmSeconds,
+                                   isNearExpectedWalk: false)
+        XCTAssertEqual(effect, .none)
+        let confirmed = sustainedWalk(&state, from: t0, seconds: tuning.sustainedWalkSeconds,
+                                      isNearExpectedWalk: false)
+        XCTAssertEqual(confirmed, .promptStart(exitedAt: t0))
     }
 
     func testSustainedWalkingPromptsWithBackdatedExit() {

@@ -52,6 +52,8 @@ struct WalkDetectionSettingsView: View {
     @State private var defaultTypeID: UUID?
     @State private var autoLog: Bool = true
     @State private var importWatchWalks: Bool = false
+    @State private var learnedTimes: [LearnedWalkTime] = []
+    @State private var timeSuggestions: [WalkSlotTimeSuggestion] = []
     @State private var showHomePicker = false
     @State private var showAlwaysExplainer = false
 
@@ -127,6 +129,32 @@ struct WalkDetectionSettingsView: View {
                     }
                 }
 
+                BrandCard {
+                    VStack(alignment: .leading, spacing: 14) {
+                        BrandCardTitle("Walk habits")
+                        if learnedTimes.isEmpty {
+                            Text("After a few logged walks, detection learns your usual times — leaving home near one confirms the walk in about 90 seconds instead of 4 minutes.")
+                                .font(.footnote).foregroundStyle(Theme.inkSoft)
+                        } else {
+                            Label(learnedSummary, systemImage: "clock.arrow.circlepath")
+                                .font(Theme.body()).foregroundStyle(Theme.ink)
+                            Text("Learned from your logged walks. Leaving home near these times confirms a walk fast.")
+                                .font(.footnote).foregroundStyle(Theme.inkSoft)
+                        }
+                        ForEach(timeSuggestions) { suggestion in
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("You usually walk around \(timeString(suggestion.suggestedHour, suggestion.suggestedMinute)), but “\(suggestion.slot.name)” is scheduled for \(timeString(suggestion.slot.hour, suggestion.slot.minute)).")
+                                    .font(.footnote).foregroundStyle(Theme.inkSoft)
+                                Button("Set “\(suggestion.slot.name)” to \(timeString(suggestion.suggestedHour, suggestion.suggestedMinute))") {
+                                    apply(suggestion)
+                                }
+                                .font(Theme.body().weight(.semibold))
+                                .foregroundStyle(Theme.primary)
+                            }
+                        }
+                    }
+                }
+
                 if HKHealthStore.isHealthDataAvailable() {
                     BrandCard {
                         VStack(alignment: .leading, spacing: 14) {
@@ -186,6 +214,7 @@ struct WalkDetectionSettingsView: View {
             defaultTypeID = home.defaultActivityTypeID
             autoLog = home.autoLog
             importWatchWalks = home.importWatchWalks
+            reloadHabits()
         }
         .sheet(isPresented: $showHomePicker) {
             HomeLocationPickerView(permissions: permissions,
@@ -201,6 +230,49 @@ struct WalkDetectionSettingsView: View {
         } message: {
             Text("“Always” access lets the walk end itself the moment you're home, even with the app closed. That's all it's used for.")
         }
+    }
+
+    // MARK: - Walk habits
+
+    /// "Mornings ~7:05 AM · evenings ~5:32 PM" — hour < 12 decides the label.
+    private var learnedSummary: String {
+        learnedTimes
+            .map { "\($0.hour < 12 ? "Mornings" : "Evenings") ~\(timeString($0.hour, $0.minute))" }
+            .joined(separator: " · ")
+    }
+
+    private func timeString(_ hour: Int, _ minute: Int) -> String {
+        let date = Calendar.current.date(bySettingHour: hour, minute: minute, second: 0,
+                                         of: Date()) ?? Date()
+        return date.formatted(date: .omitted, time: .shortened)
+    }
+
+    private func reloadHabits() {
+        learnedTimes = WalkHabitLearner.learnedTimes(context: context, home: home)
+        let slots = walkTasks.map {
+            WalkSlotInfo(id: $0.id, name: $0.name, hour: Int($0.hour), minute: Int($0.minute))
+        }
+        timeSuggestions = WalkTimeSuggestion.suggestions(learned: learnedTimes, slots: slots)
+    }
+
+    private var walkTasks: [RoutineTask] {
+        let petStore = PetStore(context: context)
+        let store = RoutineStore(context: context, petStore: petStore)
+        return ((try? store.currentTasks()) ?? []).filter(\.isWalk)
+    }
+
+    /// Versioned edit (past days keep the old time), then re-derive: a fresh suggestion set
+    /// makes the applied one disappear, and the detector re-arms off the new slot time.
+    private func apply(_ suggestion: WalkSlotTimeSuggestion) {
+        guard let task = walkTasks.first(where: { $0.id == suggestion.slot.id }) else { return }
+        let petStore = PetStore(context: context)
+        let store = RoutineStore(context: context, petStore: petStore)
+        _ = try? store.editTask(task, name: task.name, category: task.category,
+                                iconName: task.iconName, hour: suggestion.suggestedHour,
+                                minute: suggestion.suggestedMinute,
+                                weekdayMask: task.weekdayMask)
+        reloadHabits()
+        NotificationCenter.default.post(name: .walkSettingsChanged, object: nil)
     }
 
     /// Asks Health for workout read access, then arms the importer. The import-since stamp

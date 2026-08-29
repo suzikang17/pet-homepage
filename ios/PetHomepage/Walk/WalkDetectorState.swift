@@ -32,8 +32,13 @@ struct WalkDetectorState: Equatable {
 
     static let initial = WalkDetectorState()
 
+    /// `isNearExpectedWalk`: the home exit landed near a scheduled walk slot or a learned
+    /// habit time, so the prior carries confidence and the short confirmation threshold
+    /// applies. Distinct from `isNearScheduledSlot`, which gates the `.scheduledOnly` rule
+    /// on configured slots only.
     mutating func apply(_ event: WalkDetectorEvent, rule: WalkPromptRule,
                         hasActiveSession: Bool, isNearScheduledSlot: Bool,
+                        isNearExpectedWalk: Bool = false,
                         tuning: WalkDetectionTuning) -> WalkDetectorEffect {
         switch event {
         case let .exitedHome(at):
@@ -59,8 +64,9 @@ struct WalkDetectorState: Equatable {
             if isWalking {
                 consecutiveNonWalking = 0
                 if walkingSince == nil { walkingSince = at }
-                if let since = walkingSince,
-                   at.timeIntervalSince(since) >= tuning.sustainedWalkSeconds {
+                let threshold = isNearExpectedWalk
+                    ? tuning.fastConfirmSeconds : tuning.sustainedWalkSeconds
+                if let since = walkingSince, at.timeIntervalSince(since) >= threshold {
                     promptedThisExcursion = true
                     return .promptStart(exitedAt: awaySince)
                 }
