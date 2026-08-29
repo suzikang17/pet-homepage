@@ -46,7 +46,7 @@ struct PetProfileView: View {
                     title: "Home",
                     subtitle: model.name.isEmpty ? "Your pet" : model.name,
                     systemImage: speciesIcon,
-                    backgroundImage: avatarImage,
+                    backgroundImage: heroBackground,
                     onTapAvatar: { showAvatarActions = true },
                     onSettings: settings != nil ? { showSettings = true } : nil
                 )
@@ -123,6 +123,29 @@ struct PetProfileView: View {
         guard let data = model.photoData, let ui = UIImage(data: data) else { return nil }
         return Image(uiImage: ui)
     }
+
+    /// Today's photo across all activities, falling back to the pet's avatar. The avatar stays
+    /// the identity; this just gives the header something of today in it.
+    ///
+    /// `HeroHeader.backgroundImage` is `Image?` (see Theme.swift), so the pick — a `UIImage`
+    /// loaded off disk — is wrapped before returning; the fallback path returns `avatarImage`
+    /// directly since it's already an `Image?`.
+    private var heroBackground: Image? {
+        // `model.activePetID` (PetProfileViewModel) is `UUID?`, matching `DailyShuffle.pick`'s
+        // salt parameter exactly. It's nil only when there's no current pet yet, in which case
+        // `recentPhotos` is empty too and this falls through to `avatarImage` regardless — but a
+        // fixed constant keeps the (unreachable) fallback pick stable across view re-evaluations
+        // rather than reshuffling on every body recompute the way a fresh `UUID()` would.
+        let salt = model.activePetID ?? Self.noActivePetSalt
+        guard let photo = DailyShuffle.pick(recentPhotos, on: Date(), salt: salt),
+              let url = ThumbnailCache.shared.url(for: photo, size: .hero),
+              let image = UIImage(contentsOfFile: url.path) else { return avatarImage }
+        return Image(uiImage: image)
+    }
+
+    /// Fixed namespace UUID used only as `heroBackground`'s salt when `activePetID` is nil.
+    /// Never persisted or compared against real pet ids.
+    private static let noActivePetSalt = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
 
     private func loadPhoto(_ item: PhotosPickerItem) {
         Task {
