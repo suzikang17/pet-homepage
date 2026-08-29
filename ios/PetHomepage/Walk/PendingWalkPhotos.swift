@@ -35,19 +35,34 @@ struct PendingWalkPhotos {
     }
 
     /// Buffered JPEGs in capture order, oldest first.
+    ///
+    /// Materialises every file at once, so this is for small buffers and for tests. The drain in
+    /// `WalkSessionStore.writeEntry` iterates `fileURLs(for:)` and reads one JPEG at a time
+    /// instead: nothing caps how many captures a walk may buffer, each is a 1600px q0.8 JPEG
+    /// (200–500 KB), and 100 of them in a single `[Data]` is ~40 MB allocated up front — a
+    /// plausible jetsam kill on an older device, right before the writes that would have
+    /// emptied the buffer.
     func photos(for sessionID: UUID) -> [Data] {
-        urls(for: sessionID).compactMap { try? Data(contentsOf: $0) }
+        fileURLs(for: sessionID).compactMap { try? Data(contentsOf: $0) }
+    }
+
+    /// Drops one buffered file. Used as each capture is successfully attached, so a drain that
+    /// fails part-way through leaves behind exactly the captures that did NOT attach.
+    func remove(_ url: URL) {
+        try? fileManager.removeItem(at: url)
     }
 
     func count(for sessionID: UUID) -> Int {
-        urls(for: sessionID).count
+        fileURLs(for: sessionID).count
     }
 
     func clear(sessionID: UUID) {
         try? fileManager.removeItem(at: folder(for: sessionID))
     }
 
-    private func urls(for sessionID: UUID) -> [URL] {
+    /// Buffered files in capture order, oldest first. Read and remove them one at a time so
+    /// peak memory is one photo rather than the whole walk.
+    func fileURLs(for sessionID: UUID) -> [URL] {
         let contents = (try? fileManager.contentsOfDirectory(
             at: folder(for: sessionID), includingPropertiesForKeys: nil
         )) ?? []

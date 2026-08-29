@@ -99,15 +99,41 @@ final class WalkSessionStore {
     /// normal `end()` and a stale `expireIfStale()` without a second code path.
     private func writeEntry(for session: WalkSession, endedAt: Date?) throws -> LogEntry {
         let entry = try writeEntryCore(for: session, endedAt: endedAt)
-        let buffered = pending.photos(for: session.id)
+        let buffered = pending.fileURLs(for: session.id)
         guard !buffered.isEmpty else { return entry }
         let logStore = LogStore(context: context,
                                 petStore: PetStore(context: context, defaults: defaults))
-        for jpeg in buffered {
-            // A single failed photo must not lose the walk itself, which is already written.
-            _ = try? logStore.addPhoto(to: entry, imageData: jpeg)
+        var allAttached = true
+        for url in buffered {
+            // One file at a time. Loading the whole buffer as a single `[Data]` before writing
+            // any of it made peak memory scale with the length of the walk.
+            guard let jpeg = try? Data(contentsOf: url) else {
+                allAttached = false
+                continue
+            }
+            do {
+                _ = try logStore.addPhoto(to: entry, imageData: jpeg)
+                pending.remove(url)
+            } catch {
+                // Two things must survive an attachment failure, and they used to be in
+                // conflict. A single failed photo must not lose the WALK, which is already
+                // written — hence swallowing the error rather than rethrowing. But it must not
+                // lose the PHOTO either: these files are the only copy (PendingWalkPhotos lives
+                // in Application Support, not Caches, precisely because they are not derived
+                // data), and the buffer used to be cleared unconditionally below, so an
+                // addPhoto that threw — a full disk at the end of a walk is the realistic case
+                // — silently DELETED a capture the user had watched the banner badge count.
+                //
+                // So the choice is: keep whatever did not attach. The file stays on disk and
+                // the folder survives the drain.
+                allAttached = false
+            }
         }
-        pending.clear(sessionID: session.id)
+        // Only a clean drain removes the folder. A partial one leaves the failures behind;
+        // nothing re-drains them today (the session is cleared either way), so they are
+        // orphaned on disk rather than destroyed — strictly the better of the two outcomes,
+        // and a sweep for orphaned session folders is tracked separately.
+        if allAttached { pending.clear(sessionID: session.id) }
         return entry
     }
 
