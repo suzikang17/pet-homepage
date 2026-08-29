@@ -3,6 +3,8 @@ import UserNotifications
 
 @main
 struct PetHomepageApp: App {
+    /// Quick actions only: catches the app-icon "Jot an idea" long-press (see QuickActions.swift).
+    @UIApplicationDelegateAdaptor(QuickActionAppDelegate.self) private var quickActionDelegate
     // `--uitest`: an in-memory store (no CloudKit) seeded deterministically below, instead of the
     // real `.shared` CloudKit-backed container. Seeding happens synchronously here, before
     // `ContentView` is ever constructed, so the first render already sees the seeded pet.

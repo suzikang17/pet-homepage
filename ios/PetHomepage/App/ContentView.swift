@@ -56,6 +56,12 @@ struct ContentView: View {
     @State private var pendingLibraryFromCamera = false
     /// Development scratchpad, opened by shaking the phone from any tab.
     @State private var showIdeas = false
+    /// App-icon "Jot an idea" quick action; observed so cold and warm launches both open the
+    /// sheet. `@State` keeps the shared reference participating in SwiftUI observation.
+    @State private var quickActions = QuickActionRouter.shared
+    /// True while the sheet was opened from the app icon — those ideas are stamped "App icon"
+    /// rather than the current tab, which the user never saw.
+    @State private var ideasFromQuickAction = false
 
     /// Opens the capture flow from the Timeline + menu: staged stub photo under
     /// `--uitest-stub-camera`, the camera when available, else the photo-library picker.
@@ -197,10 +203,12 @@ struct ContentView: View {
         }
         .tint(Theme.primary)
         .background(ShakeDetector { showIdeas = true })
-        .sheet(isPresented: $showIdeas) {
+        .sheet(isPresented: $showIdeas, onDismiss: { ideasFromQuickAction = false }) {
             NavigationStack {
                 IdeaListView(store: FileIdeaStore.documents(),
-                             screen: Self.screenLabel(for: selectedTab))
+                             screen: ideasFromQuickAction
+                                 ? "App icon"
+                                 : Self.screenLabel(for: selectedTab))
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
                             Button("Done") { showIdeas = false }
@@ -208,12 +216,27 @@ struct ContentView: View {
                     }
             }
         }
+        // App-icon quick action, warm path: the router flips while the UI is live. The cold
+        // path (flag set before this view existed) is consumed in .task below.
+        .onChange(of: quickActions.pendingJot) { _, pending in
+            guard pending else { return }
+            quickActions.pendingJot = false
+            ideasFromQuickAction = true
+            showIdeas = true
+        }
         .onChange(of: deeplinkRouter?.pendingTab) { _, tab in
             guard let tab else { return }
             selectedTab = tab
             deeplinkRouter?.pendingTab = nil
         }
         .task {
+            // App-icon quick action, cold path: the flag was set in configurationForConnecting,
+            // before this view existed, so onChange never saw a change.
+            if quickActions.pendingJot {
+                quickActions.pendingJot = false
+                ideasFromQuickAction = true
+                showIdeas = true
+            }
             // v1 -> v2: carry the mis-named `startedAt` into `nextReminderAt`. Keyed on nil
             // rather than a run-once flag, so records arriving later from a device still on the
             // old build get carried across too.
