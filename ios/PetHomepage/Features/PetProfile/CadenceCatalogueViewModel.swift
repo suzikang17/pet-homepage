@@ -25,6 +25,7 @@ final class CadenceCatalogueViewModel {
     private let dueScheduler: DueReminderScheduler
     private let calendar: Calendar
     private let now: () -> Date
+    private let photoPool: PhotoPool
 
     init(medicationStore: MedicationStore,
          activityStore: ActivityStore,
@@ -32,7 +33,8 @@ final class CadenceCatalogueViewModel {
          reminderScheduler: MedicationReminderScheduler,
          dueScheduler: DueReminderScheduler,
          calendar: Calendar = .current,
-         now: @escaping () -> Date = Date.init) {
+         now: @escaping () -> Date = Date.init,
+         photoPool: PhotoPool? = nil) {
         self.medicationStore = medicationStore
         self.activityStore = activityStore
         self.logStore = logStore
@@ -40,6 +42,16 @@ final class CadenceCatalogueViewModel {
         self.dueScheduler = dueScheduler
         self.calendar = calendar
         self.now = now
+        self.photoPool = photoPool ?? PhotoPool(context: activityStore.context)
+    }
+
+    /// Today's photo for an activity type. Salted with the type's own id so two activities
+    /// pick independently on the same day.
+    private func dailyPhotoURL(for type: ActivityType) -> URL? {
+        let photos = (try? photoPool.photos(for: .activityType(type))) ?? []
+        guard let photo = DailyShuffle.pick(photos, on: now(), salt: type.id,
+                                            calendar: calendar) else { return nil }
+        return ThumbnailCache.shared.url(for: photo, size: .strip)
     }
 
     func load() {
@@ -55,7 +67,8 @@ final class CadenceCatalogueViewModel {
                     iconName: "pills.fill",
                     subtitle: med.dosage,
                     lastDone: try? logStore.lastDose(for: med),
-                    nextDue: med.nextReminder)
+                    nextDue: med.nextReminder,
+                    dailyPhotoURL: nil)
             }
 
         // Only types with a real cadence. defaultIntervalDays == 0 means a one-off log type,
@@ -71,7 +84,8 @@ final class CadenceCatalogueViewModel {
                     iconName: type.iconName,
                     subtitle: nil,
                     lastDone: latest?.performedAt,
-                    nextDue: latest?.nextDueAt)
+                    nextDue: latest?.nextDueAt,
+                    dailyPhotoURL: dailyPhotoURL(for: type))
             }
 
         items = (medications + activities).sorted(by: Self.ordering(now: now(), calendar: calendar))

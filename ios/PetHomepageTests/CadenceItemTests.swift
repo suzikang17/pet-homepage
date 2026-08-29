@@ -17,7 +17,8 @@ final class CadenceItemTests: XCTestCase {
 
     private func item(nextDue: Date?) -> CadenceItem {
         CadenceItem(id: UUID(), source: .activityType(objectID), name: "Bath",
-                    iconName: "shower", subtitle: nil, lastDone: nil, nextDue: nextDue)
+                    iconName: "shower", subtitle: nil, lastDone: nil, nextDue: nextDue,
+                    dailyPhotoURL: nil)
     }
 
     private func date(_ year: Int, _ month: Int, _ day: Int, _ hour: Int = 0) -> Date {

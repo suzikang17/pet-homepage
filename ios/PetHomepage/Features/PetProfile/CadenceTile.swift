@@ -44,9 +44,13 @@ struct CadenceTile: View {
         Group {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 6) {
-                    Image(systemName: item.iconName)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Theme.primary)
+                    if let url = item.dailyPhotoURL {
+                        PhotoThumbnail(url: url, side: 28, cornerRadius: 8)
+                    } else {
+                        Image(systemName: item.iconName)
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(Theme.primary)
+                    }
                     Spacer(minLength: 0)
                     Text(item.dueState(now: now).badgeText)
                         .font(.caption2.weight(.semibold))

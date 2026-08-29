@@ -33,6 +33,9 @@ struct CadenceItem: Identifiable, Equatable, Hashable {
     let subtitle: String?
     let lastDone: Date?
     let nextDue: Date?
+    /// Today's photo for this item, already downsized. Nil when the pool is empty, and the
+    /// tile falls back to its symbol.
+    let dailyPhotoURL: URL?
 
     func dueState(now: Date, calendar: Calendar = .current) -> DueState {
         DueState.from(due: nextDue, now: now, calendar: calendar)
