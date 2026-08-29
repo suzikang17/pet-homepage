@@ -15,13 +15,16 @@ final class WalkSessionStore {
     private let defaults: UserDefaults
     private let calendar: Calendar
     private let now: () -> Date
+    private let pending: PendingWalkPhotos
 
     init(context: NSManagedObjectContext, defaults: UserDefaults = .standard,
-         calendar: Calendar = .current, now: @escaping () -> Date = Date.init) {
+         calendar: Calendar = .current, now: @escaping () -> Date = Date.init,
+         pending: PendingWalkPhotos = PendingWalkPhotos()) {
         self.context = context
         self.defaults = defaults
         self.calendar = calendar
         self.now = now
+        self.pending = pending
     }
 
     var active: WalkSession? {
@@ -54,7 +57,23 @@ final class WalkSessionStore {
         return entry
     }
 
-    func cancel() { clear() }
+    /// Parks a mid-walk capture until `writeEntry` has an entry to attach it to. A no-op with
+    /// no active session, which makes a late shutter tap after End harmless.
+    func attachPhoto(_ jpeg: Data) {
+        guard let session = active else { return }
+        try? pending.add(jpeg, sessionID: session.id)
+    }
+
+    /// How many photos are waiting on the active session — drives the banner's badge.
+    var pendingPhotoCount: Int {
+        guard let session = active else { return 0 }
+        return pending.count(for: session.id)
+    }
+
+    func cancel() {
+        if let session = active { pending.clear(sessionID: session.id) }
+        clear()
+    }
 
     /// A forgotten session (older than maxSessionAge) is saved open-ended so the walk isn't
     /// lost, and cleared so a new one can start. The caller decides whether to notify.
@@ -76,7 +95,23 @@ final class WalkSessionStore {
         return session
     }
 
+    /// The single path from session to LogEntry, so draining the pending buffer here covers a
+    /// normal `end()` and a stale `expireIfStale()` without a second code path.
     private func writeEntry(for session: WalkSession, endedAt: Date?) throws -> LogEntry {
+        let entry = try writeEntryCore(for: session, endedAt: endedAt)
+        let buffered = pending.photos(for: session.id)
+        guard !buffered.isEmpty else { return entry }
+        let logStore = LogStore(context: context,
+                                petStore: PetStore(context: context, defaults: defaults))
+        for jpeg in buffered {
+            // A single failed photo must not lose the walk itself, which is already written.
+            _ = try? logStore.addPhoto(to: entry, imageData: jpeg)
+        }
+        pending.clear(sessionID: session.id)
+        return entry
+    }
+
+    private func writeEntryCore(for session: WalkSession, endedAt: Date?) throws -> LogEntry {
         let petStore = PetStore(context: context, defaults: defaults)
         if let typeID = session.activityTypeID {
             // Reconcile with the schedule at END time too: prompt-time attachment can miss
