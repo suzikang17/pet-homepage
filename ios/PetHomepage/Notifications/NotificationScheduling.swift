@@ -36,6 +36,10 @@ struct PendingReminder: Equatable {
     /// true = repeating on those components (weekly routine reminders, components = [weekday]).
     /// Ignored when dateComponents is nil (always the daily repeating medication trigger).
     let repeats: Bool
+    /// A cached thumbnail to attach when the reminder actually fires, or nil for none. Purely
+    /// additive to content — never consulted by `ReminderIdentifier`, so it cannot change a
+    /// reminder's identity or trigger.
+    let attachmentURL: URL?
 
     init(kind: ReminderKind,
          entityID: UUID,
@@ -44,7 +48,8 @@ struct PendingReminder: Equatable {
          hour: Int,
          minute: Int,
          dateComponents: DateComponents? = nil,
-         repeats: Bool = false) {
+         repeats: Bool = false,
+         attachmentURL: URL? = nil) {
         self.kind = kind
         self.entityID = entityID
         self.title = title
@@ -53,6 +58,7 @@ struct PendingReminder: Equatable {
         self.minute = minute
         self.dateComponents = dateComponents
         self.repeats = repeats
+        self.attachmentURL = attachmentURL
     }
 }
 

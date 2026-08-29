@@ -17,14 +17,33 @@ final class DueReminderScheduler {
     private let hour: Int
     private let minute: Int
     private let now: () -> Date
+    /// Source of today's attachment photo for activity reminders. nil (the default, and every
+    /// existing call site) means reminders schedule exactly as before — no attachment lookup at
+    /// all, not even an empty-pool one. DueReminderScheduler has no NSManagedObjectContext of its
+    /// own and none of its collaborators (NotificationScheduling) expose one, so unlike
+    /// CadenceCatalogueViewModel this can't default itself from a store already in hand — the
+    /// composition root (ContentView) passes a real PhotoPool explicitly.
+    private let photoPool: PhotoPool?
 
     init(scheduler: NotificationScheduling, calendar: Calendar = .current, hour: Int = 9,
-         minute: Int = 0, now: @escaping () -> Date = Date.init) {
+         minute: Int = 0, now: @escaping () -> Date = Date.init, photoPool: PhotoPool? = nil) {
         self.scheduler = scheduler
         self.calendar = calendar
         self.hour = hour
         self.minute = minute
         self.now = now
+        self.photoPool = photoPool
+    }
+
+    /// Today's attachment photo for an activity type, or nil if there is no pool, no photos, or
+    /// no cached thumbnail. Salted with the type's own id so two activity reminders due the same
+    /// day pick independently, matching CadenceCatalogueViewModel.dailyPhotoURL.
+    private func attachmentURL(for type: ActivityType) -> URL? {
+        guard let photoPool else { return nil }
+        let photos = (try? photoPool.photos(for: .activityType(type))) ?? []
+        guard let photo = DailyShuffle.pick(photos, on: now(), salt: type.id, calendar: calendar)
+        else { return nil }
+        return ThumbnailCache.shared.url(for: photo, size: .notification)
     }
 
     /// The trigger components for a due date, shared by all three kinds.
@@ -150,7 +169,8 @@ final class DueReminderScheduler {
             body: body,
             hour: reminderHour,
             minute: reminderMinute,
-            dateComponents: dateComponents
+            dateComponents: dateComponents,
+            attachmentURL: log.activityType.flatMap(attachmentURL(for:))
         )
     }
 

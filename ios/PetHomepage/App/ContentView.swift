@@ -76,11 +76,13 @@ struct ContentView: View {
         let medicationStore = MedicationStore(context: context, petStore: petStore)
         let recommendationStore = VetRecommendationStore(context: context)
         let reminderScheduler = MedicationReminderScheduler(scheduler: UNNotificationScheduler())
-        let dueScheduler = DueReminderScheduler(scheduler: UNNotificationScheduler())
+        let dueScheduler = DueReminderScheduler(scheduler: UNNotificationScheduler(),
+                                                photoPool: PhotoPool(context: context))
         let symptomEntryStore = SymptomEntryStore(context: context)
         let activityStore = ActivityStore(context: context, petStore: petStore)
         let routineStore = RoutineStore(context: context, petStore: petStore)
-        let routineReminderScheduler = RoutineReminderScheduler(scheduler: UNNotificationScheduler())
+        let routineReminderScheduler = RoutineReminderScheduler(scheduler: UNNotificationScheduler(),
+                                                                 photoPool: PhotoPool(context: context))
         let veterinarianStore = VeterinarianStore(context: context, petStore: petStore)
         let diaryStore = DiaryStore(context: context, petStore: petStore)
         let logStore = LogStore(context: context, petStore: petStore)

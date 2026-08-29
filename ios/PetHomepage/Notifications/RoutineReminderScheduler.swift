@@ -24,10 +24,29 @@ struct RoutineReminderOccurrence: Equatable {
 final class RoutineReminderScheduler {
     private let scheduler: NotificationScheduling
     private let calendar: Calendar
+    /// Source of today's attachment photo for routine/walk-slot reminders — this is the first
+    /// real caller of the `.routineTask` union built for `PhotoPool` (it also pulls in
+    /// auto-detected walk logs for walk tasks). nil (the default, and every existing call site
+    /// until the composition root is updated) means no attachment lookup at all, matching
+    /// today's behavior exactly. RoutineReminderScheduler has no NSManagedObjectContext of its
+    /// own — like DueReminderScheduler, callers that want photos pass a real PhotoPool in.
+    private let photoPool: PhotoPool?
 
-    init(scheduler: NotificationScheduling, calendar: Calendar = .current) {
+    init(scheduler: NotificationScheduling, calendar: Calendar = .current, photoPool: PhotoPool? = nil) {
         self.scheduler = scheduler
         self.calendar = calendar
+        self.photoPool = photoPool
+    }
+
+    /// Today's attachment photo for a routine/walk-slot occurrence, or nil if there is no pool,
+    /// no photos, or no cached thumbnail. Salted with the task's own id, matching
+    /// DueReminderScheduler's per-activity-type salting.
+    private func attachmentURL(for task: RoutineTask, on day: Date) -> URL? {
+        guard let photoPool else { return nil }
+        let photos = (try? photoPool.photos(for: .routineTask(task))) ?? []
+        guard let photo = DailyShuffle.pick(photos, on: day, salt: task.id, calendar: calendar)
+        else { return nil }
+        return ThumbnailCache.shared.url(for: photo, size: .notification)
     }
 
     /// Full re-sync: clears the whole routine kind, then schedules the given occurrences.
@@ -50,7 +69,8 @@ final class RoutineReminderScheduler {
                 hour: occurrence.hour,
                 minute: occurrence.minute,
                 dateComponents: components,
-                repeats: false))
+                repeats: false,
+                attachmentURL: attachmentURL(for: occurrence.task, on: occurrence.day)))
         }
     }
 
