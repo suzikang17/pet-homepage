@@ -63,6 +63,10 @@ targets:
         INFOPLIST_KEY_NSMotionUsageDescription: "Recognize walking so short trips to the car don't trigger walk prompts."
         # Apple Watch walk import (Settings → Walk detection → Apple Watch).
         INFOPLIST_KEY_NSHealthShareUsageDescription: "Import walks recorded on your Apple Watch so they're logged for your pet."
+        # App Store validation requires BOTH Health purpose strings once the HealthKit
+        # entitlement is present (ITMS-90683), even though this app never writes Health
+        # data — builds 73-75 were silently rejected in post-upload processing without it.
+        INFOPLIST_KEY_NSHealthUpdateUsageDescription: "Pet Homepage only reads walk workouts; it never writes to Health."
         # Lock-screen walk timer (WalkLiveActivityWidget in the PetHomepageWidgets extension).
         INFOPLIST_KEY_NSSupportsLiveActivities: "YES"
         # CloudKit sync pushes silent change notifications; without this mode other devices
@@ -82,10 +86,18 @@ targets:
         # project-wide GENERATE_INFOPLIST_FILE=YES must not also synthesize one.
         GENERATE_INFOPLIST_FILE: NO
         SKIP_INSTALL: YES
+        # Fallbacks for local builds; the TestFlight workflow's command-line
+        # CURRENT_PROJECT_VERSION=$GITHUB_RUN_NUMBER overrides for both targets, keeping
+        # the extension's CFBundleVersion in lockstep with the app's (App Store warns on
+        # mismatch; xcodegen's generated plist otherwise hardcodes '1').
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
     info:
       path: PetHomepageWidgets/Info.plist
       properties:
         CFBundleDisplayName: "Pet Homepage"
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
 
