@@ -195,6 +195,9 @@ struct TimelineView: View {
 
     private func row(_ item: TimelineItem) -> some View {
         HStack(spacing: 12) {
+            if let url = item.thumbnailURL {
+                PhotoThumbnail(url: url, side: 44, cornerRadius: 10)
+            }
             Image(systemName: item.kind.systemImage)
                 .font(.system(size: 15, weight: .bold))
                 .foregroundStyle(tint(item.kind))

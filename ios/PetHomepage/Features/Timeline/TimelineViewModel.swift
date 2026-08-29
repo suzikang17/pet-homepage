@@ -60,6 +60,9 @@ struct TimelineItem: Identifiable {
     let subtitle: String?
     let nextDue: Date?
     let reference: TimelineReference
+    /// This entry's own first photo — never a pool/shuffle pick. A row is a specific event, so
+    /// a rotating photo would misrepresent it. Nil when the entry has no photos.
+    let thumbnailURL: URL?
 }
 
 /// Aggregates the five record stores into one date-sorted stream, plus the "due soon" slice the
@@ -237,7 +240,8 @@ extension TimelineItem {
             title: v.title ?? "Vaccine",
             subtitle: v.administeredBy.map { "by \($0)" },
             nextDue: v.nextDueAt,
-            reference: .vaccine(v)
+            reference: .vaccine(v),
+            thumbnailURL: nil
         )
     }
 
@@ -249,7 +253,8 @@ extension TimelineItem {
             title: v.clinicName ?? "Vet visit",
             subtitle: v.title ?? v.vetName,
             nextDue: v.nextDueAt,
-            reference: .vet(v)
+            reference: .vet(v),
+            thumbnailURL: nil
         )
     }
 
@@ -265,7 +270,8 @@ extension TimelineItem {
             subtitle: [d.medication?.dosage, d.note]
                 .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "),
             nextDue: nil,
-            reference: .dose(d)
+            reference: .dose(d),
+            thumbnailURL: nil
         )
     }
 
@@ -277,7 +283,8 @@ extension TimelineItem {
             title: m.drugName,
             subtitle: [m.dosage, m.frequency].filter { !$0.isEmpty }.joined(separator: " · "),
             nextDue: m.refillDueAt,
-            reference: .medication(m)
+            reference: .medication(m),
+            thumbnailURL: nil
         )
     }
 
@@ -290,7 +297,8 @@ extension TimelineItem {
             title: "\(mk.markerType.displayName): \(formatMarker(mk.value))\(unit)",
             subtitle: nil,
             nextDue: nil,
-            reference: .marker(mk)
+            reference: .marker(mk),
+            thumbnailURL: nil
         )
     }
 
@@ -302,7 +310,8 @@ extension TimelineItem {
             title: ep.title ?? ep.category.displayName,
             subtitle: ep.status == .active ? "Active" : "Resolved",
             nextDue: nil,
-            reference: .symptom(ep)
+            reference: .symptom(ep),
+            thumbnailURL: nil
         )
     }
 
@@ -317,7 +326,8 @@ extension TimelineItem {
             title: log.activityType?.name ?? "Activity",
             subtitle: combined.isEmpty ? nil : combined,
             nextDue: log.nextDueAt,
-            reference: .activity(log)
+            reference: .activity(log),
+            thumbnailURL: nil
         )
     }
 
@@ -328,6 +338,8 @@ extension TimelineItem {
             : (photoCount > 0 ? "\(photoCount) photo\(photoCount == 1 ? "" : "s")" : nil)
         let duration = entry.durationMinutes.map { "\($0) min" }
         let combined = [duration, base].compactMap { $0 }.joined(separator: " · ")
+        let thumbnailURL = entry.photoArray.first
+            .flatMap { ThumbnailCache.shared.url(for: $0, size: .row) }
         self.init(
             id: "routine:\(entry.id.uuidString)",
             kind: .routine,
@@ -335,7 +347,8 @@ extension TimelineItem {
             title: entry.title ?? "Routine",
             subtitle: combined.isEmpty ? nil : combined,
             nextDue: nil,
-            reference: .routine(entry)
+            reference: .routine(entry),
+            thumbnailURL: thumbnailURL
         )
     }
 
@@ -345,6 +358,8 @@ extension TimelineItem {
             .split(separator: "\n", maxSplits: 1, omittingEmptySubsequences: true)
             .first.map(String.init)
         let photoCount = entry.photoArray.count
+        let thumbnailURL = entry.photoArray.first
+            .flatMap { ThumbnailCache.shared.url(for: $0, size: .row) }
         self.init(
             id: "diary:\(entry.id.uuidString)",
             kind: .diary,
@@ -352,7 +367,8 @@ extension TimelineItem {
             title: (firstLine?.isEmpty == false) ? firstLine! : "Diary entry",
             subtitle: photoCount > 0 ? "\(photoCount) photo\(photoCount == 1 ? "" : "s")" : nil,
             nextDue: nil,
-            reference: .diary(entry)
+            reference: .diary(entry),
+            thumbnailURL: thumbnailURL
         )
     }
 }
