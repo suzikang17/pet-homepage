@@ -45,13 +45,42 @@ final class CadenceCatalogueViewModel {
         self.photoPool = photoPool ?? PhotoPool(context: activityStore.context)
     }
 
-    /// Today's photo for an activity type. Salted with the type's own id so two activities
-    /// pick independently on the same day.
-    private func dailyPhotoURL(for type: ActivityType) -> URL? {
+    /// Bumped by every `load()`. Views drive `resolveDailyPhotos()` from `.task(id: loadToken)`.
+    private(set) var loadToken = UUID()
+
+    /// Picks whose thumbnail was not already on disk when `load()` ran, keyed by the tile's id.
+    /// Drained by `resolveDailyPhotos()`.
+    private var pendingPhotoPicks: [UUID: Photo] = [:]
+
+    /// Today's photo for an activity type, and its thumbnail URL as a CACHE HIT ONLY — a `stat`,
+    /// never a blob fault and never an ImageIO downsample.
+    ///
+    /// The pick itself (the two `PhotoPool` fetches) stays synchronous because it decides *which*
+    /// photo, and the answer must be stable for the tile. Only the expensive part — generating a
+    /// 264px JPEG on a miss — is deferred to `resolveDailyPhotos()`. Salted with the type's own
+    /// id so two activities pick independently on the same day.
+    private func dailyPhotoPick(for type: ActivityType) -> (photo: Photo, url: URL?)? {
         let photos = (try? photoPool.photos(for: .activityType(type))) ?? []
         guard let photo = DailyShuffle.pick(photos, on: now(), salt: type.id,
                                             calendar: calendar) else { return nil }
-        return ThumbnailCache.shared.url(for: photo, size: .strip)
+        return (photo, ThumbnailCache.shared.cachedURL(for: photo, size: .strip))
+    }
+
+    /// Generates the tile photos `load()` could not answer from the cache, off the main thread,
+    /// publishing each tile as it lands. A tile still waiting shows its SF Symbol — the same
+    /// rendering an activity type with no photos gets — so nothing flickers into a hole.
+    @MainActor
+    func resolveDailyPhotos() async {
+        // Snapshot: the loop mutates `pendingPhotoPicks` as each pick lands.
+        for (itemID, photo) in pendingPhotoPicks.map({ ($0.key, $0.value) }) {
+            if Task.isCancelled { return }
+            guard let url = await ThumbnailCache.shared.resolveURL(for: photo, size: .strip)
+            else { continue }
+            // `load()` may have replaced `items` while this was suspended; match by id.
+            guard let index = items.firstIndex(where: { $0.id == itemID }) else { continue }
+            items[index].dailyPhotoURL = url
+            pendingPhotoPicks[itemID] = nil
+        }
     }
 
     func load() {
@@ -73,10 +102,13 @@ final class CadenceCatalogueViewModel {
 
         // Only types with a real cadence. defaultIntervalDays == 0 means a one-off log type,
         // which by construction never gets a nextDueAt.
+        var picks: [UUID: Photo] = [:]
         let activities = ((try? activityStore.types(includeArchived: false)) ?? [])
             .filter { $0.defaultIntervalDays > 0 }
             .map { type in
                 let latest = try? logStore.latestLog(of: type)
+                let pick = dailyPhotoPick(for: type)
+                if let pick, pick.url == nil { picks[type.id] = pick.photo }
                 return CadenceItem(
                     id: type.id,
                     source: .activityType(type.objectID),
@@ -85,11 +117,13 @@ final class CadenceCatalogueViewModel {
                     subtitle: nil,
                     lastDone: latest?.performedAt,
                     nextDue: latest?.nextDueAt,
-                    dailyPhotoURL: dailyPhotoURL(for: type))
+                    dailyPhotoURL: pick?.url)
             }
+        pendingPhotoPicks = picks
 
         items = (medications + activities).sorted(by: Self.ordering(now: now(), calendar: calendar))
         loadUpcoming()
+        loadToken = UUID()
     }
 
     /// Builds the dated list. The grid's own items supply doses and activities; the three sources

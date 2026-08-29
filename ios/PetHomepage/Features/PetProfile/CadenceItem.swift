@@ -35,7 +35,12 @@ struct CadenceItem: Identifiable, Equatable, Hashable {
     let nextDue: Date?
     /// Today's photo for this item, already downsized. Nil when the pool is empty, and the
     /// tile falls back to its symbol.
-    let dailyPhotoURL: URL?
+    ///
+    /// `var`, because it is filled in twice: `load()` sets it from a cache HIT only (a `stat`),
+    /// and `CadenceCatalogueViewModel.resolveDailyPhotos()` generates the misses afterwards off
+    /// the main thread. A tile whose photo hasn't landed yet shows its symbol, which is exactly
+    /// the empty-pool rendering.
+    var dailyPhotoURL: URL?
 
     func dueState(now: Date, calendar: Calendar = .current) -> DueState {
         DueState.from(due: nextDue, now: now, calendar: calendar)

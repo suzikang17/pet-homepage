@@ -87,6 +87,10 @@ struct TimelineView: View {
             .ignoresSafeArea(edges: .top)
             .toolbar(.hidden, for: .navigationBar)
             .onAppear { model.load() }
+            // Row thumbnails that weren't already cached are generated off the main thread and
+            // filled in as they land. Keyed on `loadToken` so every reload — appear, sheet
+            // dismiss, detail pop — starts a fresh pass and cancels the previous one.
+            .task(id: model.loadToken) { await model.resolveThumbnails() }
             .sheet(item: $editTarget, onDismiss: { model.load() }) { editor(for: $0) }
             .sheet(item: $addKind, onDismiss: { model.load() }) { addEditor(for: $0) }
             .navigationDestination(item: $medDetail) { med in

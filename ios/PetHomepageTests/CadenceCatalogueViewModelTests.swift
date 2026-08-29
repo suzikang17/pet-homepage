@@ -275,23 +275,31 @@ final class CadenceCatalogueViewModelTests: XCTestCase {
         return image.jpegData(compressionQuality: 0.9)!
     }
 
-    func testActivityItemCarriesTodaysPhotoURL() throws {
+    /// `load()` now answers cache HITS only — generating a thumbnail there was a synchronous
+    /// ImageIO downsample on the main thread, once per tile, on every Home appear. The tile's
+    /// photo arrives from `resolveDailyPhotos()` instead, which is what the view drives from
+    /// `.task(id: loadToken)`.
+    func testActivityItemCarriesTodaysPhotoURL() async throws {
         let bath = try makeType("Bath", intervalDays: 30)
         let log = try logStore.logActivity(type: bath, performedAt: now, note: nil, intervalDays: 30)
         _ = try logStore.addPhoto(to: log, imageData: sampleJPEG())
         let sut = makeSUT()
 
         sut.load()
+        await sut.resolveDailyPhotos()
 
         let item = try XCTUnwrap(sut.items.first { $0.name == "Bath" })
         XCTAssertNotNil(item.dailyPhotoURL)
     }
 
-    func testActivityItemWithNoPhotosHasNoURL() throws {
+    /// The degradation rule: no photos means the tile renders exactly as it did before this
+    /// feature existed — its SF Symbol — and the async resolve pass must not change that.
+    func testActivityItemWithNoPhotosHasNoURL() async throws {
         try makeType("Bath", intervalDays: 30)
         let sut = makeSUT()
 
         sut.load()
+        await sut.resolveDailyPhotos()
 
         let item = try XCTUnwrap(sut.items.first { $0.name == "Bath" })
         XCTAssertNil(item.dailyPhotoURL)

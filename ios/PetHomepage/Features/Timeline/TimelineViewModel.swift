@@ -62,7 +62,11 @@ struct TimelineItem: Identifiable {
     let reference: TimelineReference
     /// This entry's own first photo — never a pool/shuffle pick. A row is a specific event, so
     /// a rotating photo would misrepresent it. Nil when the entry has no photos.
-    let thumbnailURL: URL?
+    ///
+    /// `var`, because it is filled in twice: `load()` sets it from a cache HIT only (a `stat`),
+    /// and `TimelineViewModel.resolveThumbnails()` fills in the misses afterwards, off the main
+    /// thread, publishing each row as it lands.
+    var thumbnailURL: URL?
 }
 
 /// Aggregates the five record stores into one date-sorted stream, plus the "due soon" slice the
@@ -94,6 +98,10 @@ final class TimelineViewModel {
     var errorMessage: String?
     /// All photos across diary entries + records, for the Photos view mode grid.
     var photos: [Photo] = []
+    /// Bumped by every `load()`. Views drive `resolveThumbnails()` from `.task(id: loadToken)`,
+    /// so each reload gets a fresh, structurally-cancelled resolve pass rather than an
+    /// unstructured `Task` fired from inside `load()`.
+    private(set) var loadToken = UUID()
 
     private let medicationStore: MedicationStore
     private let logStore: LogStore
@@ -121,6 +129,36 @@ final class TimelineViewModel {
             errorMessage = nil
         } catch {
             errorMessage = String(describing: error)
+        }
+        loadToken = UUID()
+    }
+
+    /// Fills in the row thumbnails `load()` could not answer from the cache.
+    ///
+    /// `load()` resolves cache HITS only — one `stat` per row, no blob fault and no downsample —
+    /// so it costs what it did before thumbnails existed. Generation happens here instead: the
+    /// blob is faulted on the main context's own thread (Core Data requires it, and `Photo` is
+    /// not `Sendable`), the ImageIO downsample runs on a background executor, and each row is
+    /// published as it lands so the list fills in progressively.
+    ///
+    /// This used to happen synchronously inside `TimelineItem.init`, which meant one cold-cache
+    /// `load()` — and `PetProfileView.refresh()` calls `load()` on every Home appear — ran an
+    /// unbounded number of 200–500 KB reads and downsamples back to back on the main thread.
+    @MainActor
+    func resolveThumbnails() async {
+        var pending: [(id: String, photo: Photo)] = []
+        for item in items {
+            guard item.thumbnailURL == nil, let photo = item.thumbnailPhoto else { continue }
+            pending.append((id: item.id, photo: photo))
+        }
+        for target in pending {
+            if Task.isCancelled { return }
+            guard let url = await ThumbnailCache.shared.resolveURL(for: target.photo, size: .row)
+            else { continue }
+            // `load()` may have replaced `items` while this was suspended, so rows are matched
+            // by id rather than by index — a stale offset would write onto the wrong row.
+            guard let index = items.firstIndex(where: { $0.id == target.id }) else { continue }
+            items[index].thumbnailURL = url
         }
     }
 
@@ -232,9 +270,25 @@ private func formatMarker(_ value: Double) -> String {
 }
 
 extension TimelineItem {
+    /// The photo this row's thumbnail is generated from — the entry's OWN first photo, and only
+    /// for the five kinds that show one.
+    ///
+    /// `.dose`, `.marker` and `.symptom` carry a `LogEntry` too but deliberately render no
+    /// thumbnail, and `.medication` is a prescription record rather than an event, so all four
+    /// are excluded here exactly as they are in the initialisers.
+    var thumbnailPhoto: Photo? {
+        switch reference {
+        case .vaccine(let entry), .vet(let entry), .activity(let entry),
+             .diary(let entry), .routine(let entry):
+            return entry.photoArray.first
+        case .dose, .marker, .symptom, .medication:
+            return nil
+        }
+    }
+
     init(vaccine v: LogEntry) {
         let thumbnailURL = v.photoArray.first
-            .flatMap { ThumbnailCache.shared.url(for: $0, size: .row) }
+            .flatMap { ThumbnailCache.shared.cachedURL(for: $0, size: .row) }
         self.init(
             id: "vaccine:\(v.id.uuidString)",
             kind: .vaccine,
@@ -249,7 +303,7 @@ extension TimelineItem {
 
     init(vet v: LogEntry) {
         let thumbnailURL = v.photoArray.first
-            .flatMap { ThumbnailCache.shared.url(for: $0, size: .row) }
+            .flatMap { ThumbnailCache.shared.cachedURL(for: $0, size: .row) }
         self.init(
             id: "vet:\(v.id.uuidString)",
             kind: .vet,
@@ -324,7 +378,7 @@ extension TimelineItem {
         let duration = log.durationMinutes.map { "\($0) min" }
         let combined = [duration, base].compactMap { $0 }.joined(separator: " · ")
         let thumbnailURL = log.photoArray.first
-            .flatMap { ThumbnailCache.shared.url(for: $0, size: .row) }
+            .flatMap { ThumbnailCache.shared.cachedURL(for: $0, size: .row) }
         self.init(
             id: "activity:\(log.id.uuidString)",
             kind: .activity,
@@ -345,7 +399,7 @@ extension TimelineItem {
         let duration = entry.durationMinutes.map { "\($0) min" }
         let combined = [duration, base].compactMap { $0 }.joined(separator: " · ")
         let thumbnailURL = entry.photoArray.first
-            .flatMap { ThumbnailCache.shared.url(for: $0, size: .row) }
+            .flatMap { ThumbnailCache.shared.cachedURL(for: $0, size: .row) }
         self.init(
             id: "routine:\(entry.id.uuidString)",
             kind: .routine,
@@ -365,7 +419,7 @@ extension TimelineItem {
             .first.map(String.init)
         let photoCount = entry.photoArray.count
         let thumbnailURL = entry.photoArray.first
-            .flatMap { ThumbnailCache.shared.url(for: $0, size: .row) }
+            .flatMap { ThumbnailCache.shared.cachedURL(for: $0, size: .row) }
         self.init(
             id: "diary:\(entry.id.uuidString)",
             kind: .diary,
