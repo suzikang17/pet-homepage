@@ -1,0 +1,55 @@
+name: ASC builds
+# Maintenance: print recent TestFlight builds and their processing state via the
+# App Store Connect API. Exists because `altool --upload-app` succeeding only means
+# DELIVERY succeeded — Apple's post-upload processing can still mark a build INVALID
+# (visible otherwise only in App Store Connect or account email), leaving testers
+# stuck on an old build with no error anywhere in CI. Manual-only; same ASC_*
+# secrets as the TestFlight workflow. Pure API, so it runs on a Linux runner.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  builds:
+    runs-on: ubuntu-latest
+    steps:
+      - name: List recent builds
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+        run: |
+          echo "$ASC_KEY_P8_BASE64" | base64 --decode > key.p8
+          npm install --no-fund --no-audit jsonwebtoken@9 >/dev/null 2>&1
+          node - <<'JS'
+          const jwt = require("jsonwebtoken");
+          const fs = require("fs");
+          const token = jwt.sign(
+            { iss: process.env.ASC_ISSUER_ID, aud: "appstoreconnect-v1",
+              exp: Math.floor(Date.now() / 1000) + 900 },
+            fs.readFileSync("key.p8"),
+            { algorithm: "ES256", header: { kid: process.env.ASC_KEY_ID } });
+          const api = async (path) => {
+            const res = await fetch("https://api.appstoreconnect.apple.com" + path,
+              { headers: { Authorization: "Bearer " + token } });
+            if (!res.ok) { console.error(path, "failed:", res.status, await res.text()); process.exit(1); }
+            return res.json();
+          };
+
+          (async () => {
+            const apps = await api("/v1/apps?filter[bundleId]=pet.homepage.PetHomepage");
+            const app = apps.data[0];
+            if (!app) { console.error("app not found for bundle id"); process.exit(1); }
+            const builds = await api(`/v1/builds?filter[app]=${app.id}&sort=-uploadedDate&limit=10`
+              + "&fields[builds]=version,uploadedDate,processingState,expired,usesNonExemptEncryption");
+            console.log(`\nRecent builds for ${app.attributes.name} (${app.id}):\n`);
+            for (const b of builds.data) {
+              const a = b.attributes;
+              console.log(`build ${String(a.version).padEnd(5)} ${a.processingState.padEnd(11)}`
+                + ` uploaded ${a.uploadedDate}  expired=${a.expired}`);
+            }
+            console.log("\nStates: PROCESSING = Apple still working; VALID = installable in"
+              + " TestFlight; INVALID/FAILED = rejected post-upload — check the account email"
+              + " for the ITMS reason.");
+          })();
+          JS
