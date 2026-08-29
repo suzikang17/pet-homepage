@@ -108,8 +108,8 @@ final class ThumbnailCacheTests: XCTestCase {
 
     func testResolveURLGeneratesTheSameFileAsTheSyncPath() async throws {
         let id = UUID()
-        let resolved = try XCTUnwrap(await cache.resolveURL(forPhotoID: id, size: .row,
-                                                             imageData: sampleJPEG()))
+        let maybe = await cache.resolveURL(forPhotoID: id, size: .row, imageData: sampleJPEG())
+        let resolved = try XCTUnwrap(maybe)
         XCTAssertTrue(FileManager.default.fileExists(atPath: resolved.path))
         XCTAssertEqual(cache.cachedURL(forPhotoID: id, size: .row), resolved)
     }
