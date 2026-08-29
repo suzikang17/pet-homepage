@@ -1,5 +1,6 @@
 // ios/PetHomepage/Walk/WalkInProgressBanner.swift
 import SwiftUI
+import UIKit
 
 /// UI-facing wrapper over WalkSessionStore: the store is plain (readable from notification
 /// handlers), this adds observation so SwiftUI surfaces refresh when a session starts/ends.
@@ -13,6 +14,8 @@ final class WalkSessionModel {
     /// Fired after any session mutation so the hosting view can reload day state
     /// (the ended walk just completed a slot) and resync reminders.
     var onChange: (() -> Void)?
+    /// Photos taken during the active session, shown as a badge on the camera button.
+    private(set) var pendingPhotoCount: Int = 0
 
     init(sessions: WalkSessionStore, petName: @escaping () -> String = { "Your pet" }) {
         self.sessions = sessions
@@ -25,6 +28,15 @@ final class WalkSessionModel {
     func refresh() {
         active = sessions.active
         activeTitle = active.flatMap { sessions.title(for: $0) }
+        pendingPhotoCount = sessions.pendingPhotoCount
+    }
+
+    /// Downscales through the same path as every other picker in the app, then parks it on
+    /// the session. Attaching happens later, when the walk is written.
+    func capture(_ image: UIImage) {
+        guard let jpeg = ImageDownscaler.scaledJPEG(from: image) else { return }
+        sessions.attachPhoto(jpeg)
+        pendingPhotoCount = sessions.pendingPhotoCount
     }
 
     func startRoutine(taskID: UUID) {
@@ -54,6 +66,7 @@ final class WalkSessionModel {
 struct WalkInProgressBanner: View {
     let model: WalkSessionModel
     @State private var confirmCancel = false
+    @State private var showingCamera = false
 
     var body: some View {
         if let session = model.active {
@@ -73,6 +86,29 @@ struct WalkInProgressBanner: View {
                         .foregroundStyle(Theme.inkSoft)
                 }
                 Spacer(minLength: 8)
+
+                if CameraPicker.isAvailable {
+                    Button { showingCamera = true } label: {
+                        Image(systemName: "camera.fill")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(Theme.primary)
+                            .frame(width: 38, height: 38)
+                            .background(Theme.primary.opacity(0.12), in: Circle())
+                            .overlay(alignment: .topTrailing) {
+                                if model.pendingPhotoCount > 0 {
+                                    Text("\(model.pendingPhotoCount)")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .foregroundStyle(.white)
+                                        .padding(.horizontal, 5).padding(.vertical, 1)
+                                        .background(Theme.primary, in: Capsule())
+                                }
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Take a photo on this walk")
+                    .accessibilityIdentifier("walkBannerCamera")
+                }
+
                 Button("End") { model.end() }
                     .font(.subheadline.weight(.bold))
                     .buttonStyle(.borderedProminent)
@@ -83,6 +119,13 @@ struct WalkInProgressBanner: View {
                         in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .contentShape(Rectangle())
             .onLongPressGesture { confirmCancel = true }
+            .fullScreenCover(isPresented: $showingCamera) {
+                CameraPicker(
+                    onCapture: { model.capture($0) },
+                    onFinish: { showingCamera = false }
+                )
+                .ignoresSafeArea()
+            }
             .confirmationDialog("Discard this walk?", isPresented: $confirmCancel,
                                 titleVisibility: .visible) {
                 Button("Discard without logging", role: .destructive) { model.cancel() }
