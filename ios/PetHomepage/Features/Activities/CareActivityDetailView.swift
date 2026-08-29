@@ -25,51 +25,58 @@ struct CareActivityDetailView: View {
     private var type: ActivityType { model.type }
 
     var body: some View {
-        Form {
-            Section("Cadence") {
-                if model.hasCadence {
-                    LabeledContent("Repeats", value: "Every \(model.intervalDays) days")
-                    LabeledContent("Remind at") {
-                        Text(String(format: "%02d:%02d", type.reminderHour, type.reminderMinute))
-                    }
-                } else {
-                    LabeledContent("Repeats", value: "No repeat")
-                }
-                if let lastDone = model.lastDone {
-                    LabeledContent("Last done") {
-                        Text(lastDone, format: .dateTime.month().day().year())
-                    }
-                }
-                if let nextDue = model.nextDue {
-                    LabeledContent("Next due") {
-                        Text(nextDue, format: .dateTime.month().day().year())
-                    }
-                }
+        VStack(spacing: 0) {
+            if let url = model.heroPhotoURL {
+                PhotoThumbnail(url: url, side: 160, cornerRadius: 0)
+                    .frame(maxWidth: .infinity)
+                    .clipped()
             }
-
-            Section("History (\(model.logs.count))") {
-                Button {
-                    showLog = true
-                } label: {
-                    Label("Log a \(type.name.lowercased())", systemImage: "checkmark.circle.fill")
-                        .fontWeight(.semibold)
-                }
-                if model.logs.isEmpty {
-                    Text("Nothing logged yet.").foregroundStyle(Theme.inkSoft)
-                } else {
-                    ForEach(model.logs, id: \.id) { log in
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(log.performedAt.formatted(date: .abbreviated, time: .shortened))
-                                .foregroundStyle(Theme.ink)
-                            if let note = log.note, !note.isEmpty {
-                                Text(note).font(.caption).foregroundStyle(Theme.inkSoft)
-                            }
+            Form {
+                Section("Cadence") {
+                    if model.hasCadence {
+                        LabeledContent("Repeats", value: "Every \(model.intervalDays) days")
+                        LabeledContent("Remind at") {
+                            Text(String(format: "%02d:%02d", type.reminderHour, type.reminderMinute))
                         }
-                        .swipeActions(edge: .trailing) {
-                            Button(role: .destructive) {
-                                Task { await model.delete(log) }
-                            } label: {
-                                Label("Delete", systemImage: "trash")
+                    } else {
+                        LabeledContent("Repeats", value: "No repeat")
+                    }
+                    if let lastDone = model.lastDone {
+                        LabeledContent("Last done") {
+                            Text(lastDone, format: .dateTime.month().day().year())
+                        }
+                    }
+                    if let nextDue = model.nextDue {
+                        LabeledContent("Next due") {
+                            Text(nextDue, format: .dateTime.month().day().year())
+                        }
+                    }
+                }
+
+                Section("History (\(model.logs.count))") {
+                    Button {
+                        showLog = true
+                    } label: {
+                        Label("Log a \(type.name.lowercased())", systemImage: "checkmark.circle.fill")
+                            .fontWeight(.semibold)
+                    }
+                    if model.logs.isEmpty {
+                        Text("Nothing logged yet.").foregroundStyle(Theme.inkSoft)
+                    } else {
+                        ForEach(model.logs, id: \.id) { log in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(log.performedAt.formatted(date: .abbreviated, time: .shortened))
+                                    .foregroundStyle(Theme.ink)
+                                if let note = log.note, !note.isEmpty {
+                                    Text(note).font(.caption).foregroundStyle(Theme.inkSoft)
+                                }
+                            }
+                            .swipeActions(edge: .trailing) {
+                                Button(role: .destructive) {
+                                    Task { await model.delete(log) }
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
                             }
                         }
                     }

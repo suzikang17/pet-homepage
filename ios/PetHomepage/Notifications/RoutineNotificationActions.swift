@@ -78,7 +78,8 @@ final class RoutineActionHandler {
     private func resyncReminders() async {
         await RoutineReminderPlanner.resync(
             context: context,
-            using: RoutineReminderScheduler(scheduler: scheduler, calendar: calendar),
+            using: RoutineReminderScheduler(scheduler: scheduler, calendar: calendar,
+                                            photoPool: PhotoPool(context: context)),
             calendar: calendar,
             now: now())
     }

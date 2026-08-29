@@ -11,6 +11,22 @@ final class UNNotificationScheduler: NotificationScheduling {
         self.center = center
     }
 
+    /// Builds an attachment from a cached thumbnail.
+    ///
+    /// The file is copied to a temp location first: UNNotificationAttachment takes ownership of
+    /// the URL it is handed and may move it, which would silently empty the thumbnail cache.
+    static func attachment(for photoURL: URL) -> UNNotificationAttachment? {
+        let temp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("notif-\(UUID().uuidString).jpg")
+        do {
+            try FileManager.default.copyItem(at: photoURL, to: temp)
+            return try UNNotificationAttachment(identifier: temp.lastPathComponent,
+                                                url: temp, options: nil)
+        } catch {
+            return nil
+        }
+    }
+
     func requestAuthorization() async -> Bool {
         do {
             return try await center.requestAuthorization(options: [.alert, .sound, .badge])
@@ -33,6 +49,11 @@ final class UNNotificationScheduler: NotificationScheduling {
         // handled by MedicationActionHandler.
         if reminder.kind == .medication || reminder.kind == .medicationSnooze {
             content.categoryIdentifier = MedicationNotificationAction.categoryID
+        }
+        // Additive only: a missing/failed attachment must never stop the reminder from firing,
+        // so this never throws past here.
+        if let photoURL = reminder.attachmentURL, let attachment = Self.attachment(for: photoURL) {
+            content.attachments = [attachment]
         }
 
         let trigger: UNCalendarNotificationTrigger

@@ -9,6 +9,7 @@ final class WalkSessionStoreTests: XCTestCase {
     private var context: NSManagedObjectContext!
     private var defaults: UserDefaults!
     private var walkType: ActivityType!
+    private var pendingDirectory: URL!
 
     override func setUpWithError() throws {
         controller = PersistenceController(inMemory: true)
@@ -18,10 +19,13 @@ final class WalkSessionStoreTests: XCTestCase {
         let activityStore = ActivityStore(context: context, petStore: petStore)
         walkType = try activityStore.createType(name: "Walk", category: .training,
                                                 iconName: "figure.walk", defaultIntervalDays: 0)
+        pendingDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("walk-pending-\(UUID().uuidString)")
     }
 
     private func makeStore(now: Date) -> WalkSessionStore {
-        WalkSessionStore(context: context, defaults: defaults, now: { now })
+        WalkSessionStore(context: context, defaults: defaults, now: { now },
+                         pending: PendingWalkPhotos(directory: pendingDirectory))
     }
 
     override func tearDownWithError() throws {
@@ -29,6 +33,8 @@ final class WalkSessionStoreTests: XCTestCase {
         context = nil
         defaults = nil
         walkType = nil
+        try? FileManager.default.removeItem(at: pendingDirectory)
+        pendingDirectory = nil
     }
 
     func testStartEndWritesActivitySpan() throws {
@@ -227,5 +233,81 @@ final class WalkSessionStoreTests: XCTestCase {
         let request = LogEntry.fetchRequest()
         request.predicate = NSPredicate(format: "kindRaw == %@", LogKind.routine.rawValue)
         XCTAssertEqual(try context.fetch(request).count, 1)
+    }
+
+    // MARK: - Mid-walk photos
+
+    func testBufferedPhotosAttachOnEnd() throws {
+        let t0 = Date(timeIntervalSince1970: 1_700_000_000)
+        let store = makeStore(now: t0)
+        _ = try store.startActivity(typeID: walkType.id, source: .manual)
+        store.attachPhoto(Data([1]))
+        store.attachPhoto(Data([2]))
+        XCTAssertEqual(store.pendingPhotoCount, 2)
+
+        let entry = try XCTUnwrap(try store.end(at: t0.addingTimeInterval(1800)))
+        XCTAssertEqual(Set(entry.photoArray.compactMap(\.imageData)), [Data([1]), Data([2])])
+    }
+
+    /// Both paths from session to entry go through writeEntry, so a forgotten walk must not
+    /// silently drop the photos taken during it.
+    func testBufferedPhotosAttachOnStaleExpiry() throws {
+        let t0 = Date(timeIntervalSince1970: 1_700_000_000)
+        let starting = makeStore(now: t0)
+        _ = try starting.startActivity(typeID: walkType.id, source: .manual)
+        starting.attachPhoto(Data([9]))
+
+        let later = makeStore(now: t0.addingTimeInterval(WalkSessionStore.maxSessionAge + 60))
+        let entry = try XCTUnwrap(try later.expireIfStale())
+        XCTAssertEqual(entry.photoArray.compactMap(\.imageData), [Data([9])])
+    }
+
+    func testBufferIsClearedAfterAttaching() throws {
+        let t0 = Date(timeIntervalSince1970: 1_700_000_000)
+        let store = makeStore(now: t0)
+        _ = try store.startActivity(typeID: walkType.id, source: .manual)
+        store.attachPhoto(Data([1]))
+        _ = try store.end(at: t0.addingTimeInterval(600))
+        XCTAssertEqual(store.pendingPhotoCount, 0)
+    }
+
+    /// A capture that cannot be attached must NOT be deleted alongside the ones that could.
+    /// The buffer is the only copy of a mid-walk photo (it lives in Application Support, not
+    /// Caches, for exactly this reason), and the drain used to clear the whole folder
+    /// unconditionally — so any attachment failure destroyed the photo rather than merely
+    /// failing to attach it.
+    ///
+    /// A directory where a JPEG should be is the one attachment failure reachable without a
+    /// throwing LogStore: `Data(contentsOf:)` fails on it, and it survives the drain the same
+    /// way a photo whose `addPhoto` threw does.
+    func testUnattachableBufferedPhotoSurvivesWhileTheRestAttach() throws {
+        let t0 = Date(timeIntervalSince1970: 1_700_000_000)
+        let store = makeStore(now: t0)
+        let session = try store.startActivity(typeID: walkType.id, source: .manual)
+        store.attachPhoto(Data([1]))
+        let folder = pendingDirectory.appendingPathComponent(session.id.uuidString,
+                                                             isDirectory: true)
+        try FileManager.default.createDirectory(
+            at: folder.appendingPathComponent("000001.jpg"), withIntermediateDirectories: true)
+
+        let entry = try XCTUnwrap(try store.end(at: t0.addingTimeInterval(600)))
+
+        XCTAssertEqual(entry.photoArray.compactMap(\.imageData), [Data([1])],
+                       "the readable capture still attaches")
+        XCTAssertEqual(PendingWalkPhotos(directory: pendingDirectory)
+                        .fileURLs(for: session.id).count, 1,
+                       "the capture that could not be attached must survive the drain")
+    }
+
+    /// Discarding a walk must discard its photos too, or they leak onto the next session's
+    /// entry — a walk you deliberately threw away reappearing as someone else's photos.
+    func testCancelDiscardsBufferedPhotos() throws {
+        let t0 = Date(timeIntervalSince1970: 1_700_000_000)
+        let store = makeStore(now: t0)
+        let session = try store.startActivity(typeID: walkType.id, source: .manual)
+        store.attachPhoto(Data([1]))
+        store.cancel()
+        XCTAssertEqual(PendingWalkPhotos(directory: pendingDirectory)
+                        .photos(for: session.id).count, 0)
     }
 }
