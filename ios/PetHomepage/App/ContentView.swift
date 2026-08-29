@@ -165,7 +165,8 @@ struct ContentView: View {
             // Display order only — the .tag values are load-bearing: NotificationRouter.Tab maps
             // raw values to these tags, so reordering must never renumber them.
             PetProfileView(store: petStore, settings: settingsViewModel,
-                           timelineServices: timelineServices)
+                           timelineServices: timelineServices,
+                           onShowTimeline: { selectedTab = 1 })
                 .tabItem { Label("Home", systemImage: "house") }
                 .tag(0)
             ScheduleView(store: routineStore, logStore: logStore,

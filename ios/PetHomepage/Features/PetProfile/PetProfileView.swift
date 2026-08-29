@@ -18,18 +18,25 @@ struct PetProfileView: View {
 
     // Dashboard data, refreshed on appear + after any add.
     @State private var recent: [TimelineItem] = []
+    @State private var recentPhotos: [Photo] = []
 
     private let petStore: PetStore
     private let settings: SettingsViewModel?
     private let timelineServices: TimelineServices?
+    /// Switches the host `TabView` to the Timeline tab, owned by `ContentView` (this view has no
+    /// tab-selection state of its own). Nil in previews/tests, in which case "See all" is omitted
+    /// rather than inventing a standalone navigation path.
+    private let onShowTimeline: (() -> Void)?
 
     init(store: PetStore,
          settings: SettingsViewModel? = nil,
-         timelineServices: TimelineServices? = nil) {
+         timelineServices: TimelineServices? = nil,
+         onShowTimeline: (() -> Void)? = nil) {
         _model = State(initialValue: PetProfileViewModel(store: store))
         self.petStore = store
         self.settings = settings
         self.timelineServices = timelineServices
+        self.onShowTimeline = onShowTimeline
     }
 
     var body: some View {
@@ -43,6 +50,9 @@ struct PetProfileView: View {
                     onTapAvatar: { showAvatarActions = true },
                     onSettings: settings != nil ? { showSettings = true } : nil
                 )
+
+                RecentMomentsStrip(photos: recentPhotos, onTap: onShowTimeline)
+                    .padding(.horizontal, 18)
 
                 if let catalogue, !catalogue.items.isEmpty {
                     cadenceGrid(catalogue).padding(.horizontal, 18)
@@ -259,6 +269,9 @@ struct PetProfileView: View {
         // borrows a due date can never masquerade as recent history again.
         let now = Date()
         recent = Array(vm.items.lazy.filter { $0.kind != .medication && $0.date <= now }.prefix(4))
+
+        // Capped so Home never decodes an unbounded number of thumbnails.
+        recentPhotos = Array(((try? timelineServices?.logStore.allPhotos()) ?? []).prefix(20))
 
         let model = catalogue ?? CadenceCatalogueViewModel(
             medicationStore: s.medicationStore,
