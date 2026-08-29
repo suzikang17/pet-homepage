@@ -27,7 +27,7 @@ final class FileIdeaStore: IdeaStore {
     init(directory: URL,
          fileManager: FileManager = .default,
          timeZone: TimeZone = .current,
-         now: @escaping () -> Date = Date) {
+         now: @escaping () -> Date = Date.init) {
         self.fileURL = directory.appendingPathComponent("ideas.json")
         self.fileManager = fileManager
         self.timeZone = timeZone
