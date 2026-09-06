@@ -5,7 +5,7 @@ import XCTest
 /// tests can't reach (camera cover collapsing, sheet-handoff races, etc).
 final class CaptureFlowTests: UITestCase {
     /// Tapping Capture with the stub camera lands on the review sheet; saving with the default
-    /// "Note only" tag creates a diary entry, visible under Timeline's Diary filter.
+    /// "Note only" tag creates a diary entry, visible under the Log subtab's Diary filter.
     func testCaptureNoteOnlySave() {
         let app = launchApp(extra: ["--uitest-stub-camera"])
         openCapture()
@@ -14,7 +14,7 @@ final class CaptureFlowTests: UITestCase {
         XCTAssertTrue(save.waitForExistence(timeout: 5))
         save.tap()
 
-        app.tabBars.buttons["Timeline"].tap()
+        openLog()
         tapChip(app.buttons["timelineChip.Diary"], in: app.scrollViews["timelineChipsStrip"])
         XCTAssertTrue(app.staticTexts["Diary entry"].waitForExistence(timeout: 5))
     }
@@ -30,13 +30,13 @@ final class CaptureFlowTests: UITestCase {
         bathChip.tap()
         app.buttons["sheet.save"].tap()
 
-        app.tabBars.buttons["Timeline"].tap()
+        openLog()
         tapChip(app.buttons["timelineChip.Activities"], in: app.scrollViews["timelineChipsStrip"])
         XCTAssertTrue(app.staticTexts["Bath"].waitForExistence(timeout: 5))
     }
 
     /// The marker chip's value field gates Save: empty/non-numeric keeps it disabled, a valid
-    /// number enables it, and the saved reading shows up under Timeline's Health filter.
+    /// number enables it, and the saved reading shows up under the Log subtab's Health filter.
     func testCaptureMarkerValidation() {
         let app = launchApp(extra: ["--uitest-stub-camera"])
         openCapture()
@@ -59,7 +59,7 @@ final class CaptureFlowTests: UITestCase {
         XCTAssertTrue(save.isEnabled, "Save should enable once a numeric value is entered")
         save.tap()
 
-        app.tabBars.buttons["Timeline"].tap()
+        openLog()
         let healthChip = app.buttons["timelineChip.Health"]
         XCTAssertTrue(healthChip.waitForExistence(timeout: 5))
         healthChip.tap()

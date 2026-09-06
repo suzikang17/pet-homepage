@@ -37,32 +37,73 @@ struct PhotoGalleryView: View {
         return result
     }
 
+    /// Measured aspect ratios (width / height), filled in off the main thread. A photo missing
+    /// from here renders square, which is what this grid drew for every photo before.
+    @State private var ratios: [UUID: Double] = [:]
+
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 22) {
-                ForEach(sections) { section in
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text(section.id.uppercased())
-                            .font(.system(.caption, design: .rounded).weight(.heavy))
-                            .tracking(1.4)
-                            .foregroundStyle(Theme.inkSoft)
-                            .padding(.leading, 6)
-                        // Two big cells per phone width — the photos are the point of this view.
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 8)],
-                                  spacing: 8) {
-                            ForEach(section.items, id: \.photo.id) { item in
-                                cell(item.photo, index: item.index)
-                            }
+        GeometryReader { geo in
+            // Two big cells per phone width — the photos are the point of this view — and three
+            // once there is room, matching what `.adaptive(minimum: 160)` used to decide.
+            let columnCount = max(2, Int((geo.size.width - 28) / 200))
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 22) {
+                    ForEach(sections) { section in
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text(section.id.uppercased())
+                                .font(.system(.caption, design: .rounded).weight(.heavy))
+                                .tracking(1.4)
+                                .foregroundStyle(Theme.inkSoft)
+                                .padding(.leading, 6)
+                            masonry(section, columnCount: columnCount)
                         }
                     }
                 }
+                .padding(.horizontal, 14)
+                .padding(.bottom, 20)
             }
-            .padding(.horizontal, 14)
-            .padding(.bottom, 20)
+            .scrollContentBackground(.hidden)
         }
-        .scrollContentBackground(.hidden)
         .fullScreenCover(item: $viewerIndex) { start in
             PhotoPagerView(photos: photos, initialIndex: start.value)
+        }
+        .task(id: photos.count) { await measureRatios() }
+    }
+
+    /// One month, laid out into columns of near-equal height.
+    ///
+    /// The columns are built here rather than by a `LazyVGrid` because a grid gives every cell in
+    /// a row the same height, which is the square crop this view is trying to stop doing.
+    private func masonry(_ section: MonthSection, columnCount: Int) -> some View {
+        let columns = MasonryLayout.columns(section.items, count: columnCount) { item in
+            // Height per unit width is the inverse of the aspect ratio; unmeasured photos are
+            // square, so the grid starts uniform and settles as measurements land.
+            1 / (ratios[item.photo.id] ?? 1)
+        }
+        return HStack(alignment: .top, spacing: 8) {
+            ForEach(Array(columns.enumerated()), id: \.offset) { _, indices in
+                LazyVStack(spacing: 8) {
+                    ForEach(indices, id: \.self) { position in
+                        let item = section.items[position]
+                        cell(item.photo, index: item.index)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+    }
+
+    /// Reads each photo's dimensions off the main thread — image properties only, never a pixel
+    /// decode — and publishes them as they land.
+    private func measureRatios() async {
+        for photo in photos where ratios[photo.id] == nil {
+            if Task.isCancelled { return }
+            guard let data = photo.imageData else { continue }
+            let id = photo.id
+            guard let ratio = await AspectRatioCache.shared.measure(id: id, data: data) else {
+                continue
+            }
+            ratios[id] = ratio
         }
     }
 
@@ -72,12 +113,21 @@ struct PhotoGalleryView: View {
             Button {
                 viewerIndex = ViewerIndex(value: index)
             } label: {
-                Image(uiImage: ui)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(height: 190)
-                    .frame(maxWidth: .infinity)
-                    .clipped()
+                // The cell's SHAPE comes from the measured ratio, and the image fills it. Both
+                // halves matter: sizing the image directly would let an unmeasured photo size
+                // its own cell and reflow the column, and a fixed height would be the square
+                // crop this layout exists to avoid.
+                Color.clear
+                    .aspectRatio(ratios[photo.id] ?? 1, contentMode: .fit)
+                    .overlay {
+                        Image(uiImage: ui)
+                            .resizable()
+                            .scaledToFill()
+                            // On the image, not the container: the container is now a Color, and
+                            // XCUITest classifies by element type — `app.images["…"]` would stop
+                            // matching if this rode on the wrapper.
+                            .accessibilityIdentifier("timelinePhotoCell")
+                    }
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     .overlay(alignment: .bottomLeading) {
                         if photo.caption?.isEmpty == false {
@@ -90,8 +140,6 @@ struct PhotoGalleryView: View {
                         }
                     }
                     .shadow(color: Theme.shadow.opacity(0.08), radius: 6, y: 3)
-                    // Keep the identifier the UI test queries (app.images["timelinePhotoCell"]).
-                    .accessibilityIdentifier("timelinePhotoCell")
             }
             .buttonStyle(.plain)
         }
