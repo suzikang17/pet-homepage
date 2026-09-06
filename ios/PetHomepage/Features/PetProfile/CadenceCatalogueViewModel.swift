@@ -246,27 +246,45 @@ final class CadenceCatalogueViewModel {
 
     func dismissConfirmation() { lastLogged = nil }
 
+    /// What a log attempt actually did.
+    ///
+    /// `deduped` is not a failure: something was already recorded for that calendar day, so
+    /// nothing was written. It needs a name because the two callers want opposite things from it
+    /// — a tile long-press can stay silent (no Undo strip appearing IS the feedback), but the
+    /// sheet's Log button must say so out loud. A button that writes nothing and reports nothing
+    /// reads as broken, which is exactly how tapping a tile used to behave on a day it had
+    /// already been logged.
+    enum LogOutcome: Equatable { case logged, deduped, failed }
+
     /// Records the item as done now (or at an explicit date), then reloads.
     @MainActor
-    func log(_ item: CadenceItem, at date: Date? = nil) async {
+    @discardableResult
+    func log(_ item: CadenceItem, at date: Date? = nil, note: String? = nil) async -> LogOutcome {
         let when = date ?? now()
+        let outcome: LogOutcome
         switch item.source {
         case .medication(let objectID):
             guard let obj = try? medicationStore.context.existingObject(with: objectID),
-                  let med = obj as? Medication else { return }
+                  let med = obj as? Medication else { return .failed }
             let logger = MedicationDoseLogger(logStore: logStore,
                                               reminderScheduler: reminderScheduler,
                                               calendar: calendar, now: now)
-            // nil means the same-day dedupe swallowed it — nothing was written, so there is
-            // nothing to offer an Undo for.
             let previousStartedAt = med.nextReminder
-            guard await logger.log(med, at: when) != nil,
-                  let entry = try? logStore.doses(for: med).first else { break }
-            lastLogged = LoggedRecord(item: item, entry: entry,
-                                      previousStartedAt: previousStartedAt)
+            if await logger.log(med, at: when, note: note) == nil {
+                // The same-day dedupe swallowed it — nothing was written, so there is nothing
+                // to offer an Undo for either.
+                outcome = .deduped
+            } else {
+                if let entry = try? logStore.doses(for: med).first {
+                    lastLogged = LoggedRecord(item: item, entry: entry,
+                                              previousStartedAt: previousStartedAt)
+                }
+                // Written either way; only the Undo affordance depends on reading it back.
+                outcome = .logged
+            }
         case .activityType(let objectID):
             guard let obj = try? activityStore.context.existingObject(with: objectID),
-                  let type = obj as? ActivityType else { return }
+                  let type = obj as? ActivityType else { return .failed }
             // Capture the prior latest-of-type BEFORE logging, so we can cancel its reminder —
             // mirrors ActivityLogEditViewModel.save() and CaptureReviewViewModel exactly.
             // DueReminderScheduler keys activity reminders by the LOG ENTRY's id, not the type's,
@@ -276,17 +294,19 @@ final class CadenceCatalogueViewModel {
             let priorLatest = try? logStore.latestLog(of: type)
             // Same-day dedupe, matching MedicationDoseLogger.
             if let last = priorLatest?.performedAt, calendar.isDate(last, inSameDayAs: when) {
-                return
+                return .deduped
             }
-            guard let entry = try? logStore.logActivity(type: type, performedAt: when, note: nil,
+            guard let entry = try? logStore.logActivity(type: type, performedAt: when, note: note,
                                                         intervalDays: Int(type.defaultIntervalDays))
-            else { return }
+            else { return .failed }
             if let prior = priorLatest, prior.id != entry.id {
                 await dueScheduler.cancelActivity(prior)
             }
             await dueScheduler.syncActivity(entry)
             lastLogged = LoggedRecord(item: item, entry: entry, previousStartedAt: nil)
+            outcome = .logged
         }
         load()
+        return outcome
     }
 }

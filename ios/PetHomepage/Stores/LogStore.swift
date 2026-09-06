@@ -65,6 +65,22 @@ final class LogStore {
     // MARK: - Update / delete
 
     func updateDiary(_ entry: LogEntry, performedAt: Date, note: String?) throws {
+        try updateOccurrence(entry, performedAt: performedAt, note: note)
+    }
+
+    /// Corrects an already-recorded dose — the "I took it at 8, not 2" edit.
+    ///
+    /// Deliberately does NOT touch `medication.nextReminder`. Moving the cadence needs
+    /// `MedicationDoseLogger` and the reminder scheduler, which live above this store, so the
+    /// repair is the caller's — exactly as it already is after
+    /// `MedicationDetailViewModel.deleteDose`.
+    func updateDose(_ entry: LogEntry, performedAt: Date, note: String?) throws {
+        try updateOccurrence(entry, performedAt: performedAt, note: note)
+    }
+
+    /// The two fields every occurrence can have corrected. Activities get their own updater
+    /// because they additionally own an end time and a cadence to recompute.
+    private func updateOccurrence(_ entry: LogEntry, performedAt: Date, note: String?) throws {
         entry.performedAt = performedAt
         let trimmed = note?.trimmingCharacters(in: .whitespacesAndNewlines)
         entry.note = (trimmed?.isEmpty == false) ? trimmed : nil

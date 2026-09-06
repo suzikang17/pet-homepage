@@ -63,4 +63,28 @@ final class CareActivityDetailViewModel {
             await dueScheduler.syncActivity(newLatest)
         }
     }
+
+    /// Corrects when a logged occurrence actually happened.
+    ///
+    /// `updateActivity` recomputes `nextDueAt` from the new date, so the entry's own cadence is
+    /// handled by the store. The reminder is not: it is keyed by the entry's id and was armed for
+    /// the OLD due date, so it has to be cancelled and re-armed — and only for whichever entry is
+    /// newest afterwards, since moving a date can change which one that is.
+    /// `note` is written as given — nil clears it, matching every other update path on
+    /// `LogStore`. Callers that are only moving a time pass `log.note` back.
+    @MainActor
+    func updateTime(of log: LogEntry, to date: Date, note: String?) async {
+        // An entry with an end time (a walk) keeps its DURATION rather than its end instant:
+        // moving the start alone would otherwise push it past the end, and `updateActivity`
+        // rejects that outright — a `try?` would swallow the throw and the edit would look
+        // like it silently did nothing.
+        let endedAt = log.endedAt.map { $0.addingTimeInterval(date.timeIntervalSince(log.performedAt)) }
+        await dueScheduler.cancelActivity(log)
+        try? logStore.updateActivity(log, type: type, performedAt: date, endedAt: endedAt,
+                                     note: note, intervalDays: Int(log.intervalDays))
+        load()
+        if let newLatest = logs.first {
+            await dueScheduler.syncActivity(newLatest)
+        }
+    }
 }
