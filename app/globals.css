@@ -1,19 +1,30 @@
 @import "tailwindcss";
 
 :root {
-  --bg: oklch(98% 0.008 240);
+  /* Warm neutrals — tinted toward the yellow brand rather than the old blue-grey. */
+  --bg: oklch(98.5% 0.012 85);
   --paper: oklch(100% 0 0);
-  --soft: oklch(96% 0.012 240);
-  --ink: oklch(20% 0.05 250);
-  --ink-2: oklch(38% 0.04 245);
-  --ink-3: oklch(50% 0.03 240);
-  --ink-4: oklch(72% 0.02 240);
-  --rule: oklch(91% 0.015 240);
-  --rule-2: oklch(95% 0.01 240);
-  --blue: oklch(48% 0.16 250);
-  --blue-2: oklch(58% 0.16 245);
-  --blue-bg: oklch(95% 0.04 245);
-  --blue-bg-2: oklch(92% 0.06 245);
+  --soft: oklch(96.5% 0.016 85);
+  --ink: oklch(22% 0.03 75);
+  --ink-2: oklch(40% 0.025 75);
+  --ink-3: oklch(52% 0.02 78);
+  --ink-4: oklch(73% 0.015 80);
+  --rule: oklch(91% 0.018 82);
+  --rule-2: oklch(95% 0.012 82);
+
+  /* Brand. Yellow is a light hue, so unlike the old blue it can't both carry white text
+     and read as colored text on white — the brand is split by job:
+       --brand       fills (buttons, brand mark, chips)
+       --on-brand    text/icons sitting ON a --brand fill
+       --brand-deep  text/icons that read as brand-colored on a LIGHT surface (links, figures)
+       --brand-bg*   pale washes and focus rings */
+  --brand: oklch(84% 0.15 83);
+  --brand-2: oklch(89% 0.13 85);
+  --brand-deep: oklch(48% 0.11 75);
+  --on-brand: oklch(28% 0.05 75);
+  --brand-bg: oklch(96% 0.05 85);
+  --brand-bg-2: oklch(92% 0.09 85);
+
   --green: oklch(48% 0.13 160);
   --green-bg: oklch(95% 0.05 160);
   --orange: oklch(56% 0.15 50);
@@ -32,10 +43,12 @@
   --color-ink-4: var(--ink-4);
   --color-rule: var(--rule);
   --color-rule-2: var(--rule-2);
-  --color-blue: var(--blue);
-  --color-blue-2: var(--blue-2);
-  --color-blue-bg: var(--blue-bg);
-  --color-blue-bg-2: var(--blue-bg-2);
+  --color-brand: var(--brand);
+  --color-brand-2: var(--brand-2);
+  --color-brand-deep: var(--brand-deep);
+  --color-on-brand: var(--on-brand);
+  --color-brand-bg: var(--brand-bg);
+  --color-brand-bg-2: var(--brand-bg-2);
   --color-green: var(--green);
   --color-green-bg: var(--green-bg);
   --color-orange: var(--orange);
@@ -71,7 +84,7 @@ body {
 
 /* ─── Focus & motion ─── */
 :focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--brand-deep);
   outline-offset: 2px;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -101,8 +114,8 @@ body {
 .ob-input:hover { border-color: var(--ink-4); }
 .ob-input:focus-visible {
   outline: none;
-  border-color: var(--blue);
-  box-shadow: 0 0 0 3px var(--blue-bg-2);
+  border-color: var(--brand-deep);
+  box-shadow: 0 0 0 3px var(--brand-bg-2);
 }
 
 /* ─── Buttons ─── */
@@ -114,9 +127,9 @@ body {
   transition: background 120ms, border-color 120ms, color 120ms;
 }
 .btn {
-  background: var(--blue); color: white; border: 1px solid transparent;
+  background: var(--brand); color: var(--on-brand); border: 1px solid transparent;
 }
-.btn:hover { background: var(--blue-2); }
+.btn:hover { background: var(--brand-2); }
 .btn-quiet {
   background: var(--paper); color: var(--ink);
   border: 1px solid var(--rule);
@@ -139,12 +152,12 @@ body {
   border-bottom: 1px solid var(--rule);
   position: sticky; top: 0; z-index: 30;
   backdrop-filter: saturate(140%) blur(10px);
-  background: oklch(100% 0 0 / 0.85);
+  background: oklch(99.5% 0.008 85 / 0.85);
 }
 .brand { display: flex; gap: 12px; align-items: center; }
 .brand-mark {
   width: 36px; height: 36px; border-radius: 10px;
-  background: var(--blue); color: white;
+  background: var(--brand); color: var(--on-brand);
   display: grid; place-items: center;
   font-family: var(--font-display), serif; font-size: 20px; font-style: italic;
 }
@@ -267,7 +280,7 @@ body {
 }
 .wt-num {
   font-family: var(--font-display), serif;
-  font-size: 44px; line-height: 1; color: var(--blue);
+  font-size: 44px; line-height: 1; color: var(--brand-deep);
   font-weight: 400;
   font-variant-numeric: tabular-nums;
 }
@@ -327,7 +340,7 @@ body {
   margin: 0 0 10px; color: var(--ink);
   letter-spacing: -0.02em; font-weight: 400;
 }
-.rec-head h1 .punct { color: var(--blue); }
+.rec-head h1 .punct { color: var(--brand-deep); }
 .rec-meta { font-size: 14px; color: var(--ink-2); }
 .rec-meta .sep { margin: 0 7px; color: var(--ink-4); }
 .rec-sync {
@@ -371,7 +384,7 @@ body {
 .crow .cn { font-size: 13.5px; font-weight: 500; color: var(--ink); }
 .crow .cn small { font-weight: 400; color: var(--ink-3); margin-left: 6px; font-size: 12px; }
 .crow .cc { font-size: 12.5px; color: var(--ink-3); margin-top: 3px; }
-.crow .cc a { color: var(--blue); text-decoration: none; }
+.crow .cc a { color: var(--brand-deep); text-decoration: none; }
 .crow .cc a:hover { text-decoration: underline; }
 
 /* Symptom episodes */

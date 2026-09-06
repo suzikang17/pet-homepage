@@ -15,7 +15,7 @@ extension DueState {
     var badgeTint: Color {
         switch self {
         case .overdue: return Theme.danger
-        case .dueToday: return Theme.primary
+        case .dueToday: return Theme.primaryDeep
         case .dueIn: return Theme.inkSoft
         case .noCadence: return Theme.inkSoft
         }
@@ -49,7 +49,7 @@ struct CadenceTile: View {
                     } else {
                         Image(systemName: item.iconName)
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(Theme.primary)
+                            .foregroundStyle(Theme.primaryDeep)
                     }
                     Spacer(minLength: 0)
                     Text(item.dueState(now: now).badgeText)

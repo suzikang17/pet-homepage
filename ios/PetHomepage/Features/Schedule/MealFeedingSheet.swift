@@ -94,7 +94,7 @@ struct MealRing: View {
                 .stroke(Theme.inkSoft.opacity(0.2), lineWidth: 3)
             Circle()
                 .trim(from: 0, to: max(0.001, min(1, progress)))
-                .stroke(complete ? Theme.ok : Theme.primary,
+                .stroke(complete ? Theme.ok : Theme.primaryDeep,
                         style: StrokeStyle(lineWidth: 3, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             if complete {

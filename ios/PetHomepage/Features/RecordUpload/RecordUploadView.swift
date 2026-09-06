@@ -83,7 +83,7 @@ struct RecordUploadView: View {
                 ForEach(Array(results.enumerated()), id: \.offset) { _, r in
                     VStack(alignment: .leading, spacing: 3) {
                         Text(r.title).font(Theme.headline()).foregroundStyle(Theme.ink)
-                        Text(prettyType(r.eventType)).font(.caption.weight(.semibold)).foregroundStyle(Theme.primary)
+                        Text(prettyType(r.eventType)).font(.caption.weight(.semibold)).foregroundStyle(Theme.primaryDeep)
                         if let notes = r.notes {
                             Text(notes).font(.caption).foregroundStyle(Theme.inkSoft)
                         }

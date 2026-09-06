@@ -44,7 +44,7 @@ struct SheetHeader: View {
         .frame(maxWidth: .infinity)
         .background(Theme.brandGradient)
         .clipShape(.rect(bottomLeadingRadius: 26, bottomTrailingRadius: 26, style: .continuous))
-        .shadow(color: Theme.primary.opacity(0.25), radius: 14, y: 6)
+        .shadow(color: Theme.shadow.opacity(0.25), radius: 14, y: 6)
     }
 }
 
@@ -93,7 +93,7 @@ struct BrandFormSheet<Content: View>: View {
                     .headerProminence(.increased)
             }
             .background(Theme.bg)
-            .tint(Theme.primary)
+            .tint(Theme.primaryDeep)
             .toolbar(.hidden, for: .navigationBar)
             .ignoresSafeArea(edges: .top)
         }

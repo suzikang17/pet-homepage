@@ -260,7 +260,7 @@ struct ScheduleView: View {
                     .font(.caption.weight(.bold))
                     .buttonStyle(.bordered)
                     .buttonBorderShape(.capsule)
-                    .tint(Theme.primary)
+                    .tint(Theme.primaryDeep)
                     .padding(.trailing, 60)
                     .accessibilityIdentifier("scheduleTodayButton")
             }
@@ -271,7 +271,7 @@ struct ScheduleView: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(Theme.primary)
+                .foregroundStyle(Theme.primaryDeep)
                 .frame(width: 38, height: 38)
                 .background(Theme.card, in: Circle())
                 .shadow(color: Theme.shadow.opacity(0.06), radius: 6, y: 2)
@@ -336,7 +336,7 @@ struct ScheduleView: View {
                                     Label(slot.isSkipped ? "Unskip" : "Skip today",
                                           systemImage: slot.isSkipped ? "arrow.uturn.backward" : "moon.zzz")
                                 }
-                                .tint(slot.isSkipped ? Theme.primary : .orange)
+                                .tint(slot.isSkipped ? Theme.primaryDeep : .orange)
                             }
                         }
                         .swipeActions(edge: .leading) { doneAtSwipe(slot) }
@@ -359,7 +359,7 @@ struct ScheduleView: View {
                 } label: {
                     Label("Edit time", systemImage: "clock")
                 }
-                .tint(Theme.primary)
+                .tint(Theme.primaryDeep)
             } else if !slot.isSkipped, !model.isFuture {
                 Button {
                     clockTarget = .setDone(slot)
@@ -392,7 +392,7 @@ struct ScheduleView: View {
                                       weight: slot.isCompleted ? .medium : .semibold))
                         .foregroundStyle(slot.isCompleted
                                          ? Theme.inkSoft.opacity(0.6)
-                                         : Theme.primary.opacity(0.45))
+                                         : Theme.primaryDeep.opacity(0.45))
                         .frame(width: 26)
                 }
             }
@@ -402,7 +402,7 @@ struct ScheduleView: View {
 
             Image(systemName: slot.task.iconName)
                 .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(slot.isSkipped ? Theme.inkSoft : Theme.primary)
+                .foregroundStyle(slot.isSkipped ? Theme.inkSoft : Theme.primaryDeep)
                 .frame(width: 38, height: 38)
                 .background((slot.isSkipped ? Theme.inkSoft : Theme.primary).opacity(0.13),
                             in: RoundedRectangle(cornerRadius: 11, style: .continuous))
@@ -431,7 +431,7 @@ struct ScheduleView: View {
                             // Marks a "this day only" time change (long-press → reset).
                             Image(systemName: "clock.arrow.circlepath")
                                 .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(Theme.primary)
+                                .foregroundStyle(Theme.primaryDeep)
                         }
                     }
                 }
@@ -454,7 +454,7 @@ struct ScheduleView: View {
                     } label: {
                         Image(systemName: "camera")
                             .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(Theme.primary)
+                            .foregroundStyle(Theme.primaryDeep)
                             .frame(width: 38, height: 38)
                             .background(Theme.primary.opacity(0.1), in: Circle())
                     }
@@ -559,7 +559,7 @@ struct ScheduleView: View {
             } label: {
                 Label("Add a photo", systemImage: "camera.fill")
                     .font(.subheadline.weight(.bold))
-                    .foregroundStyle(Theme.primary)
+                    .foregroundStyle(Theme.primaryDeep)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 8)
                     .background(.white, in: Capsule())
@@ -570,7 +570,7 @@ struct ScheduleView: View {
         .padding(.horizontal, 18)
         .padding(.vertical, 14)
         .background(Theme.brandGradient, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .shadow(color: Theme.primary.opacity(0.35), radius: 14, y: 6)
+        .shadow(color: Theme.shadow.opacity(0.35), radius: 14, y: 6)
         .padding(.horizontal, 16)
         .padding(.bottom, 12)
         .transition(.move(edge: .bottom).combined(with: .opacity))

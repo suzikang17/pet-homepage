@@ -131,7 +131,7 @@ struct TimelineView: View {
                 .padding(.horizontal, 14)
                 .padding(.vertical, 7)
                 .background(active ? Theme.primary : Theme.card, in: Capsule())
-                .foregroundStyle(active ? .white : Theme.ink)
+                .foregroundStyle(active ? Theme.onBrand : Theme.ink)
                 .overlay(Capsule().stroke(Theme.ink.opacity(active ? 0 : 0.08)))
         }
         .buttonStyle(.plain)
@@ -258,10 +258,10 @@ struct TimelineView: View {
         } label: {
             Image(systemName: "plus")
                 .font(.system(size: 24, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.onBrand)
                 .frame(width: 60, height: 60)
                 .background(Theme.primary, in: Circle())
-                .shadow(color: Theme.primary.opacity(0.35), radius: 12, y: 5)
+                .shadow(color: Theme.shadow.opacity(0.35), radius: 12, y: 5)
         }
         .accessibilityIdentifier("timelineAddButton")
         .padding(.trailing, 22)
@@ -343,8 +343,8 @@ struct TimelineView: View {
         switch kind {
         case .vaccine: .teal
         case .vet: .indigo
-        case .medication: Theme.primary
-        case .dose: Theme.primary
+        case .medication: Theme.primaryDeep
+        case .dose: Theme.primaryDeep
         case .marker: .pink
         case .symptom: .orange
         case .activity: .cyan

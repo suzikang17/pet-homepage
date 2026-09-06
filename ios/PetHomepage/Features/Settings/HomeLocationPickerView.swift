@@ -20,7 +20,7 @@ struct HomeLocationPickerView: View {
                 Map(position: $camera) {
                     if let pin {
                         Marker("Home", systemImage: "house.fill", coordinate: pin)
-                            .tint(Theme.primary)
+                            .tint(Theme.primaryDeep)
                     }
                 }
                 .onTapGesture { screenPoint in

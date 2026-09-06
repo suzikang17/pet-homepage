@@ -43,7 +43,7 @@ struct SettingsView: View {
                                     Text("🐱  Cat").tag("cat")
                                     Text("🐾  Other").tag("other")
                                 }
-                                .labelsHidden().tint(Theme.primary)
+                                .labelsHidden().tint(Theme.primaryDeep)
                                 .onChange(of: petSpecies) { _, new in try? petStore.setSpecies(new) }
                             }
                         }
@@ -92,7 +92,7 @@ struct SettingsView: View {
                                 .font(.footnote).foregroundStyle(Theme.inkSoft)
                               }
                             }
-                            .tint(Theme.primary)
+                            .tint(Theme.primaryDeep)
 
                             Button("Sync now") {
                                 Task {
@@ -218,7 +218,7 @@ struct SettingsView: View {
     private func documentRow(_ row: DocumentRow) -> some View {
         if let url = try? model.shareURL(for: row) {
             ShareLink(item: url) {
-                Label(row.reference.fileName, systemImage: "doc.fill").tint(Theme.primary)
+                Label(row.reference.fileName, systemImage: "doc.fill").tint(Theme.primaryDeep)
             }
         } else {
             Label(row.reference.fileName, systemImage: "doc")

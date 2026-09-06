@@ -45,7 +45,7 @@ struct MedicationEditView: View {
                         Spacer()
                         Text(model.frequencyLabel)
                             .fontWeight(.semibold)
-                            .foregroundStyle(Theme.primary)
+                            .foregroundStyle(Theme.primaryDeep)
                     }
                 }
                 .listRowSeparator(.hidden)

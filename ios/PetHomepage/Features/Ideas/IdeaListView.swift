@@ -36,7 +36,7 @@ struct IdeaListView: View {
                         Image(systemName: "plus.circle.fill").font(.title2)
                     }
                     .buttonStyle(.plain)
-                    .foregroundStyle(draftIsBlank ? Theme.inkSoft : Theme.primary)
+                    .foregroundStyle(draftIsBlank ? Theme.inkSoft : Theme.primaryDeep)
                     .disabled(draftIsBlank)
                     .accessibilityIdentifier("idea.add")
                 }

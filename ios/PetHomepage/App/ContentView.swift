@@ -204,7 +204,7 @@ struct ContentView: View {
                 .tabItem { Label("Care Team", systemImage: "stethoscope") }
                 .tag(4)
         }
-        .tint(Theme.primary)
+        .tint(Theme.primaryDeep)
         .background(ShakeDetector { showIdeas = true })
         .sheet(isPresented: $showIdeas, onDismiss: { ideasFromQuickAction = false }) {
             NavigationStack {

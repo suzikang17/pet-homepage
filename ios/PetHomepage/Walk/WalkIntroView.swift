@@ -13,10 +13,10 @@ struct WalkIntroView: View {
             Spacer(minLength: 24)
             Image(systemName: "figure.walk.motion")
                 .font(.system(size: 40, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.onBrand)
                 .frame(width: 88, height: 88)
                 .background(Theme.primary, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-                .shadow(color: Theme.primary.opacity(0.3), radius: 16, y: 6)
+                .shadow(color: Theme.shadow.opacity(0.3), radius: 16, y: 6)
                 .padding(.bottom, 24)
 
             Text("Walks that log themselves")
@@ -55,7 +55,7 @@ struct WalkIntroView: View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(Theme.primary)
+                .foregroundStyle(Theme.primaryDeep)
                 .frame(width: 30, height: 30)
                 .background(Theme.primary.opacity(0.1), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             Text(text)

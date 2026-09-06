@@ -45,10 +45,10 @@ struct CareTeamView: View {
         Button { addVet = true } label: {
             Image(systemName: "plus")
                 .font(.system(size: 24, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.onBrand)
                 .frame(width: 60, height: 60)
                 .background(Theme.primary, in: Circle())
-                .shadow(color: Theme.primary.opacity(0.35), radius: 12, y: 5)
+                .shadow(color: Theme.shadow.opacity(0.35), radius: 12, y: 5)
         }
         .padding(.trailing, 22)
         .padding(.bottom, 24)
@@ -84,7 +84,7 @@ struct CareTeamView: View {
         HStack(spacing: 12) {
             Image(systemName: "stethoscope")
                 .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(Theme.primary)
+                .foregroundStyle(Theme.primaryDeep)
                 .frame(width: 38, height: 38)
                 .background(Theme.primary.opacity(0.13), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {

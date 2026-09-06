@@ -51,8 +51,8 @@ export default function SignInPage() {
               width: 40,
               height: 40,
               borderRadius: 10,
-              background: 'var(--blue)',
-              color: 'white',
+              background: 'var(--brand)',
+              color: 'var(--on-brand)',
               display: 'grid',
               placeItems: 'center',
               fontFamily: 'var(--font-display), serif',
@@ -129,7 +129,7 @@ export default function SignInPage() {
           Don&apos;t have an account?{' '}
           <Link
             href="/sign-up"
-            style={{ color: 'var(--blue)', textDecoration: 'none', fontWeight: 500 }}
+            style={{ color: 'var(--brand-deep)', textDecoration: 'none', fontWeight: 500 }}
           >
             Sign up
           </Link>

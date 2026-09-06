@@ -22,7 +22,7 @@ struct LogDoseView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Theme.bg)
-            .tint(Theme.primary)
+            .tint(Theme.primaryDeep)
             .toolbar(.hidden, for: .navigationBar)
             .ignoresSafeArea(edges: .top)
         }
@@ -42,7 +42,7 @@ struct LogDoseView: View {
                 Section {
                     LabeledContent("Next reminder") {
                         Text(model.nextReminder(), format: .dateTime.month().day().hour().minute())
-                            .foregroundStyle(Theme.primary)
+                            .foregroundStyle(Theme.primaryDeep)
                             .fontWeight(.semibold)
                     }
                 } footer: {
@@ -84,7 +84,7 @@ struct LogDoseView: View {
                         .foregroundStyle(Theme.inkSoft)
                     Text(next, format: .dateTime.weekday().month().day().hour().minute())
                         .font(.title3.weight(.bold))
-                        .foregroundStyle(Theme.primary)
+                        .foregroundStyle(Theme.primaryDeep)
                 }
                 .padding(20)
                 .frame(maxWidth: .infinity)

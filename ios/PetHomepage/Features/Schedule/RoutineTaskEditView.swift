@@ -133,7 +133,7 @@ struct RoutineTaskEditView: View {
                         .frame(width: 34, height: 34)
                         .background(selected ? Theme.primary : Theme.inkSoft.opacity(0.12),
                                     in: Circle())
-                        .foregroundStyle(selected ? .white : Theme.inkSoft)
+                        .foregroundStyle(selected ? Theme.onBrand : Theme.inkSoft)
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("routineWeekday.\(weekday)")

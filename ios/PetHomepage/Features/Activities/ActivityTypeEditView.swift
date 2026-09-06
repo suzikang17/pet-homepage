@@ -69,8 +69,8 @@ struct ActivityTypeEditView: View {
                                 .background(symbol == iconName ? Theme.primary.opacity(0.15) : Color.clear,
                                             in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                                 .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .stroke(symbol == iconName ? Theme.primary : Theme.ink.opacity(0.1)))
-                                .foregroundStyle(symbol == iconName ? Theme.primary : Theme.ink)
+                                    .stroke(symbol == iconName ? Theme.primaryDeep : Theme.ink.opacity(0.1)))
+                                .foregroundStyle(symbol == iconName ? Theme.primaryDeep : Theme.ink)
                                 .onTapGesture { iconName = symbol }
                         }
                     }

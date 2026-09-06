@@ -1,27 +1,38 @@
 // ios/PetHomepage/DesignSystem/Theme.swift
-// Bold & distinctive design system: an electric-violet brand with rounded, heavy
+// Bold & distinctive design system: a friendly-yellow brand with rounded, heavy
 // type, gradient hero headers, and soft elevated cards. Shared across every screen.
 import SwiftUI
 import UIKit
 
 enum Theme {
-    // Brand palette. The violet/coral brand colors read well on both appearances; the
-    // neutrals (bg/card/ink/inkSoft) are adaptive so dark mode gets a navy-violet dark
+    // Brand palette. Yellow is a *light* hue, so unlike the previous violet it cannot do
+    // both brand jobs at once — it is too pale to carry white text, and too pale to read
+    // as colored text on a white card. The brand is therefore split into three tokens:
+    //
+    //   primary     — the yellow itself. Use for FILLS: buttons, gradients, selected chips.
+    //   onBrand     — dark warm charcoal. Use for TEXT/ICONS drawn ON a primary fill.
+    //   primaryDeep — deep amber. Use for TEXT/ICONS that need to look "brand-colored"
+    //                 while sitting on a light surface (card, cream bg).
+    //
+    // The neutrals (bg/card/ink/inkSoft) stay adaptive so dark mode gets a warm brown-black
     // surface instead of near-black text on system-dark fills.
-    static let primary = Color(hex: 0x6C4CF1)   // electric indigo-violet
-    static let primary2 = Color(hex: 0x9B5CF6)  // lighter violet (gradient end)
-    static let accent = Color(hex: 0xFF6B5C)    // warm coral
-    static let bg = Color(light: 0xF4F3FA, dark: 0x14121F)      // app background
-    static let card = Color(light: 0xFFFFFF, dark: 0x211E33)    // elevated card surface
-    static let ink = Color(light: 0x16142A, dark: 0xEEECF8)     // primary text
-    static let inkSoft = Color(light: 0x6E6A86, dark: 0x9E9AB8) // secondary text
-    /// Shadow tint: always the dark navy. (Shadows must NOT track `ink` — an adaptive ink
-    /// would render light-colored "glow" shadows in dark mode.)
-    static let shadow = Color(hex: 0x16142A)
+    static let primary = Color(hex: 0xFFC53D)     // friendly golden yellow (fills)
+    static let primary2 = Color(hex: 0xFFDE73)    // lighter sunny yellow (gradient end)
+    static let primaryDeep = Color(hex: 0x8F6200) // deep amber — brand color on light surfaces
+    static let onBrand = Color(hex: 0x3D2E12)     // warm charcoal — content on a yellow fill
+    static let accent = Color(hex: 0xFF7A5C)      // warm coral
+    static let bg = Color(light: 0xFDF8EC, dark: 0x1B1710)      // app background
+    static let card = Color(light: 0xFFFFFF, dark: 0x2A2419)    // elevated card surface
+    static let ink = Color(light: 0x2A2113, dark: 0xF3EDE0)     // primary text
+    static let inkSoft = Color(light: 0x7C6F57, dark: 0xB0A48C) // secondary text
+    /// Shadow tint: always the warm dark brown. (Shadows must NOT track `ink` — an adaptive
+    /// ink would render light-colored "glow" shadows in dark mode.)
+    static let shadow = Color(hex: 0x2A2113)
 
-    // Status colors
+    // Status colors. `warn` is pushed to a vivid orange so it stays distinguishable from
+    // the yellow brand fill — the old amber was nearly identical to `primary`.
     static let ok = Color(hex: 0x12B886)
-    static let warn = Color(hex: 0xF59E0B)
+    static let warn = Color(hex: 0xF97316)
     static let danger = Color(hex: 0xEF4444)
 
     static let brandGradient = LinearGradient(
@@ -79,6 +90,10 @@ struct HeroHeader: View {
 
     private var hasPhotoBackground: Bool { backgroundImage != nil }
 
+    /// Photo headers keep white text (they sit on a dark scrim); the yellow brand gradient
+    /// needs dark text instead.
+    private var onHero: Color { hasPhotoBackground ? .white : Theme.onBrand }
+
     var body: some View {
         ZStack(alignment: .bottomLeading) {
             if let backgroundImage {
@@ -102,24 +117,24 @@ struct HeroHeader: View {
                     if let editableSubtitle {
                         ZStack(alignment: .leading) {
                             if editableSubtitle.wrappedValue.isEmpty {
-                                Text(subtitle ?? "").foregroundStyle(.white.opacity(0.55))
+                                Text(subtitle ?? "").foregroundStyle(onHero.opacity(0.55))
                             }
                             TextField("", text: editableSubtitle)
                         }
                         .font(.system(.subheadline, design: .rounded).weight(.bold))
-                        .foregroundStyle(.white)
-                        .tint(.white)
+                        .foregroundStyle(onHero)
+                        .tint(onHero)
                         .lineLimit(1)
                         .submitLabel(.done)
                     } else if let subtitle {
                         Text(subtitle.uppercased())
                             .font(.system(.caption, design: .rounded).weight(.heavy))
                             .tracking(1.6)
-                            .foregroundStyle(.white.opacity(0.85))
+                            .foregroundStyle(onHero.opacity(0.85))
                     }
                     Text(title)
                         .font(Theme.title(34))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(onHero)
                         .lineLimit(1).minimumScaleFactor(0.6)
                 }
             }
@@ -147,7 +162,7 @@ struct HeroHeader: View {
             .padding(.top, 62)
         }
         .clipShape(.rect(bottomLeadingRadius: 30, bottomTrailingRadius: 30, style: .continuous))
-        .shadow(color: Theme.primary.opacity(0.25), radius: 16, y: 8)
+        .shadow(color: Theme.shadow.opacity(0.18), radius: 16, y: 8)
     }
 
     @ViewBuilder
@@ -164,7 +179,7 @@ struct HeroHeader: View {
         avatarCircle.overlay(alignment: .bottomTrailing) {
             Image(systemName: "camera.fill")
                 .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(Theme.primary)
+                .foregroundStyle(Theme.onBrand)
                 .frame(width: 22, height: 22)
                 .background(.white, in: Circle())
                 .offset(x: 4, y: 4)
@@ -177,13 +192,13 @@ struct HeroHeader: View {
             avatar.resizable().scaledToFill()
                 .frame(width: 62, height: 62)
                 .clipShape(Circle())
-                .overlay(Circle().stroke(.white.opacity(0.7), lineWidth: 2))
+                .overlay(Circle().stroke(onHero.opacity(0.7), lineWidth: 2))
         } else {
             ZStack {
-                Circle().fill(.white.opacity(0.22)).frame(width: 62, height: 62)
+                Circle().fill(onHero.opacity(0.18)).frame(width: 62, height: 62)
                 Image(systemName: systemImage)
                     .font(.system(size: 28, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(onHero)
             }
         }
     }
@@ -192,7 +207,7 @@ struct HeroHeader: View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(Theme.primary)
+                .foregroundStyle(Theme.onBrand)
                 .frame(width: 42, height: 42)
                 .background(.white, in: Circle())
                 .shadow(color: Theme.shadow.opacity(0.18), radius: 8, y: 3)
@@ -212,14 +227,16 @@ struct BrandCard<Content: View>: View {
 }
 
 extension View {
-    /// Consistent brand treatment for the Form-based add/edit sheets: cream background, violet
+    /// Consistent brand treatment for the Form-based add/edit sheets: cream background, amber
     /// accent, prominent section headers, and a drag handle. The nav bar is left to blend with
     /// the cream sheet — a colored bar clashes with iOS 26's capsule toolbar buttons.
+    /// Tint is `primaryDeep`, not `primary`: tint colors interactive *labels*, and the yellow
+    /// would be unreadable as text on the cream sheet.
     func brandSheet() -> some View {
         self
             .scrollContentBackground(.hidden)
             .background(Theme.bg)
-            .tint(Theme.primary)
+            .tint(Theme.primaryDeep)
             .headerProminence(.increased)
             .presentationDragIndicator(.visible)
     }
@@ -245,13 +262,13 @@ struct PrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(Theme.headline())
-            .foregroundStyle(.white)
+            .foregroundStyle(Theme.onBrand)
             .padding(.vertical, 17)
             .frame(maxWidth: .infinity)
             .background(Theme.brandGradient, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .opacity(isEnabled ? 1 : 0.4)
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .shadow(color: Theme.primary.opacity(isEnabled ? 0.35 : 0), radius: 14, y: 8)
+            .shadow(color: Theme.shadow.opacity(isEnabled ? 0.22 : 0), radius: 14, y: 8)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
     }
 }

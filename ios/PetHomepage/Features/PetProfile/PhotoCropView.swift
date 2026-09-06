@@ -53,7 +53,7 @@ struct PhotoCropView: View {
                     .fontWeight(.semibold)
                 }
             }
-            .tint(Theme.primary)
+            .tint(Theme.primaryDeep)
         }
     }
 

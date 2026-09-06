@@ -181,7 +181,7 @@ struct CaptureReviewView: View {
                 .padding(.horizontal, 14)
                 .padding(.vertical, 7)
                 .background(active ? Theme.primary : Theme.card, in: Capsule())
-                .foregroundStyle(active ? .white : Theme.ink)
+                .foregroundStyle(active ? Theme.onBrand : Theme.ink)
                 .overlay(Capsule().stroke(Theme.ink.opacity(active ? 0 : 0.08)))
         }
         .buttonStyle(.plain)

@@ -38,7 +38,7 @@ struct RecentMomentsStrip: View {
                     if let onTap {
                         Button("See all", action: onTap)
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(Theme.primary)
+                            .foregroundStyle(Theme.primaryDeep)
                     }
                 }
                 ScrollView(.horizontal, showsIndicators: false) {

@@ -27,7 +27,7 @@ struct PetSwitcherView: View {
                         Spacer()
                         if pet.id == activePetID {
                             Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(Theme.primary)
+                                .foregroundStyle(Theme.primaryDeep)
                                 .accessibilityIdentifier("petSwitcherCheckmark")
                         }
                     }
@@ -61,7 +61,7 @@ struct PetSwitcherView: View {
         } else {
             Image(systemName: "pawprint.fill")
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Theme.primary)
+                .foregroundStyle(Theme.primaryDeep)
                 .frame(width: 44, height: 44)
                 .background(Theme.primary.opacity(0.12), in: Circle())
         }

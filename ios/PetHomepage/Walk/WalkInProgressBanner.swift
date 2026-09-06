@@ -73,7 +73,7 @@ struct WalkInProgressBanner: View {
             HStack(spacing: 12) {
                 Image(systemName: "figure.walk.motion")
                     .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Theme.onBrand)
                     .frame(width: 38, height: 38)
                     .background(Theme.primary, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
                 VStack(alignment: .leading, spacing: 1) {
@@ -91,14 +91,14 @@ struct WalkInProgressBanner: View {
                     Button { showingCamera = true } label: {
                         Image(systemName: "camera.fill")
                             .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(Theme.primary)
+                            .foregroundStyle(Theme.primaryDeep)
                             .frame(width: 38, height: 38)
                             .background(Theme.primary.opacity(0.12), in: Circle())
                             .overlay(alignment: .topTrailing) {
                                 if model.pendingPhotoCount > 0 {
                                     Text("\(model.pendingPhotoCount)")
                                         .font(.system(size: 10, weight: .bold))
-                                        .foregroundStyle(.white)
+                                        .foregroundStyle(Theme.onBrand)
                                         .padding(.horizontal, 5).padding(.vertical, 1)
                                         .background(Theme.primary, in: Capsule())
                                 }
@@ -112,7 +112,7 @@ struct WalkInProgressBanner: View {
                 Button("End") { model.end() }
                     .font(.subheadline.weight(.bold))
                     .buttonStyle(.borderedProminent)
-                    .tint(Theme.primary)
+                    .tint(Theme.primaryDeep)
             }
             .padding(12)
             .background(Theme.primary.opacity(0.08),

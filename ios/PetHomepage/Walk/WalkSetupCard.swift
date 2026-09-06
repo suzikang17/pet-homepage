@@ -12,7 +12,7 @@ struct WalkSetupCard: View {
         HStack(spacing: 12) {
             Image(systemName: "location.magnifyingglass")
                 .font(.system(size: 17, weight: .bold))
-                .foregroundStyle(Theme.primary)
+                .foregroundStyle(Theme.primaryDeep)
                 .frame(width: 38, height: 38)
                 .background(Theme.primary.opacity(0.12),
                             in: RoundedRectangle(cornerRadius: 11, style: .continuous))
@@ -30,7 +30,7 @@ struct WalkSetupCard: View {
                 Button("Set up") { onSetUp() }
                     .font(.caption.weight(.bold))
                     .buttonStyle(.borderedProminent)
-                    .tint(Theme.primary)
+                    .tint(Theme.primaryDeep)
                 Button("Not now") { onDismiss() }
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(Theme.inkSoft)

@@ -220,7 +220,7 @@ struct ClockTimeSheet: View {
             }
         }
         .background(Theme.bg)
-        .tint(Theme.primary)
+        .tint(Theme.primaryDeep)
         .ignoresSafeArea(edges: .top)
         .presentationDragIndicator(.hidden)
     }

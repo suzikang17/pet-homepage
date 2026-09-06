@@ -37,7 +37,7 @@ struct RoutineTemplateView: View {
         }
         .scrollContentBackground(.hidden)
         .background(Theme.bg)
-        .tint(Theme.primary)
+        .tint(Theme.primaryDeep)
         .navigationTitle("Edit routine")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -66,7 +66,7 @@ struct RoutineTemplateView: View {
         HStack(spacing: 12) {
             Image(systemName: task.iconName)
                 .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(Theme.primary)
+                .foregroundStyle(Theme.primaryDeep)
                 .frame(width: 38, height: 38)
                 .background(Theme.primary.opacity(0.13),
                             in: RoundedRectangle(cornerRadius: 11, style: .continuous))

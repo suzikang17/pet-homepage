@@ -99,7 +99,7 @@ struct WalkDetectionSettingsView: View {
                                     .tag(UUID?.some(type.id))
                             }
                         }
-                        .font(Theme.body()).tint(Theme.primary)
+                        .font(Theme.body()).tint(Theme.primaryDeep)
                         .onChange(of: defaultTypeID) { _, new in
                             home.defaultActivityTypeID = new
                             NotificationCenter.default.post(name: .walkSettingsChanged, object: nil)
@@ -110,7 +110,7 @@ struct WalkDetectionSettingsView: View {
                                 Text(rule.displayName).tag(rule)
                             }
                         }
-                        .font(Theme.body()).tint(Theme.primary)
+                        .font(Theme.body()).tint(Theme.primaryDeep)
                         .onChange(of: promptRule) { _, new in
                             home.promptRule = new
                             NotificationCenter.default.post(name: .walkSettingsChanged, object: nil)
@@ -149,7 +149,7 @@ struct WalkDetectionSettingsView: View {
                                     apply(suggestion)
                                 }
                                 .font(Theme.body().weight(.semibold))
-                                .foregroundStyle(Theme.primary)
+                                .foregroundStyle(Theme.primaryDeep)
                             }
                         }
                     }
@@ -293,7 +293,7 @@ struct WalkDetectionSettingsView: View {
     private var settingsLink: some View {
         Link("Open Settings", destination: URL(string: UIApplication.openSettingsURLString)!)
             .font(Theme.body().weight(.semibold))
-            .foregroundStyle(Theme.primary)
+            .foregroundStyle(Theme.primaryDeep)
     }
 
     private var permissionStatus: some View {
