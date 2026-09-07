@@ -22,12 +22,20 @@ extension DueState {
     }
 }
 
-/// One recurring thing. Tappable in EVERY state — a catalogue exists so you can record something
-/// you just did regardless of what the app thinks is due.
+/// One recurring thing. Interactive in EVERY state — a catalogue exists so you can record
+/// something you just did regardless of what the app thinks is due.
+///
+/// Tap OPENS the item; long-press logs it. That way round because the reverse shipped first and
+/// was wrong: on a two-column grid of similar cards, the most reachable gesture was writing a
+/// dose with no confirmation, and the only way back was an Undo strip that expired after four
+/// seconds. Logging is still one gesture for the common "I just did this" case — it now just has
+/// to be meant.
 struct CadenceTile: View {
     let item: CadenceItem
     let now: Date
+    /// Opens the item's sheet.
     let onTap: () -> Void
+    /// Logs it, at `now`.
     let onLongPress: () -> Void
 
     private var lastDoneText: String {
@@ -72,20 +80,21 @@ struct CadenceTile: View {
             .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .contentShape(Rectangle())
-        .onTapGesture {
-            // Success haptic on the tap itself, not after the async write returns — the feedback
-            // is about the gesture landing, and a delayed buzz reads as lag.
+        .onTapGesture { onTap() }
+        .onLongPressGesture {
+            // Success haptic on the gesture itself, not after the async write returns — the
+            // feedback is about the press landing, and a delayed buzz reads as lag. It sits on
+            // the long-press because that is now the gesture that writes.
             UINotificationFeedbackGenerator().notificationOccurred(.success)
-            onTap()
+            onLongPress()
         }
-        .onLongPressGesture { onLongPress() }
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)
         .accessibilityIdentifier("cadenceTile.\(item.name)")
         .accessibilityLabel("\(item.name), \(item.dueState(now: now).badgeText), last done \(lastDoneText)")
-        .accessibilityAction(named: "Log now") { onTap() }
-        // VoiceOver cannot perform a long press, so the details route needs its own action or it
-        // is unreachable for those users.
-        .accessibilityAction(named: "Open details") { onLongPress() }
+        // The default action opens the sheet, which is where logging, history and delete all
+        // live — so VoiceOver reaches everything without this. "Log now" stays anyway: it is the
+        // shortcut sighted users get from the long press, which VoiceOver cannot perform.
+        .accessibilityAction(named: "Log now") { onLongPress() }
     }
 }

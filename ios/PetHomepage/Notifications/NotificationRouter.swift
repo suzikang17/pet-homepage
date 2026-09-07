@@ -8,22 +8,33 @@ import Foundation
 @MainActor
 @Observable
 final class NotificationRouter {
-    /// Tab tags mirror ContentView's TabView (`.tag`).
-    enum Tab: Int { case home = 0, timeline = 1, schedule = 3, careTeam = 4 }
+    /// Tab tags mirror ContentView's TabView (`.tag`). The raw values are load-bearing and must
+    /// not be renumbered when the tabs are reordered or renamed — `gallery` is tag 1 because
+    /// that tab used to be the Timeline.
+    enum Tab: Int { case home = 0, gallery = 1, schedule = 3, careTeam = 4 }
 
     /// Set by a notification tap; ContentView consumes it (switches tab) and clears it.
     var pendingTab: Int?
 
-    /// Decide the destination for a tapped notification. Routine (`routine-reminder-…`) and
-    /// walk (`walk-…`) notifications both act on the Schedule tab; medication reminders
-    /// (`medication-reminder-…`, `medicationSnooze-reminder-…`) act on the Timeline tab, which
-    /// owns the medication rows and the Log dose flow.
+    /// Which Schedule subtab to open with, when the destination is that tab. Consumed and
+    /// cleared by ScheduleView.
+    var pendingScheduleTab: ScheduleTab?
+
+    /// Decide the destination for a tapped notification.
+    ///
+    /// Routine (`routine-reminder-…`) and walk (`walk-…`) notifications act on the day's
+    /// checklist, so they open Schedule on Today. Medication reminders
+    /// (`medication-reminder-…`, `medicationSnooze-reminder-…`) act on the medication rows and
+    /// the dose history — which used to mean tab 1. That tab is now the photo gallery, so they
+    /// open Schedule on Log instead; without this a tapped dose reminder lands on pictures.
     func route(requestID: String) {
         if requestID.hasPrefix("routine-reminder-") || requestID.hasPrefix("walk-") {
             pendingTab = Tab.schedule.rawValue
+            pendingScheduleTab = .today
         } else if requestID.hasPrefix("medication-reminder-")
                     || requestID.hasPrefix("medicationSnooze-reminder-") {
-            pendingTab = Tab.timeline.rawValue
+            pendingTab = Tab.schedule.rawValue
+            pendingScheduleTab = .log
         }
     }
 }

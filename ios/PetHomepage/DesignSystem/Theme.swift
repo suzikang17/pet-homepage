@@ -83,6 +83,10 @@ struct HeroHeader: View {
     /// When provided, the subtitle becomes an inline editable field (placeholder = `subtitle`).
     var editableSubtitle: Binding<String>? = nil
     var onAdd: (() -> Void)? = nil
+    /// When set, "+" opens a MENU instead of firing `onAdd` (which is then ignored). `AnyView`
+    /// rather than a generic parameter so every existing call site stays source-compatible — a
+    /// header button's menu is not worth a type parameter on a view this widely used.
+    var addMenu: AnyView? = nil
     var onSettings: (() -> Void)? = nil
     /// SF Symbol for the settings/manage button (defaults to the gear). Override to disambiguate
     /// when a screen's "settings" action isn't app Settings (e.g. Timeline → manage activity types).
@@ -154,8 +158,13 @@ struct HeroHeader: View {
                 if let onSettings {
                     heroIconButton(settingsSymbol, action: onSettings)
                 }
-                if let onAdd {
+                if let addMenu {
+                    Menu { addMenu } label: { heroIconLabel("plus") }
+                        .accessibilityLabel("Add")
+                        .accessibilityIdentifier("heroAddButton")
+                } else if let onAdd {
                     heroIconButton("plus", action: onAdd)
+                        .accessibilityIdentifier("heroAddButton")
                 }
             }
             .padding(.trailing, 20)
@@ -204,14 +213,16 @@ struct HeroHeader: View {
     }
 
     private func heroIconButton(_ systemName: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(Theme.onBrand)
-                .frame(width: 42, height: 42)
-                .background(.white, in: Circle())
-                .shadow(color: Theme.shadow.opacity(0.18), radius: 8, y: 3)
-        }
+        Button(action: action) { heroIconLabel(systemName) }
+    }
+
+    private func heroIconLabel(_ systemName: String) -> some View {
+        Image(systemName: systemName)
+            .font(.system(size: 18, weight: .bold))
+            .foregroundStyle(Theme.onBrand)
+            .frame(width: 42, height: 42)
+            .background(.white, in: Circle())
+            .shadow(color: Theme.shadow.opacity(0.18), radius: 8, y: 3)
     }
 }
 

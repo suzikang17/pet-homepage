@@ -13,8 +13,9 @@ struct PetProfileView: View {
     @State private var showPetSwitcher = false
     @State private var showAddPet = false
     @State private var catalogue: CadenceCatalogueViewModel?
-    /// "View all" destination — resolves to the medication or care-activity detail screen.
-    @State private var detailTarget: CadenceItem?
+    /// The tile whose sheet is open. The medication / care-activity detail screens are pushed
+    /// from inside that sheet rather than onto this stack, so a tile has one destination.
+    @State private var sheetTarget: CadenceItem?
 
     // Dashboard data, refreshed on appear + after any add.
     @State private var recent: [TimelineItem] = []
@@ -75,26 +76,18 @@ struct PetProfileView: View {
                 }
 
             }
-            .navigationDestination(item: $detailTarget) { item in
-                if let s = timelineServices {
-                    // A tile is a shortcut; this is the record behind it. Medications already had
-                    // such a screen, so each source routes to its own rather than being forced
-                    // through one shape — dosage and prescriber have no activity equivalent.
-                    switch item.source {
-                    case .medication(let objectID):
-                        if let obj = try? s.medicationStore.context.existingObject(with: objectID),
-                           let med = obj as? Medication {
-                            MedicationDetailView(medication: med, services: s)
-                        }
-                    case .activityType(let objectID):
-                        if let obj = try? s.activityStore.context.existingObject(with: objectID),
-                           let type = obj as? ActivityType {
-                            CareActivityDetailView(type: type, services: s)
-                        }
-                    }
+            // A tile now opens rather than writes. The sheet holds the history, the confirmed
+            // (and backdatable) log form, and per-entry delete; the full record for each source
+            // is pushed from inside it, since dosage and prescriber have no activity equivalent.
+            .sheet(item: $sheetTarget) { item in
+                // Nothing renders if the tile's record no longer resolves — it was deleted
+                // underneath the grid, and the next `refresh()` drops the tile too.
+                if let s = timelineServices, let catalogue,
+                   let sheet = CadenceSheet(item: item, catalogue: catalogue, services: s) {
+                    sheet
                 }
             }
-            .onChange(of: detailTarget) { _, new in if new == nil { refresh() } }
+            .onChange(of: sheetTarget) { _, new in if new == nil { refresh() } }
             .sheet(isPresented: $showSettings) {
                 if let settings { SettingsView(model: settings, petStore: petStore) }
             }
@@ -233,9 +226,9 @@ struct PetProfileView: View {
             HStack(alignment: .firstTextBaseline) {
                 Text("Care routine").font(Theme.headline()).foregroundStyle(Theme.ink)
                 Spacer(minLength: 8)
-                // Long-press is invisible without saying so, and it is the only route to a tile's
-                // history, its cadence editor, and backdated logging.
-                Text("Hold a tile for details")
+                // Long-press is invisible without saying so, and it is now the shortcut past the
+                // sheet for the common "I just did this" case.
+                Text("Hold a tile to log instantly")
                     .font(.caption2)
                     .foregroundStyle(Theme.inkSoft)
             }
@@ -245,12 +238,11 @@ struct PetProfileView: View {
                     CadenceTile(
                         item: item,
                         now: Date(),
-                        onTap: { Task { await model.log(item); refresh() } },
-                        // Long-press opens the record rather than a bare date picker: that screen
-                        // already has the full log form (date, note, and for activities an end
-                        // time), the cadence editor, and the history with per-entry delete — i.e.
-                        // everything backdating and bookkeeping actually need.
-                        onLongPress: { detailTarget = item })
+                        // Tap reads, long-press writes. The sheet carries the history, the
+                        // backdatable log form and per-entry delete; the long-press keeps the
+                        // one-gesture path for "I just did this", with the Undo strip below.
+                        onTap: { sheetTarget = item },
+                        onLongPress: { Task { await model.log(item); refresh() } })
                 }
             }
             if let logged = model.lastLogged {
@@ -271,7 +263,7 @@ struct PetProfileView: View {
             Spacer(minLength: 0)
             Button("Undo") { Task { await model.undoLastLog(); refresh() } }
                 .font(.subheadline.weight(.semibold))
-            Button("View all") { detailTarget = item }
+            Button("View all") { sheetTarget = item }
                 .font(.subheadline.weight(.semibold))
         }
         .padding(.horizontal, 14)

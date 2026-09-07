@@ -28,16 +28,25 @@ class UITestCase: XCTestCase {
         return app
     }
 
-    /// Opens the capture flow via its home: the Timeline tab's + menu → "Take photo".
-    /// (The former Capture pseudo-tab was removed.)
+    /// Opens the capture flow via its home: the Gallery tab's + menu → "Take photo".
+    /// (Photos are added where photos live; record types moved to the Schedule header's +.)
     func openCapture() {
-        app.tabBars.buttons["Timeline"].tap()
-        let add = app.buttons["timelineAddButton"]
-        XCTAssertTrue(add.waitForExistence(timeout: 5), "timeline add button missing")
+        app.tabBars.buttons["Gallery"].tap()
+        let add = app.buttons["heroAddButton"]
+        XCTAssertTrue(add.waitForExistence(timeout: 5), "gallery add button missing")
         add.tap()
         let takePhoto = app.buttons["Take photo"]
         XCTAssertTrue(takePhoto.waitForExistence(timeout: 5), "Take photo menu entry missing")
         takePhoto.tap()
+    }
+
+    /// Opens the record stream: the Schedule tab's Log subtab. It used to be the Timeline tab's
+    /// Stream mode, and moved to sit beside Today and Upcoming.
+    func openLog() {
+        app.tabBars.buttons["Schedule"].tap()
+        let picker = app.segmentedControls["scheduleTabPicker"]
+        XCTAssertTrue(picker.waitForExistence(timeout: 5), "schedule subtab picker missing")
+        picker.buttons["Log"].tap()
     }
 
     /// Taps a chip inside a horizontal chip strip, swiping the strip left first when the chip is

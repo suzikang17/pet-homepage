@@ -84,7 +84,7 @@ struct ContentView: View {
     private static func screenLabel(for tag: Int) -> String? {
         switch tag {
         case 0: return "Home"
-        case 1: return "Timeline"
+        case 1: return "Gallery"
         case 3: return "Schedule"
         case 4: return "Care Team"
         default: return nil
@@ -196,9 +196,9 @@ struct ContentView: View {
                          walkSessions: walkSessions, timelineServices: timelineServices)
                 .tabItem { Label("Schedule", systemImage: "checklist") }
                 .tag(3)
-            TimelineView(services: timelineServices, onCapture: { startCapture() },
-                         onImport: { showLibraryFallback = true })
-                .tabItem { Label("Timeline", systemImage: "calendar") }
+            GalleryView(services: timelineServices, onCapture: { startCapture() },
+                        onImport: { showLibraryFallback = true })
+                .tabItem { Label("Gallery", systemImage: "photo.on.rectangle") }
                 .tag(1)
             CareTeamView(store: veterinarianStore)
                 .tabItem { Label("Care Team", systemImage: "stethoscope") }

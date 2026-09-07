@@ -28,6 +28,19 @@ private enum ClockTarget: Identifiable {
     }
 }
 
+/// Which Schedule subtab is showing. "Log" is the date-sorted stream of everything already
+/// recorded; "Today" is the day-pager routine; "Upcoming" is every dated reminder, including the
+/// vaccinations, vet visits and refills that have no routine slot.
+///
+/// The three answer what happened, what is happening, and what is coming — which is why the log
+/// belongs here rather than sharing a tab with the photo gallery, as it used to.
+///
+/// Top-level rather than nested in `ScheduleView` so `NotificationRouter` can name a deep-link
+/// destination without reaching into a SwiftUI view.
+enum ScheduleTab: String, CaseIterable {
+    case log = "Log", today = "Today", upcoming = "Upcoming"
+}
+
 /// The Schedule tab: one day's care checklist at a time (chevrons/Today to move between days),
 /// check-offs with a transient "Add a photo?" toast, per-day skips and time changes
 /// (long-press a row), one-off tasks, and the versioned template editor behind the header's
@@ -46,6 +59,9 @@ struct ScheduleView: View {
     @State private var clockTarget: ClockTarget?
     @State private var feedingTarget: RoutineSlot?
     @Environment(\.scenePhase) private var scenePhase
+    /// Notification deep links pick the subtab as well as the tab — a tapped dose reminder has to
+    /// land on Log, not on whatever was last open.
+    @Environment(NotificationRouter.self) private var deeplinkRouter: NotificationRouter?
     @AppStorage("walk.setupCardDismissed") private var walkSetupDismissed = false
     /// Mirrors HomeLocationStore's key so the card disappears the moment home is set —
     /// reading the store inside `body` wouldn't re-render on the write.
@@ -57,10 +73,14 @@ struct ScheduleView: View {
     private let petStore: PetStore
     @State private var walkModel: WalkSessionModel
 
-    /// Which subtab is showing. "Today" is the day-pager routine; "Upcoming" is every dated
-    /// reminder, including the vaccinations, vet visits and refills that have no routine slot.
-    private enum Tab: String, CaseIterable { case today = "Today", upcoming = "Upcoming" }
-    @State private var tab: Tab = .today
+    /// Defaults to Today: it is the daily driver, and it is where this tab already opened.
+    @State private var tab: ScheduleTab = .today
+    /// Record-add state for the merged "+" menu, shared by all three subtabs.
+    @State private var addKind: TimelineKind?
+    @State private var showScan = false
+    /// Bumped after a record is added, so the Log subtab reloads — its stream cannot see a sheet
+    /// presented from this view's header.
+    @State private var streamToken = UUID()
     @State private var catalogue: CadenceCatalogueViewModel?
     private let timelineServices: TimelineServices?
 
@@ -83,18 +103,25 @@ struct ScheduleView: View {
                 VStack(spacing: 12) {
                     HeroHeader(
                         title: "Schedule",
-                        subtitle: progressSubtitle,
+                        // The progress count describes the day's checklist, so it belongs to
+                        // Today only — it says nothing about the log or what is upcoming.
+                        subtitle: tab == .today ? progressSubtitle : tab.rawValue,
                         systemImage: "checklist",
-                        onAdd: { showOneOffEditor = true },
+                        addMenu: addMenu,
                         onSettings: { showTemplateEditor = true },
                         settingsSymbol: "slider.horizontal.3"
                     )
                     Picker("", selection: $tab) {
-                        ForEach(Tab.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                        ForEach(ScheduleTab.allCases, id: \.self) { Text($0.rawValue).tag($0) }
                     }
                     .pickerStyle(.segmented)
                     .padding(.horizontal, 16)
-                    if tab == .today {
+                    .accessibilityIdentifier("scheduleTabPicker")
+                    if tab == .log {
+                        if let services = timelineServices {
+                            LogStreamView(services: services, refreshToken: streamToken)
+                        }
+                    } else if tab == .today {
                         dayBar
                         // Auto-detect setup nudge: only while a walk slot exists but detection
                         // was never configured, and never after "Not now".
@@ -118,7 +145,11 @@ struct ScheduleView: View {
             .background(Theme.bg)
             .ignoresSafeArea(edges: .top)
             .toolbar(.hidden, for: .navigationBar)
+            // Both paths matter: onChange catches a tap while the app is live, onAppear catches
+            // the cold launch where the router was set before this view existed.
+            .onChange(of: deeplinkRouter?.pendingScheduleTab) { _, _ in consumeDeepLink() }
             .onAppear {
+                consumeDeepLink()
                 refreshUpcoming()
                 // Sessions can start/end outside this view (notification actions, auto-end).
                 walkModel.refresh()
@@ -159,6 +190,13 @@ struct ScheduleView: View {
             .sheet(isPresented: $showOneOffEditor, onDismiss: { model.load() }) {
                 RoutineTaskEditView(store: store, reminderScheduler: reminderScheduler,
                                     petStore: petStore, mode: .oneOff(day: model.day), editing: nil)
+            }
+            // The record editors behind the merged "+". Adding one bumps `streamToken` so the
+            // Log subtab picks it up — it cannot observe a sheet presented from up here.
+            .recordEditorSheets(services: timelineServices, addKind: $addKind,
+                                showScan: $showScan) {
+                streamToken = UUID()
+                refreshUpcoming()
             }
             .sheet(item: $feedingTarget) { slot in
                 MealFeedingSheet(
@@ -229,6 +267,34 @@ struct ScheduleView: View {
                 }
             }
         }
+    }
+
+    /// Opens the subtab a tapped notification asked for, then clears the request so returning to
+    /// this tab later does not re-apply it.
+    private func consumeDeepLink() {
+        guard let requested = deeplinkRouter?.pendingScheduleTab else { return }
+        tab = requested
+        deeplinkRouter?.pendingScheduleTab = nil
+    }
+
+    /// One "+" menu, identical on all three subtabs.
+    ///
+    /// The header's "+" used to mean "new one-off task" and the stream's floating "+" meant "new
+    /// record of any kind". Merging the tabs collided them, and one button whose meaning depends
+    /// on the active subtab is the kind of thing you have to learn twice — so both live here, the
+    /// routine task first because this is still the Schedule tab.
+    private var addMenu: AnyView? {
+        AnyView(
+            Group {
+                Button { showOneOffEditor = true } label: {
+                    Label("New one-off task", systemImage: "calendar.badge.plus")
+                }
+                if let services = timelineServices {
+                    Divider()
+                    RecordAddMenuItems(services: services, addKind: $addKind, showScan: $showScan)
+                }
+            }
+        )
     }
 
     private var progressSubtitle: String {
