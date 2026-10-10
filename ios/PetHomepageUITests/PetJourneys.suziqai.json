@@ -1,0 +1,232 @@
+{
+  "id": "suite-1",
+  "name": "Pet journeys",
+  "fileName": "PetJourneys",
+  "beforeEach": [],
+  "tests": [
+    {
+      "id": "block-1",
+      "name": "Check off breakfast",
+      "steps": [
+        {
+          "id": "step-1791641394903-0",
+          "label": "Tap the Schedule tab",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"label\":\"Schedule\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "step-1791641394903-1",
+          "label": "Verify Schedule screen is visible",
+          "action": {
+            "type": "assert",
+            "assertionType": "visible",
+            "selector": "{\"type\":\"staticText\",\"label\":\"Schedule\",\"index\":0}",
+            "expected": "true"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "step-1791641412359-0",
+          "label": "Tap Mark Breakfast done",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"scheduleRow.Breakfast\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "step-1791641412359-1",
+          "label": "Verify progress updates to 1 of 4 done",
+          "action": {
+            "type": "assert",
+            "assertionType": "visible",
+            "selector": "{\"type\":\"staticText\",\"labelContains\":\"TODAY ·\",\"index\":0}",
+            "expected": "true"
+          },
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "id": "block-1791641422582",
+      "name": "Add a vet to the care team",
+      "steps": [
+        {
+          "id": "step-1791641436119-0",
+          "label": "Tap the Care Team tab",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"label\":\"Care Team\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "step-1791641436119-1",
+          "label": "Wait for Care Team screen to load",
+          "action": {
+            "type": "waitFor",
+            "selector": "{\"type\":\"staticText\",\"label\":\"Care Team\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "step-1791641436119-2",
+          "label": "Verify Care Team screen is visible",
+          "action": {
+            "type": "assert",
+            "assertionType": "visible",
+            "selector": "{\"type\":\"staticText\",\"label\":\"Care Team\",\"index\":0}",
+            "expected": "true"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "step-1791641436119-3",
+          "label": "Tap Add button to add a new care team member",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"plus\",\"label\":\"Add\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "step-1791641457072-0",
+          "label": "Tap the Name field",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"textField\",\"placeholder\":\"Name\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "step-1791641457072-1",
+          "label": "Type Dr. Paws",
+          "action": {
+            "type": "fill",
+            "selector": "{\"type\":\"textField\",\"placeholder\":\"Name\",\"index\":0}",
+            "value": "Dr. Paws"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "step-1791641457072-2",
+          "label": "Verify Name field shows Dr. Paws",
+          "action": {
+            "type": "assert",
+            "assertionType": "value",
+            "selector": "{\"type\":\"textField\",\"placeholder\":\"Name\",\"index\":0}",
+            "expected": "Dr. Paws"
+          },
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "id": "block-1791641472105",
+      "name": "Filter timeline to vaccines",
+      "steps": [
+        {
+          "id": "step-1791641483702-0",
+          "label": "Tap the Timeline tab",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"label\":\"Timeline\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "step-1791641483702-1",
+          "label": "Verify Timeline screen is visible",
+          "action": {
+            "type": "assert",
+            "assertionType": "visible",
+            "selector": "{\"type\":\"staticText\",\"label\":\"Timeline\",\"index\":0}",
+            "expected": "true"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "step-1791641499835-0",
+          "label": "Tap Vaccines filter",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"timelineChip.Vaccines\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "step-1791641499835-1",
+          "label": "Verify Vaccines filter is visible",
+          "action": {
+            "type": "assert",
+            "assertionType": "visible",
+            "selector": "{\"type\":\"button\",\"id\":\"timelineChip.Vaccines\",\"index\":0}",
+            "expected": "true"
+          },
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "id": "block-1791641510680",
+      "name": "Next day then upcoming",
+      "steps": [
+        {
+          "id": "step-1791641521964-0",
+          "label": "Tap the Schedule tab",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"label\":\"Schedule\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "step-1791641521964-1",
+          "label": "Verify Schedule screen is visible",
+          "action": {
+            "type": "assert",
+            "assertionType": "visible",
+            "selector": "{\"type\":\"staticText\",\"label\":\"Schedule\",\"index\":0}",
+            "expected": "true"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "step-1791641547429-0",
+          "label": "Tap forward to go to next day",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"scheduleNextDay\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "step-1791641547429-1",
+          "label": "Tap the Upcoming tab",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"label\":\"Upcoming\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "step-1791641547429-2",
+          "label": "Assert Upcoming is visible",
+          "action": {
+            "type": "assert",
+            "assertionType": "visible",
+            "selector": "{\"type\":\"button\",\"label\":\"Upcoming\",\"index\":0}",
+            "expected": "true"
+          },
+          "status": "passed"
+        }
+      ]
+    }
+  ],
+  "devices": [],
+  "savedAt": "2026-10-10T14:13:47.159Z",
+  "updatedAt": "2026-10-10T14:13:47.159Z"
+}
