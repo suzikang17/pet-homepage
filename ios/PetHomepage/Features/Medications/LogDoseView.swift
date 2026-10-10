@@ -38,6 +38,7 @@ struct LogDoseView: View {
                 }
                 Section("Note") {
                     TextField("e.g. with food, half dose", text: $model.note, axis: .vertical)
+                        .accessibilityLabel("Note")
                 }
                 Section {
                     LabeledContent("Next reminder") {

@@ -22,6 +22,7 @@ struct DiaryEntryEditView: View {
             }
             Section("Note") {
                 TextField("What happened today…", text: $model.note, axis: .vertical)
+                    .accessibilityLabel("Note")
                     .lineLimit(3...8)
             }
             PendingPhotoSection(

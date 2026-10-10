@@ -40,10 +40,13 @@ struct VetEditView: View {
                     .textInputAutocapitalization(.never)
             }
             Section("Address") {
+                // Multi-line fields become text views with no label of their own
                 TextField("Address", text: $model.address, axis: .vertical)
+                    .accessibilityLabel("Address")
             }
             Section("Notes") {
                 TextField("Notes", text: $model.notes, axis: .vertical)
+                    .accessibilityLabel("Notes")
             }
         }
         .background(
