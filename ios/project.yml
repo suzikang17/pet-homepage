@@ -18,6 +18,7 @@ targets:
       - path: PetHomepage
         excludes:
           - "**/.omc/**"
+          - "**/*.suziqai.json"
       # Shared with the widget extension: the ActivityAttributes both sides encode/decode.
       - path: PetHomepageWidgets/WalkActivityAttributes.swift
     dependencies:
@@ -91,6 +92,7 @@ targets:
       - path: PetHomepageTests
         excludes:
           - "**/.omc/**"
+          - "**/*.suziqai.json"
     dependencies:
       - target: PetHomepage
   PetHomepageUITests:
@@ -100,6 +102,7 @@ targets:
       - path: PetHomepageUITests
         excludes:
           - "**/.omc/**"
+          - "**/*.suziqai.json"
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES

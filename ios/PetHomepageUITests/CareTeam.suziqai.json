@@ -1,0 +1,674 @@
+{
+  "id": "suite-1",
+  "name": "Care Team",
+  "fileName": "CareTeam",
+  "beforeEach": [],
+  "tests": [
+    {
+      "id": "block-1791648510092",
+      "name": "Empty state shows placeholder",
+      "steps": [
+        {
+          "id": "goal-220121e1-2048-4f5d-80b2-84d9cf9fe2da",
+          "label": "Tap Care Team tab",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"stethoscope\",\"label\":\"Care Team\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-86b2b9ea-38b1-4c8a-8b0a-dc33873b6c6f",
+          "label": "Check 'No vets yet' is visible",
+          "action": {
+            "type": "assert",
+            "assertionType": "visible",
+            "selector": "{\"type\":\"staticText\",\"label\":\"No vets yet\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-3db84ab1-257e-4868-9032-2fb512691d2f",
+          "label": "Check 'YOUR VETS' subtitle is visible",
+          "action": {
+            "type": "assert",
+            "assertionType": "visible",
+            "selector": "{\"type\":\"staticText\",\"label\":\"YOUR VETS\",\"index\":0}"
+          },
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "id": "block-1791648545317",
+      "name": "Add a vet with all fields",
+      "steps": [
+        {
+          "id": "goal-de834b68-42cc-4525-83a2-c77d37de8fc7",
+          "label": "Tap Care Team tab",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"stethoscope\",\"label\":\"Care Team\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-692212ab-961d-4ec6-84be-613ca59ae9c0",
+          "label": "Tap Add button",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"plus\",\"label\":\"Add\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-897ac1e6-3155-435d-b30d-c69217808d70",
+          "label": "Type Dr. Sarah Chen into Name",
+          "action": {
+            "type": "fill",
+            "selector": "{\"type\":\"textField\",\"placeholder\":\"Name\",\"index\":0}",
+            "value": "Dr. Sarah Chen"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-c7b5e96e-9a38-40d9-938b-80cbfe4e7101",
+          "label": "Type Green Valley Animal Hospital into Clinic",
+          "action": {
+            "type": "fill",
+            "selector": "{\"type\":\"textField\",\"placeholder\":\"Clinic\",\"index\":0}",
+            "value": "Green Valley Animal Hospital"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-0521e8e3-6ba3-48b7-b35e-aec4b6d15de1",
+          "label": "Type 555-0123 into Phone",
+          "action": {
+            "type": "fill",
+            "selector": "{\"type\":\"textField\",\"placeholder\":\"Phone\",\"index\":0}",
+            "value": "555-0123"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-fd277189-7e94-48b9-97ae-942a39d4233b",
+          "label": "Type sarah@greenvalley.com into Email",
+          "action": {
+            "type": "fill",
+            "selector": "{\"type\":\"textField\",\"placeholder\":\"Email\",\"index\":0}",
+            "value": "sarah@greenvalley.com"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-169f6115-750e-4003-ac85-2eb599935fa5",
+          "label": "Type greenvalley.com into Website",
+          "action": {
+            "type": "fill",
+            "selector": "{\"type\":\"textField\",\"placeholder\":\"Website\",\"index\":0}",
+            "value": "greenvalley.com"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-de92998a-9ed7-423a-b4f6-14dc0ee39704",
+          "label": "Type 123 Oak St into Address",
+          "action": {
+            "type": "fill",
+            "selector": "{\"type\":\"textField\",\"placeholder\":\"Address\",\"index\":0}",
+            "value": "123 Oak St"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-068b22fb-20b2-47cf-9afa-e1c1916568f0",
+          "label": "Type Great with cats into Notes",
+          "action": {
+            "type": "fill",
+            "selector": "{\"type\":\"textField\",\"placeholder\":\"Notes\",\"index\":0}",
+            "value": "Great with cats"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-fa2f88ee-692e-48e2-9589-da285cd6fb7d",
+          "label": "Tap Save",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"sheet.save\",\"label\":\"Save\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-d6f21425-c69c-4128-a68b-6ac7dd61d13c",
+          "label": "Verify Dr. Sarah Chen is visible",
+          "action": {
+            "type": "assert",
+            "assertionType": "visible",
+            "selector": "{\"type\":\"button\",\"label\":\"Dr. Sarah Chen, Green Valley Animal Hospital\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-6281c2cd-efd0-46b8-b59b-3d6189e40f55",
+          "label": "Verify Green Valley Animal Hospital is visible",
+          "action": {
+            "type": "assert",
+            "assertionType": "visible",
+            "selector": "{\"type\":\"button\",\"label\":\"Dr. Sarah Chen, Green Valley Animal Hospital\",\"index\":0}"
+          },
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "id": "block-1791648669959",
+      "name": "Save button disabled when name is empty",
+      "steps": [
+        {
+          "id": "goal-df7b1062-d609-4743-8a13-991f11697a79",
+          "label": "Tap Care Team tab",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"stethoscope\",\"label\":\"Care Team\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-541fd006-63f2-44b8-8376-3a508f5e9be1",
+          "label": "Tap Add button",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"plus\",\"label\":\"Add\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-9972849c-03a2-4394-866b-a570047bd226",
+          "label": "Fill Clinic with 'Test Clinic'",
+          "action": {
+            "type": "fill",
+            "selector": "{\"type\":\"textField\",\"placeholder\":\"Clinic\",\"index\":0}",
+            "value": "Test Clinic"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-aa8d4595-ff4c-4899-a325-11ed44fb67b1",
+          "label": "Assert Save button is disabled",
+          "action": {
+            "type": "assert",
+            "assertionType": "disabled",
+            "selector": "{\"type\":\"button\",\"id\":\"sheet.save\",\"label\":\"Save\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-0261e021-0a3c-4ad2-b45b-d86d8dc56398",
+          "label": "Verify Save button is disabled",
+          "action": {
+            "type": "assert",
+            "assertionType": "disabled",
+            "selector": "{\"type\":\"button\",\"id\":\"sheet.save\",\"label\":\"Save\",\"index\":0}"
+          },
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "id": "block-1791648744681",
+      "name": "Cancel adding a vet discards changes",
+      "steps": [
+        {
+          "id": "goal-6dc241fd-756b-441a-ae62-a8c513588a9c",
+          "label": "Tap Care Team tab",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"stethoscope\",\"label\":\"Care Team\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-810d9bb0-c4e7-4834-8ed6-07af0d4b2202",
+          "label": "Tap the + button",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"plus\",\"label\":\"Add\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-b1e4d278-bd02-41cc-b692-4ee0360da5ec",
+          "label": "Type Dr. Temporary into Name",
+          "action": {
+            "type": "fill",
+            "selector": "{\"type\":\"textField\",\"placeholder\":\"Name\",\"index\":0}",
+            "value": "Dr. Temporary"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-ea9f54e3-ae45-4908-a35e-1634246a2462",
+          "label": "Tap Cancel to dismiss",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"sheet.cancel\",\"label\":\"Cancel\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-31702735-6dc0-4917-bce4-0af470ece322",
+          "label": "Verify 'No vets yet' is still visible",
+          "action": {
+            "type": "assert",
+            "assertionType": "visible",
+            "selector": "{\"type\":\"staticText\",\"label\":\"No vets yet\",\"index\":0}",
+            "expected": "true"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-04ca8fb0-f5df-4cc9-adea-9093b4bc267f",
+          "label": "Verify helper text is visible",
+          "action": {
+            "type": "assert",
+            "assertionType": "visible",
+            "selector": "{\"type\":\"staticText\",\"label\":\"Tap + to add your vet, then attach them to visits, vaccines, and meds.\",\"index\":0}",
+            "expected": "true"
+          },
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "id": "block-1791648801692",
+      "name": "Edit an existing vet",
+      "steps": [
+        {
+          "id": "goal-94dfbfc6-c2ee-423c-9cef-4852385484ea",
+          "label": "Tap Care Team tab",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"stethoscope\",\"label\":\"Care Team\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-231ee7cd-8ae4-4d9b-9371-3b51b29c44e7",
+          "label": "Tap Add button",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"plus\",\"label\":\"Add\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-819596e6-84e3-4617-bb23-4f52df390ab7",
+          "label": "Type 'Dr. James Lee' into Name",
+          "action": {
+            "type": "fill",
+            "selector": "{\"type\":\"textField\",\"placeholder\":\"Name\",\"index\":0}",
+            "value": "Dr. James Lee"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-1279f949-c7a5-4d97-bd4e-d55e42bfef58",
+          "label": "Type 'Paws Clinic' into Clinic",
+          "action": {
+            "type": "fill",
+            "selector": "{\"type\":\"textField\",\"placeholder\":\"Clinic\",\"index\":0}",
+            "value": "Paws Clinic"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-c2c6214e-6b15-4355-aa18-bc59fbfb1d81",
+          "label": "Tap Save",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"sheet.save\",\"label\":\"Save\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-110f0de9-eca3-48c5-911e-f353b7e8d1a7",
+          "label": "Tap Dr. James Lee row",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"label\":\"Dr. James Lee, Paws Clinic\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-5fe882c7-ff10-40fd-bf06-3d4cd0d9f135",
+          "label": "Clear Clinic field and type 'Sunrise Pet Hospital'",
+          "action": {
+            "type": "fill",
+            "selector": "{\"type\":\"textField\",\"placeholder\":\"Clinic\",\"index\":0}",
+            "value": "Sunrise Pet Hospital"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-9b8b79e5-e00b-42b6-8864-837171ad85d9",
+          "label": "Tap Save",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"sheet.save\",\"label\":\"Save\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-ff55087e-352f-42f4-978e-140e45f85740",
+          "label": "Verify Dr. James Lee is visible",
+          "action": {
+            "type": "assert",
+            "assertionType": "visible",
+            "selector": "{\"type\":\"button\",\"label\":\"Dr. James Lee, Sunrise Pet Hospital\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-8878d65b-62a5-4224-abfa-5e5b6dfdc0d1",
+          "label": "Verify Sunrise Pet Hospital is visible",
+          "action": {
+            "type": "assert",
+            "assertionType": "visible",
+            "selector": "{\"type\":\"button\",\"label\":\"Dr. James Lee, Sunrise Pet Hospital\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-e5e634a4-2f54-4cad-b15a-1ee4513617d2",
+          "label": "Verify vet count shows 1 VET",
+          "action": {
+            "type": "assert",
+            "assertionType": "visible",
+            "selector": "{\"type\":\"staticText\",\"label\":\"1 VET\",\"index\":0}"
+          },
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "id": "block-1791648899331",
+      "name": "Delete a vet via swipe",
+      "steps": [
+        {
+          "id": "goal-6b1334b2-768c-4d0c-b5be-da28616979c6",
+          "label": "Tap Care Team tab",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"stethoscope\",\"label\":\"Care Team\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-d149569e-2434-4e88-ae5f-944529453c1f",
+          "label": "Tap the + button",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"plus\",\"label\":\"Add\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-da2eeca6-8b06-4c8b-a542-239b6b6f1780",
+          "label": "Type 'Dr. Delete Me' into Name",
+          "action": {
+            "type": "fill",
+            "selector": "{\"type\":\"textField\",\"placeholder\":\"Name\",\"index\":0}",
+            "value": "Dr. Delete Me"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-0b13afc1-17f2-4bb6-b2b0-e63384bca3f3",
+          "label": "Type 'Temp Clinic' into Clinic",
+          "action": {
+            "type": "fill",
+            "selector": "{\"type\":\"textField\",\"placeholder\":\"Clinic\",\"index\":0}",
+            "value": "Temp Clinic"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-02b2c23c-e1ea-455a-a0f6-06dd4bb5b261",
+          "label": "Tap Save",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"sheet.save\",\"label\":\"Save\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-ca7155df-096d-4c64-858e-242941e84d28",
+          "label": "Swipe left on Dr. Delete Me row",
+          "action": {
+            "type": "swipe",
+            "direction": "left",
+            "selector": "{\"type\":\"button\",\"label\":\"Dr. Delete Me, Temp Clinic\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-a50d9530-55d1-44f7-af23-1a0678fe796f",
+          "label": "Tap Delete button",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"trash\",\"label\":\"Delete\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-343d415b-feb1-4f74-9755-89bf38811840",
+          "label": "Verify 'No vets yet' is visible",
+          "action": {
+            "type": "assert",
+            "assertionType": "visible",
+            "selector": "{\"type\":\"staticText\",\"label\":\"No vets yet\",\"index\":0}"
+          },
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "id": "block-1791648989433",
+      "name": "Multiple vets show correct count and sort order",
+      "steps": [
+        {
+          "id": "goal-12bbc847-f727-4da3-ab26-c68efe28bded",
+          "label": "Tap Care Team tab",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"stethoscope\",\"label\":\"Care Team\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-4ac62b85-93ad-4570-a2c7-a92dfe7a5c11",
+          "label": "Tap Add button",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"plus\",\"label\":\"Add\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-fd03636e-6743-486f-bdfe-8f8589eb413c",
+          "label": "Type Dr. Zara Wong into Name",
+          "action": {
+            "type": "fill",
+            "selector": "{\"type\":\"textField\",\"placeholder\":\"Name\",\"index\":0}",
+            "value": "Dr. Zara Wong"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-4454abf2-87dd-4b42-b828-5662a7a74899",
+          "label": "Tap Save",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"sheet.save\",\"label\":\"Save\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-d436126e-3d32-4b9c-82f7-e5bcf130b3df",
+          "label": "Tap Add button",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"plus\",\"label\":\"Add\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-a27bd390-fe7d-4aaa-8853-2b4211fb90da",
+          "label": "Type Dr. Amy Patel into Name",
+          "action": {
+            "type": "fill",
+            "selector": "{\"type\":\"textField\",\"placeholder\":\"Name\",\"index\":0}",
+            "value": "Dr. Amy Patel"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-73e1fb75-def5-4384-bc73-d3b26c9b10b2",
+          "label": "Type City Vet into Clinic",
+          "action": {
+            "type": "fill",
+            "selector": "{\"type\":\"textField\",\"placeholder\":\"Clinic\",\"index\":0}",
+            "value": "City Vet"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-e6a823e8-e061-42bf-9d07-5696d1879846",
+          "label": "Tap Save",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"sheet.save\",\"label\":\"Save\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-24e65269-5f0b-42a0-9020-8e2e6d3bf752",
+          "label": "Check subtitle shows 2 VETS",
+          "action": {
+            "type": "assert",
+            "assertionType": "visible",
+            "selector": "{\"type\":\"staticText\",\"label\":\"2 VETS\",\"index\":0}",
+            "expected": "true"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-3cabeba6-2491-4404-8ab5-2205dee1bb3f",
+          "label": "Check Dr. Amy Patel is visible",
+          "action": {
+            "type": "assert",
+            "assertionType": "visible",
+            "selector": "{\"type\":\"button\",\"label\":\"Dr. Amy Patel, City Vet\",\"index\":0}",
+            "expected": "true"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-131ed44b-633a-4296-ae01-8521ba348927",
+          "label": "Check Dr. Zara Wong is visible",
+          "action": {
+            "type": "assert",
+            "assertionType": "visible",
+            "selector": "{\"type\":\"button\",\"label\":\"Dr. Zara Wong\",\"index\":0}",
+            "expected": "true"
+          },
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "id": "block-1791649086288",
+      "name": "Add vet with only required name field",
+      "steps": [
+        {
+          "id": "goal-eaaff72d-eeea-4b9b-8101-a2643cf85eb7",
+          "label": "Tap Care Team tab",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"stethoscope\",\"label\":\"Care Team\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-b6fac2b0-fb78-4e71-a72b-0746fd59d608",
+          "label": "Tap Add button",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"plus\",\"label\":\"Add\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-92ffdd1d-0920-4585-9e46-54fc8321b341",
+          "label": "Type Dr. Minimal into Name",
+          "action": {
+            "type": "fill",
+            "selector": "{\"type\":\"textField\",\"placeholder\":\"Name\",\"index\":0}",
+            "value": "Dr. Minimal"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-c45a4c24-13ac-4e88-ae5b-d9e9d7216c3f",
+          "label": "Tap Save",
+          "action": {
+            "type": "click",
+            "selector": "{\"type\":\"button\",\"id\":\"sheet.save\",\"label\":\"Save\",\"index\":0}"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-becc1fe1-f532-43e9-9005-892733df629f",
+          "label": "Verify Dr. Minimal is visible in the list",
+          "action": {
+            "type": "assert",
+            "assertionType": "visible",
+            "selector": "{\"type\":\"button\",\"label\":\"Dr. Minimal\",\"index\":0}",
+            "expected": "true"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-e914bae4-ac06-4c3d-96c0-1867cc8efa13",
+          "label": "Verify no clinic subtitle appears beneath Dr. Minimal",
+          "action": {
+            "type": "assert",
+            "assertionType": "hidden",
+            "selector": "clinic",
+            "expected": "true"
+          },
+          "status": "passed"
+        },
+        {
+          "id": "goal-84ab9d2e-aa61-4527-b83a-5989c7b9a873",
+          "label": "Verify the vet count header shows 1 VET",
+          "action": {
+            "type": "assert",
+            "assertionType": "visible",
+            "selector": "{\"type\":\"staticText\",\"label\":\"1 VET\",\"index\":0}",
+            "expected": "true"
+          },
+          "status": "passed"
+        }
+      ]
+    }
+  ],
+  "devices": [],
+  "savedAt": "2026-10-10T14:55:24.725Z",
+  "updatedAt": "2026-10-10T16:19:07.405Z",
+  "beforeAll": [],
+  "afterEach": [],
+  "afterAll": []
+}
