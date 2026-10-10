@@ -65,7 +65,7 @@ struct CareTeamView: View {
         } else {
             List {
                 ForEach(model.vets) { vet in
-                    Button { editTarget = vet } label: { row(vet) }
+                    Button { editTarget = vet } label: { VetRow(vet: vet) }
                         .buttonStyle(.plain)
                         .listRowBackground(Theme.bg)
                         .swipeActions(edge: .trailing) {
@@ -79,8 +79,14 @@ struct CareTeamView: View {
             .scrollContentBackground(.hidden)
         }
     }
+}
 
-    private func row(_ vet: Veterinarian) -> some View {
+/// A Care Team row. Observes the vet so an edit (saved on the same managed object) redraws it —
+/// re-fetching returns the same instances, so the list alone wouldn't notice the change.
+private struct VetRow: View {
+    @ObservedObject var vet: Veterinarian
+
+    var body: some View {
         HStack(spacing: 12) {
             Image(systemName: "stethoscope")
                 .font(.system(size: 15, weight: .bold))
