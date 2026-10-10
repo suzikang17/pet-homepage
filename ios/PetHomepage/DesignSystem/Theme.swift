@@ -76,6 +76,9 @@ struct HeroHeader: View {
     /// SF Symbol for the settings/manage button (defaults to the gear). Override to disambiguate
     /// when a screen's "settings" action isn't app Settings (e.g. Timeline → manage activity types).
     var settingsSymbol: String = "gearshape.fill"
+    /// VoiceOver label for the settings/manage button. SF Symbols don't reliably supply one —
+    /// `gearshape.fill` was read out as its raw symbol name.
+    var settingsLabel: String = "Settings"
 
     private var hasPhotoBackground: Bool { backgroundImage != nil }
 
@@ -129,7 +132,7 @@ struct HeroHeader: View {
         .frame(height: hasPhotoBackground ? 260 : 200)
         .overlay(alignment: .topLeading) {
             if hasPhotoBackground, let onTapAvatar {
-                heroIconButton("camera.fill", action: onTapAvatar)
+                heroIconButton("camera.fill", label: "Change photo", action: onTapAvatar)
                     .padding(.leading, 20)
                     .padding(.top, 62)
             }
@@ -137,10 +140,10 @@ struct HeroHeader: View {
         .overlay(alignment: .topTrailing) {
             HStack(spacing: 12) {
                 if let onSettings {
-                    heroIconButton(settingsSymbol, action: onSettings)
+                    heroIconButton(settingsSymbol, label: settingsLabel, action: onSettings)
                 }
                 if let onAdd {
-                    heroIconButton("plus", action: onAdd)
+                    heroIconButton("plus", label: "Add", action: onAdd)
                 }
             }
             .padding(.trailing, 20)
@@ -188,7 +191,7 @@ struct HeroHeader: View {
         }
     }
 
-    private func heroIconButton(_ systemName: String, action: @escaping () -> Void) -> some View {
+    private func heroIconButton(_ systemName: String, label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: 18, weight: .bold))
@@ -197,6 +200,7 @@ struct HeroHeader: View {
                 .background(.white, in: Circle())
                 .shadow(color: Theme.shadow.opacity(0.18), radius: 8, y: 3)
         }
+        .accessibilityLabel(label)
     }
 }
 

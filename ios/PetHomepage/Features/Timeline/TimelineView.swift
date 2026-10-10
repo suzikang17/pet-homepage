@@ -65,7 +65,8 @@ struct TimelineView: View {
                         subtitle: viewMode == .stream ? (model.filter?.label ?? "Everything") : ViewMode.photos.rawValue,
                         systemImage: "calendar",
                         onSettings: { showActivityTypes = true },
-                        settingsSymbol: "slider.horizontal.3"
+                        settingsSymbol: "slider.horizontal.3",
+                        settingsLabel: "Manage activity types"
                     )
                     Picker("View", selection: $viewMode) {
                         ForEach(ViewMode.allCases) { Text($0.rawValue).tag($0) }

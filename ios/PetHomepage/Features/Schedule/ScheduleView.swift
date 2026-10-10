@@ -87,7 +87,8 @@ struct ScheduleView: View {
                         systemImage: "checklist",
                         onAdd: { showOneOffEditor = true },
                         onSettings: { showTemplateEditor = true },
-                        settingsSymbol: "slider.horizontal.3"
+                        settingsSymbol: "slider.horizontal.3",
+                        settingsLabel: "Edit routine"
                     )
                     Picker("", selection: $tab) {
                         ForEach(Tab.allCases, id: \.self) { Text($0.rawValue).tag($0) }
@@ -397,6 +398,7 @@ struct ScheduleView: View {
                 }
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(slot.isCompleted ? "Mark \(slot.task.name) not done" : "Mark \(slot.task.name) done")
             .disabled(model.isFuture || slot.isSkipped)
             .accessibilityIdentifier("scheduleCheck.\(slot.task.name)")
 
